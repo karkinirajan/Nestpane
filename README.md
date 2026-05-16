@@ -67,22 +67,19 @@ It is a single-user, offline-first extension. All data lives in `chrome.storage.
 
 ```
 novatab/
-├── manifest.json          Chrome Extension Manifest V3 — permissions, icons, OAuth client ID
-├── newtab.html            New tab page — full dashboard UI (~1600 lines)
-├── app.js                 All application logic (~8200 lines)
-├── style.css              Design system and all component styles (~1600 lines)
-├── fouc.js                Inline script — applies theme and accent color before CSS loads
-├── popup.html             Extension popup — save current page as a bookmark to a workspace
-├── popup.js               Popup logic
-├── favicon.svg            Source brand icon (32×32 SVG)
-├── favicon.png            128×128 extension icon (generated from SVG)
-├── icon-16.png            16×16 toolbar icon (generated from SVG)
-├── icon-48.png            48×48 extension management icon (generated from SVG)
-├── build.js               Validation and dist copy script (Node.js, no dependencies)
-├── OAUTH_SETUP.md         Step-by-step Google OAuth client configuration guide
-├── LICENSE                MIT License
-├── .gitignore             Git ignore rules
-└── dist/                  Production build output — ZIP this folder for Chrome Web Store (git-ignored)
+├── manifest.json     Chrome Extension Manifest V3 — permissions, icons, OAuth client ID
+├── newtab.html       New tab page — full dashboard UI (~1600 lines)
+├── app.js            All application logic (~8200 lines)
+├── style.css         Design system and all component styles (~1600 lines)
+├── fouc.js           Inline script — applies theme and accent color before CSS loads
+├── popup.html        Extension popup — save current page as a bookmark to a workspace
+├── popup.js          Popup logic
+├── favicon.svg       Source brand icon (32×32 SVG)
+├── favicon.png       128×128 extension icon (generated from SVG)
+├── icon-16.png       16×16 toolbar icon (generated from SVG)
+├── icon-48.png       48×48 extension management icon (generated from SVG)
+├── build.js          Validation and dist copy script (Node.js, no dependencies)
+└── dist/             Production build output — ZIP this folder for Chrome Web Store
 ```
 
 ---
@@ -312,22 +309,3 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 - [ ] Verify the extension ID still matches the OAuth redirect URI after any reinstall from a new folder
 - [ ] Review `manifest.json` permissions — remove any unused permissions before CWS submission
 - [ ] Test on Chrome stable and Edge before submitting to the Chrome Web Store
-
----
-
-## Contributing
-
-1. Fork the repository and create a feature branch.
-2. Make changes to the source files in the project root (not in `dist/`).
-3. Run `node build.js` to validate the build before submitting a pull request.
-4. Open a pull request with a clear description of the change and why it is needed.
-
-There is no test suite. Manual testing against Chrome stable is the expected verification step.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE) for the full text.
-
-Copyright (c) 2026 Nirajan Karki
