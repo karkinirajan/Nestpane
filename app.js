@@ -358,53 +358,52 @@ const DEFAULT_WS_DATA = (id) => {
     return {
       quickAccess: [
         // AI
-        { id: 101, name: "Claude", url: "https://claude.ai" },
-        { id: 102, name: "ChatGPT", url: "https://chat.openai.com" },
-        { id: 103, name: "Gemini", url: "https://gemini.google.com" },
-        { id: 104, name: "Perplexity", url: "https://perplexity.ai" },
-        { id: 105, name: "Cursor", url: "https://cursor.com" },
-        { id: 106, name: "Bolt", url: "https://bolt.new" },
+        { id: 101, name: "Claude",         url: "https://claude.ai" },
+        { id: 102, name: "ChatGPT",        url: "https://chat.openai.com" },
+        { id: 103, name: "Gemini",         url: "https://gemini.google.com" },
+        { id: 104, name: "Perplexity",     url: "https://perplexity.ai" },
+        { id: 105, name: "Cursor",         url: "https://cursor.com" },
+        { id: 106, name: "Bolt",           url: "https://bolt.new" },
         // Dev
-        { id: 107, name: "GitHub", url: "https://github.com" },
-        { id: 108, name: "Vercel", url: "https://vercel.com" },
-        { id: 109, name: "Supabase", url: "https://supabase.com" },
-        { id: 110, name: "Cloudflare", url: "https://cloudflare.com" },
-        { id: 111, name: "Docker Hub", url: "https://hub.docker.com" },
-        { id: 112, name: "Linear", url: "https://linear.app" },
-        { id: 113, name: "Stripe", url: "https://stripe.com" },
-        { id: 114, name: "DEV.to", url: "https://dev.to" },
+        { id: 107, name: "GitHub",         url: "https://github.com" },
+        { id: 108, name: "Vercel",         url: "https://vercel.com" },
+        { id: 109, name: "Supabase",       url: "https://supabase.com" },
+        { id: 110, name: "Cloudflare",     url: "https://cloudflare.com" },
+        { id: 111, name: "Docker Hub",     url: "https://hub.docker.com" },
+        { id: 112, name: "Linear",         url: "https://linear.app" },
+        { id: 113, name: "Stripe",         url: "https://stripe.com" },
+        { id: 114, name: "DEV.to",         url: "https://dev.to" },
         { id: 115, name: "Stack Overflow", url: "https://stackoverflow.com" },
-        { id: 116, name: "Postman", url: "https://postman.com" },
+        { id: 116, name: "Postman",        url: "https://postman.com" },
         // Frameworks & docs
-        { id: 117, name: "Python", url: "https://python.org" },
-        { id: 118, name: "Django", url: "https://djangoproject.com" },
-        { id: 119, name: "DRF", url: "https://www.django-rest-framework.org" },
-        { id: 120, name: "FastAPI", url: "https://fastapi.tiangolo.com" },
-        { id: 121, name: "Rust", url: "https://rust-lang.org" },
-        { id: 122, name: "React", url: "https://react.dev" },
-        { id: 123, name: "Next.js", url: "https://nextjs.org" },
-        { id: 124, name: "Tailwind", url: "https://tailwindcss.com" },
+        { id: 117, name: "Python",         url: "https://python.org" },
+        { id: 118, name: "Django",         url: "https://djangoproject.com" },
+        { id: 120, name: "FastAPI",        url: "https://fastapi.tiangolo.com" },
+        { id: 121, name: "Rust",           url: "https://rust-lang.org" },
+        { id: 122, name: "React",          url: "https://react.dev" },
+        { id: 123, name: "Next.js",        url: "https://nextjs.org" },
+        { id: 124, name: "Tailwind",       url: "https://tailwindcss.com" },
         // Productivity & tools
-        { id: 125, name: "Notion", url: "https://notion.so" },
-        { id: 127, name: "Readwise", url: "https://readwise.io" },
-        { id: 128, name: "Raindrop", url: "https://raindrop.io" },
-        { id: 129, name: "Luma", url: "https://lu.ma" },
-        { id: 130, name: "Upwork", url: "https://upwork.com" },
-        { id: 131, name: "ProductHunt", url: "https://producthunt.com" },
-        { id: 132, name: "Mobbin", url: "https://mobbin.com" },
-        { id: 133, name: "n8n", url: "https://n8n.io" },
-        { id: 134, name: "Hamro Patro", url: "https://hamropatro.com" },
+        { id: 125, name: "Notion",         url: "https://notion.so" },
+        { id: 127, name: "Readwise",       url: "https://readwise.io" },
+        { id: 128, name: "Raindrop",       url: "https://raindrop.io" },
+        { id: 130, name: "Upwork",         url: "https://upwork.com" },
+        { id: 131, name: "ProductHunt",    url: "https://producthunt.com" },
+        { id: 132, name: "Mobbin",         url: "https://mobbin.com" },
+        { id: 133, name: "n8n",            url: "https://n8n.io" },
+        { id: 134, name: "Hamro Patro",    url: "https://hamropatro.com" },
         // Socials
-        { id: 138, name: "Twitter / X", url: "https://x.com" },
-        { id: 139, name: "LinkedIn", url: "https://linkedin.com/feed" },
-        { id: 140, name: "Instagram", url: "https://instagram.com" },
-        { id: 141, name: "Reddit", url: "https://reddit.com" },
-        { id: 142, name: "Discord", url: "https://discord.com/app" },
-        { id: 143, name: "YouTube", url: "https://youtube.com" },
-        // Google essentials
-        { id: 135, name: "Gmail", url: "https://mail.google.com" },
-        { id: 136, name: "Drive", url: "https://drive.google.com" },
-        { id: 137, name: "Calendar", url: "https://calendar.google.com" },
+        { id: 138, name: "Twitter / X",    url: "https://x.com" },
+        { id: 139, name: "LinkedIn",       url: "https://linkedin.com/feed" },
+        { id: 140, name: "Instagram",      url: "https://instagram.com" },
+        { id: 141, name: "Reddit",         url: "https://reddit.com" },
+        { id: 142, name: "Discord",        url: "https://discord.com/app" },
+        { id: 143, name: "YouTube",        url: "https://youtube.com" },
+        // Google
+        { id: 135, name: "Gmail",          url: "https://mail.google.com" },
+        { id: 136, name: "Drive",          url: "https://drive.google.com" },
+        { id: 137, name: "Calendar",       url: "https://calendar.google.com" },
+        { id: 144, name: "Docs",           url: "https://docs.google.com" },
       ],
       notes: [
         {
@@ -5086,7 +5085,7 @@ function renderNotesView() {
   list.innerHTML = sorted
     .map((n) => {
       const tags = n.tags || [];
-      const dateStr = new Date(n.updatedAt || n.date).toLocaleDateString(
+      const dateStr = new Date(n.updatedAt || n.createdAt || n.date).toLocaleDateString(
         undefined,
         { month: "short", day: "numeric" },
       );
@@ -5105,7 +5104,7 @@ function renderNotesView() {
             : ""
         }
       </div>
-      <button class="note-card-del-btn" data-nid="${n.id}" data-tip="Delete">🗑</button>
+      <button class="note-card-del-btn" data-nid="${n.id}" data-tip="Delete" aria-label="Delete note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
     </div>`;
     })
     .join("");
