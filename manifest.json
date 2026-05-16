@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "novatab",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxMGoo4aGby3zGvUPXjv3FVRxyLg+VVNYmotopNKGmMeCB/4xSXwMoxC/e1+Hmdt5lERKOGj1j7XIQ/rg+bq9aVwvZ1DSOyHcpYQvnLSaK+vd62S0vlo1wrCZbQnHehD5pU10rQ0rZl0fRqhVXWznE216eTJVuKS8Tg9B8MZyqNDISAq5xj3Qrpe5o9KulkCCI+bHzRrmNroQ8hVHnbN97ngcJ7Tz+EWZs7tmtOcZY3OyreX/8OGcYqWS4eUSy8aAl1FvyGB0EN2HxyyUhhi315MgGFJGnFMN51BYK+LBdVYuJ/y0kZXoLVE4o4bXYq/k4rL4yzDtuzEA15GjKnRqRwIDAQAB",
   "version": "1.1.0",
   "description": "A beautiful productivity new tab page with workspaces, bookmarks, notes, tasks, focus timer, and cloud sync.",
   "chrome_url_overrides": { "newtab": "newtab.html" },
