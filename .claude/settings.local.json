@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf /home/kneeraazon/novatab/.git)",
+      "Bash(rm -f /home/kneeraazon/novatab/.gitignore)",
+      "Bash(rm -f /home/kneeraazon/novatab/LICENSE)",
+      "Bash(rm -f /home/kneeraazon/novatab/README.md)"
+    ]
+  }
+}

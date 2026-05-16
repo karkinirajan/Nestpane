@@ -386,7 +386,6 @@ const DEFAULT_WS_DATA = (id) => {
         { id: 124, name: "Tailwind", url: "https://tailwindcss.com" },
         // Productivity & tools
         { id: 125, name: "Notion", url: "https://notion.so" },
-        { id: 126, name: "YouTube", url: "https://youtube.com" },
         { id: 127, name: "Readwise", url: "https://readwise.io" },
         { id: 128, name: "Raindrop", url: "https://raindrop.io" },
         { id: 129, name: "Luma", url: "https://lu.ma" },
@@ -395,6 +394,13 @@ const DEFAULT_WS_DATA = (id) => {
         { id: 132, name: "Mobbin", url: "https://mobbin.com" },
         { id: 133, name: "n8n", url: "https://n8n.io" },
         { id: 134, name: "Hamro Patro", url: "https://hamropatro.com" },
+        // Socials
+        { id: 138, name: "Twitter / X", url: "https://x.com" },
+        { id: 139, name: "LinkedIn", url: "https://linkedin.com/feed" },
+        { id: 140, name: "Instagram", url: "https://instagram.com" },
+        { id: 141, name: "Reddit", url: "https://reddit.com" },
+        { id: 142, name: "Discord", url: "https://discord.com/app" },
+        { id: 143, name: "YouTube", url: "https://youtube.com" },
         // Google essentials
         { id: 135, name: "Gmail", url: "https://mail.google.com" },
         { id: 136, name: "Drive", url: "https://drive.google.com" },
@@ -1207,6 +1213,7 @@ let S = {
 // ===== BOOT =====
 document.addEventListener("DOMContentLoaded", async () => {
   await loadState();
+  migrateAddSocials();
   initClock();
   updateGreeting();
   autoDetectWeather();
@@ -1221,6 +1228,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadHistory("");
   loadDownloads();
   checkGoogleIdentity();
+
+  // Pull from Drive every 60 s to stay in sync across devices/browsers
+  // pullFromDrive() already calls renderAll() internally when cloud is newer
+  setInterval(() => { if (S.googleUser) pullFromDrive(); }, 60000);
+
+  // Pull when this tab regains focus (switching back from another device's session)
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && S.googleUser) pullFromDrive();
+  });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
@@ -2056,7 +2072,16 @@ function setSyncStatus(status, detail = "") {
     },
   );
 
-  card.className = "sb-sync";
+  // Preserve popup-open state across status changes
+  const wasOpen = card.classList.contains("popup-open");
+  card.className = "sb-sync" + (wasOpen ? " popup-open" : "");
+
+  // Footer button elements
+  const ftrName = el("sbFtrName");
+  const ftrSub  = el("sbFtrSub");
+  const ftrDot  = el("sbFtrDot");
+  if (ftrDot) ftrDot.className = "sb-ftr-dot";
+  const uname = S.user.name || S.user.googleName || S.googleUser?.email?.split("@")[0] || detail?.split("@")[0] || "";
 
   if (status === "signed-out") {
     el("syncIconCloud").style.display = "";
@@ -2064,16 +2089,19 @@ function setSyncStatus(status, detail = "") {
     if (desc) desc.textContent = "Sign in to back up your data.";
     el("signInBtn").style.display = "";
     el("syncNowBtn").style.display = "none";
+    if (ftrName) ftrName.textContent = "Connect Drive";
+    if (ftrSub)  ftrSub.textContent  = "Sign in to sync";
   } else if (status === "needs-auth") {
-    // Chrome account known, but extension not yet authorized
     el("syncIconCloud").style.display = "";
     card.classList.add("syncing");
-    const knownEmail = detail ? detail.split("@")[0] : "your account";
-    if (title) title.textContent = `Hi, ${knownEmail}`;
+    const displayName = S.user.name || S.user.googleName || (detail ? detail.split("@")[0] : "your account");
+    if (title) title.textContent = `Hi, ${displayName}`;
     if (desc) desc.textContent = "Connect Google Drive to sync.";
     el("signInBtn").style.display = "";
     el("signInBtn").textContent = "Connect Drive";
     el("syncNowBtn").style.display = "none";
+    if (ftrName) ftrName.textContent = displayName;
+    if (ftrSub)  ftrSub.textContent  = "Connect Drive";
   } else if (status === "syncing") {
     el("syncIconSpin").style.display = "";
     card.classList.add("syncing");
@@ -2081,38 +2109,49 @@ function setSyncStatus(status, detail = "") {
     if (desc) desc.textContent = "Saving your data to Google Drive.";
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "none";
+    if (ftrName) ftrName.textContent = uname || "Syncing…";
+    if (ftrSub)  ftrSub.textContent  = "Syncing…";
+    if (ftrDot)  ftrDot.classList.add("syncing");
   } else if (status === "synced") {
     el("syncIconOk").style.display = "";
     card.classList.add("synced");
-    if (title)
-      title.textContent = S.googleUser?.email?.split("@")[0] || "Synced";
     const ago = _timeAgo(Drive._lastSyncAt);
+    if (title) title.textContent = uname || "Synced";
     if (desc) desc.textContent = `Synced ${ago}`;
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
+    if (ftrName) ftrName.textContent = uname || "Synced";
+    if (ftrSub)  ftrSub.textContent  = `Synced ${ago}`;
+    if (ftrDot)  ftrDot.classList.add("synced");
   } else if (status === "error") {
     el("syncIconErr").style.display = "";
     card.classList.add("error");
     if (title) title.textContent = "Sync failed";
-    if (desc)
-      desc.textContent = detail || "Check your connection and try again.";
+    if (desc) desc.textContent = detail || "Check your connection and try again.";
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
+    if (ftrName) ftrName.textContent = uname || "Sync error";
+    if (ftrSub)  ftrSub.textContent  = "Sync failed";
+    if (ftrDot)  ftrDot.classList.add("error");
   } else if (status === "offline") {
     el("syncIconCloud").style.display = "";
     if (title) title.textContent = "Offline";
     if (desc) desc.textContent = "Will sync when connected.";
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
+    if (ftrName) ftrName.textContent = uname || "Offline";
+    if (ftrSub)  ftrSub.textContent  = "Offline";
   } else {
     // idle / connected
     el("syncIconCloud").style.display = "";
     card.classList.add("synced");
-    if (title)
-      title.textContent = S.googleUser?.email?.split("@")[0] || "Connected";
+    if (title) title.textContent = uname || "Connected";
     if (desc) desc.textContent = "Ready to sync.";
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
+    if (ftrName) ftrName.textContent = uname || "Connected";
+    if (ftrSub)  ftrSub.textContent  = "Ready to sync";
+    if (ftrDot)  ftrDot.classList.add("synced");
   }
 }
 
@@ -2308,11 +2347,15 @@ async function _doPush(token) {
   // a previous OAuth client that pass GET-metadata checks but fail on PATCH.
   const fileId = Drive._fileId || null;
 
+  const fileMeta = fileId
+    ? { name: DRIVE_FILE_NAME, mimeType: "application/json" }
+    : { name: DRIVE_FILE_NAME, mimeType: "application/json", parents: [DRIVE_SPACES] };
+
   const multipart = [
     `--${boundary}`,
     "Content-Type: application/json; charset=UTF-8",
     "",
-    JSON.stringify({ name: DRIVE_FILE_NAME, mimeType: "application/json" }),
+    JSON.stringify(fileMeta),
     `--${boundary}`,
     "Content-Type: application/json",
     "",
@@ -2322,7 +2365,7 @@ async function _doPush(token) {
 
   const url = fileId
     ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
-    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&spaces=${DRIVE_SPACES}`;
+    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
   const method = fileId ? "PATCH" : "POST";
 
   try {
@@ -2369,10 +2412,10 @@ async function _doPush(token) {
   }
 }
 
-// ── Debounce: schedule a push 4 s after last change ─────────────────────
+// ── Debounce: schedule a push 2 s after last change ─────────────────────
 function scheduleDriveSync() {
   clearTimeout(Drive._syncTimer);
-  Drive._syncTimer = setTimeout(pushToDrive, 4000);
+  Drive._syncTimer = setTimeout(pushToDrive, 2000);
 }
 
 // ── Main identity check: called on every new tab open ───────────────────
@@ -2479,27 +2522,44 @@ async function signOut() {
 // Update avatar: show Google photo if available, else letter
 function updateAvatarDisplay() {
   const avatarEl = el("userAvatar");
-  if (!avatarEl) return;
+  const ftrAvatar = el("sbFtrAvatar");
   const pic = (S.googleUser && S.googleUser.picture) || S.user.googlePicture;
-  if (pic) {
-    const img = document.createElement("img");
-    img.src = pic;
-    img.alt = "Profile picture";
-    img.className = "avatar-google-img";
-    img.addEventListener("error", () => {
-      img.remove();
+
+  if (avatarEl) {
+    if (pic) {
+      const img = document.createElement("img");
+      img.src = pic;
+      img.alt = "Profile picture";
+      img.className = "avatar-google-img";
+      img.addEventListener("error", () => {
+        img.remove();
+        avatarEl.textContent = S.user.name ? S.user.name[0].toUpperCase() : "U";
+        avatarEl.style.background = S.user.avatarColor || "#7c3aed";
+        avatarEl.style.padding = "";
+      });
+      avatarEl.innerHTML = "";
+      avatarEl.appendChild(img);
+      avatarEl.style.background = "transparent";
+      avatarEl.style.padding = "0";
+    } else {
       avatarEl.textContent = S.user.name ? S.user.name[0].toUpperCase() : "U";
       avatarEl.style.background = S.user.avatarColor || "#7c3aed";
       avatarEl.style.padding = "";
-    });
-    avatarEl.innerHTML = "";
-    avatarEl.appendChild(img);
-    avatarEl.style.background = "transparent";
-    avatarEl.style.padding = "0";
-  } else {
-    avatarEl.textContent = S.user.name ? S.user.name[0].toUpperCase() : "U";
-    avatarEl.style.background = S.user.avatarColor || "#7c3aed";
-    avatarEl.style.padding = "";
+    }
+  }
+
+  if (ftrAvatar) {
+    if (pic) {
+      ftrAvatar.innerHTML = `<img src="${pic}" alt="avatar">`;
+      ftrAvatar.style.background = "transparent";
+    } else if (S.googleUser?.email || S.user.name) {
+      const letter = (S.user.name || S.googleUser?.email || "U")[0].toUpperCase();
+      ftrAvatar.textContent = letter;
+      ftrAvatar.style.background = S.user.avatarColor || "#7c3aed";
+    } else {
+      ftrAvatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`;
+      ftrAvatar.style.background = "";
+    }
   }
 }
 
@@ -2519,6 +2579,7 @@ function renderAll() {
   renderWorkspaceBookmarks();
   renderNotesWidget();
   renderTasksWidget();
+  renderKanbanDash();
   renderNotesView();
   renderTrash();
   renderCalendarWidget();
@@ -2543,6 +2604,7 @@ function setActiveWorkspace(wsId) {
     renderWorkspaceBookmarks();
     renderNotesWidget();
     renderTasksWidget();
+    renderKanbanDash();
     renderNotesView();
   };
   if (content) {
@@ -2624,7 +2686,7 @@ function _renderSnavLinks(containerId, wsId) {
         <a href="${escH(link.url)}" class="sb-open-btn" target="_blank" rel="noopener" title="Open in new tab">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
-        <button class="sb-rm-btn" title="Remove" onclick="removeSbLink(${wsId},${link.id})">
+        <button class="sb-rm-btn" title="Remove" data-rm-ws="${wsId}" data-rm-id="${link.id}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -2678,7 +2740,7 @@ function _renderSnavGlobalLinks(containerId, group) {
         <a href="${escH(link.url)}" class="sb-open-btn" target="_blank" rel="noopener" title="Open in new tab">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
-        <button class="sb-rm-btn" title="Remove" onclick="removeSbGlobalLink('${escH(group)}',${link.id})">
+        <button class="sb-rm-btn" title="Remove" data-rm-group="${escH(group)}" data-rm-id="${link.id}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -4811,12 +4873,39 @@ function removeQA(e, id) {
   showToast("Removed from Quick Access", "success");
 }
 
-const QA_MAX = 8;
+const QA_MAX = 50;
+
+// Maps domain → category label for Quick Access section headers
+const QA_CATEGORY_MAP = {
+  "claude.ai": "AI", "chat.openai.com": "AI", "gemini.google.com": "AI",
+  "perplexity.ai": "AI", "cursor.com": "AI", "bolt.new": "AI",
+  "midjourney.com": "AI", "v0.dev": "AI", "copilot.microsoft.com": "AI",
+  "github.com": "Dev", "vercel.com": "Dev", "supabase.com": "Dev",
+  "cloudflare.com": "Dev", "hub.docker.com": "Dev", "linear.app": "Dev",
+  "stripe.com": "Dev", "dev.to": "Dev", "stackoverflow.com": "Dev",
+  "postman.com": "Dev", "railway.app": "Dev", "render.com": "Dev",
+  "python.org": "Frameworks", "djangoproject.com": "Frameworks",
+  "django-rest-framework.org": "Frameworks", "fastapi.tiangolo.com": "Frameworks",
+  "rust-lang.org": "Frameworks", "react.dev": "Frameworks",
+  "nextjs.org": "Frameworks", "tailwindcss.com": "Frameworks",
+  "notion.so": "Productivity", "readwise.io": "Productivity",
+  "raindrop.io": "Productivity", "lu.ma": "Productivity",
+  "upwork.com": "Productivity", "producthunt.com": "Productivity",
+  "mobbin.com": "Productivity", "n8n.io": "Productivity",
+  "hamropatro.com": "Productivity",
+  "x.com": "Socials", "twitter.com": "Socials", "linkedin.com": "Socials",
+  "instagram.com": "Socials", "reddit.com": "Socials",
+  "discord.com": "Socials", "youtube.com": "Socials",
+  "mail.google.com": "Google", "drive.google.com": "Google",
+  "calendar.google.com": "Google", "docs.google.com": "Google",
+  "meet.google.com": "Google", "sheets.google.com": "Google",
+  "photos.google.com": "Google",
+};
 
 function addQA(name, url) {
   const data = wsData();
   const item = { id: Date.now(), name, url };
-  if (data.quickAccess.length >= QA_MAX) {
+  if (data.quickAccess.filter(q => !q.__section).length >= QA_MAX) {
     openQAReplaceModal(item);
     return;
   }
@@ -5168,11 +5257,84 @@ function deleteNoteById(id) {
   }
 }
 
+// ===== KANBAN DASHBOARD WIDGET (Todo-only with checkbox CRUD) =====
+function renderKanbanDash() {
+  const container = el("kanbanDashCols");
+  if (!container) return;
+  const kb = getKanban();
+  const todos = kb.todo || [];
+
+  if (!todos.length) {
+    container.innerHTML = `<div class="kd-empty">No to-dos yet — click + to add one.</div>`;
+    return;
+  }
+
+  container.innerHTML = todos.map(card => `
+    <div class="kd-todo-item" data-kid="${card.id}">
+      <div class="kd-todo-check" data-kid="${card.id}" title="Mark done"></div>
+      <span class="kd-todo-text">${escH(card.title)}</span>
+      <button class="kd-todo-del" data-kid="${card.id}" title="Delete">✕</button>
+    </div>`).join("");
+
+  container.querySelectorAll(".kd-todo-check").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = Number(btn.dataset.kid);
+      const kb2 = getKanban();
+      const idx = (kb2.todo || []).findIndex(c => c.id === id);
+      if (idx < 0) return;
+      const [card] = kb2.todo.splice(idx, 1);
+      if (!kb2.done) kb2.done = [];
+      kb2.done.unshift(card);
+      save();
+      renderKanbanDash();
+      if (el("view-kanban")?.classList.contains("active")) renderKanban();
+    });
+  });
+
+  container.querySelectorAll(".kd-todo-del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = Number(btn.dataset.kid);
+      const kb2 = getKanban();
+      kb2.todo = (kb2.todo || []).filter(c => c.id !== id);
+      save();
+      renderKanbanDash();
+      if (el("view-kanban")?.classList.contains("active")) renderKanban();
+    });
+  });
+}
+
+// ===== MIGRATION: add Socials items to existing users' Quick Access =====
+function migrateAddSocials() {
+  const data = wsData();
+  if (!data?.quickAccess) return;
+  const existing = new Set(data.quickAccess.map(q => q.url));
+  const toAdd = [
+    { id: 138, name: "Twitter / X", url: "https://x.com" },
+    { id: 139, name: "LinkedIn", url: "https://linkedin.com/feed" },
+    { id: 140, name: "Instagram", url: "https://instagram.com" },
+    { id: 141, name: "Reddit", url: "https://reddit.com" },
+    { id: 142, name: "Discord", url: "https://discord.com/app" },
+    { id: 143, name: "YouTube", url: "https://youtube.com" },
+  ].filter(item => !existing.has(item.url));
+  if (!toAdd.length) return;
+  // Insert before first Google item if present, otherwise append
+  const googleIdx = data.quickAccess.findIndex(q =>
+    q.url && (q.url.includes("mail.google.com") || q.url.includes("drive.google.com"))
+  );
+  if (googleIdx >= 0) {
+    data.quickAccess.splice(googleIdx, 0, ...toAdd);
+  } else {
+    data.quickAccess.push(...toAdd);
+  }
+  save();
+}
+
 // ===== TASKS =====
 function renderTasksWidget() {
   const tasks = wsTasks();
   const list = el("tasksList");
   const chip = el("tasksProgressChip");
+  if (!list) return;
   if (!tasks.length) {
     list.innerHTML = `<div class="widget-empty-state">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
@@ -6626,6 +6788,20 @@ function setupEventListeners() {
     });
   });
 
+  // Sidebar remove buttons — event delegation (CSP-safe, no inline onclick)
+  el("sbNav")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".sb-rm-btn");
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const { rmWs, rmGroup, rmId } = btn.dataset;
+    if (rmId !== undefined && rmWs !== undefined) {
+      removeSbLink(Number(rmWs), Number(rmId));
+    } else if (rmId !== undefined && rmGroup !== undefined) {
+      removeSbGlobalLink(rmGroup, Number(rmId));
+    }
+  });
+
   // Theme
   el("themeBtn").addEventListener("click", () => {
     applyTheme(S.settings.theme === "dark" ? "light" : "dark");
@@ -6938,8 +7114,8 @@ function setupEventListeners() {
     renderNotesView();
   });
 
-  // Tasks
-  el("addTaskBtn").addEventListener("click", () => openModal("taskModal"));
+  // Tasks (widget removed from dashboard — kept for data compat)
+  el("addTaskBtn")?.addEventListener("click", () => openModal("taskModal"));
   el("saveTaskBtn").addEventListener("click", () => {
     const t = el("taskInput").value.trim();
     if (!t) {
@@ -7301,6 +7477,8 @@ function setupEventListeners() {
   });
 
   // ── Kanban ──────────────────────────────────────────────────────────────
+  el("kanbanDashOpenBtn")?.addEventListener("click", () => navigateTo("kanban"));
+  el("kanbanDashAddBtn")?.addEventListener("click", () => openKanbanCardModal("todo"));
   document.querySelectorAll(".kanban-add-card").forEach((btn) => {
     btn.addEventListener("click", () => openKanbanCardModal(btn.dataset.col));
   });
@@ -7387,6 +7565,17 @@ function setupEventListeners() {
   el("signInBtn")?.addEventListener("click", signIn);
   el("syncNowBtn")?.addEventListener("click", () => pushToDrive());
   el("logoutBtn")?.addEventListener("click", signOut);
+
+  // ── Sync popup toggle ────────────────────────────────────────────────────
+  el("syncFooterBtn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    el("syncCard")?.classList.toggle("popup-open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!el("sbFooterUserWrap")?.contains(e.target)) {
+      el("syncCard")?.classList.remove("popup-open");
+    }
+  });
 
   // ── Custom hero color input ──────────────────────────────────────────────
   el("heroColorCustomInput")?.addEventListener("input", (e) => {
@@ -7798,6 +7987,7 @@ function renderKanban() {
       S._kanbanDragCard = null;
       save();
       renderKanban();
+      renderKanbanDash();
     });
   });
 }
@@ -7834,6 +8024,7 @@ function saveKanbanCard() {
   save();
   closeModal("kanbanCardModal");
   renderKanban();
+  renderKanbanDash();
 }
 
 function deleteKanbanCard(col, id) {
@@ -7841,6 +8032,7 @@ function deleteKanbanCard(col, id) {
   kb[col] = (kb[col] || []).filter((c) => c.id !== id);
   save();
   renderKanban();
+  renderKanbanDash();
 }
 
 // ===== FEATURES 7 & 8 — Stopwatch & World Clock removed =================
