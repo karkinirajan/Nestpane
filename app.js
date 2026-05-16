@@ -2081,6 +2081,7 @@ function setSyncStatus(status, detail = "") {
   const ftrSub  = el("sbFtrSub");
   const ftrDot  = el("sbFtrDot");
   if (ftrDot) ftrDot.className = "sb-ftr-dot";
+  if (ftrSub) ftrSub.className = "sb-ftr-sub";
   const uname = S.user.name || S.user.googleName || S.googleUser?.email?.split("@")[0] || detail?.split("@")[0] || "";
 
   if (status === "signed-out") {
@@ -2090,7 +2091,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "";
     el("syncNowBtn").style.display = "none";
     if (ftrName) ftrName.textContent = "Connect Drive";
-    if (ftrSub)  ftrSub.textContent  = "Sign in to sync";
+    if (ftrSub)  { ftrSub.textContent = "Sign in to sync"; ftrSub.classList.add("sync-err"); }
   } else if (status === "needs-auth") {
     el("syncIconCloud").style.display = "";
     card.classList.add("syncing");
@@ -2101,7 +2102,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").textContent = "Connect Drive";
     el("syncNowBtn").style.display = "none";
     if (ftrName) ftrName.textContent = displayName;
-    if (ftrSub)  ftrSub.textContent  = "Connect Drive";
+    if (ftrSub)  { ftrSub.textContent = "Connect Drive"; ftrSub.classList.add("sync-err"); }
   } else if (status === "syncing") {
     el("syncIconSpin").style.display = "";
     card.classList.add("syncing");
@@ -2121,7 +2122,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Synced";
-    if (ftrSub)  ftrSub.textContent  = `Synced ${ago}`;
+    if (ftrSub)  { ftrSub.textContent = `Synced ${ago}`; ftrSub.classList.add("sync-ok"); }
     if (ftrDot)  ftrDot.classList.add("synced");
   } else if (status === "error") {
     el("syncIconErr").style.display = "";
@@ -2131,7 +2132,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Sync error";
-    if (ftrSub)  ftrSub.textContent  = "Sync failed";
+    if (ftrSub)  { ftrSub.textContent = "Sync failed"; ftrSub.classList.add("sync-err"); }
     if (ftrDot)  ftrDot.classList.add("error");
   } else if (status === "offline") {
     el("syncIconCloud").style.display = "";
@@ -2140,7 +2141,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Offline";
-    if (ftrSub)  ftrSub.textContent  = "Offline";
+    if (ftrSub)  { ftrSub.textContent = "Offline"; ftrSub.classList.add("sync-err"); }
   } else {
     // idle / connected
     el("syncIconCloud").style.display = "";
@@ -2150,7 +2151,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Connected";
-    if (ftrSub)  ftrSub.textContent  = "Ready to sync";
+    if (ftrSub)  { ftrSub.textContent = "Ready to sync"; ftrSub.classList.add("sync-ok"); }
     if (ftrDot)  ftrDot.classList.add("synced");
   }
 }
