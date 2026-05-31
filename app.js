@@ -6257,15 +6257,28 @@ async function renderAnalytics() {
     <div class="insights-cards-row">
       <div class="insights-card" id="an-topsites">
         <div class="insights-card-hd"><span class="insights-card-title">Top Visited Sites</span></div>
-        <div class="ins-empty">Loading…</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text" style="width:70%"></div>
+          <div class="skeleton skeleton-text" style="width:85%"></div>
+          <div class="skeleton skeleton-text" style="width:60%"></div>
+        </div>
       </div>
       <div class="insights-card" id="an-downloads">
         <div class="insights-card-hd"><span class="insights-card-title">Downloads — 30 Days</span></div>
-        <div class="ins-empty">Loading…</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text" style="width:65%"></div>
+          <div class="skeleton skeleton-text" style="width:75%"></div>
+        </div>
       </div>
       <div class="insights-card full" id="an-history">
         <div class="insights-card-hd"><span class="insights-card-title">Browsing Activity — Last 7 Days</span></div>
-        <div class="ins-empty">Loading…</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
+          <div class="skeleton skeleton-block" style="height:40px"></div>
+          <div class="skeleton skeleton-text" style="width:90%"></div>
+          <div class="skeleton skeleton-text" style="width:75%"></div>
+        </div>
       </div>
     </div>
   `;

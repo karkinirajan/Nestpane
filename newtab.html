@@ -13,27 +13,30 @@
 </head>
 <body>
 
+<!-- Skip to main content (accessibility) -->
+<a href="#mainContent" class="sr-only" style="position:absolute;top:-100px;left:0;z-index:9999;padding:8px 16px;background:var(--accent);color:#fff;border-radius:0 0 var(--radius-xs) 0;font-size:13px;font-weight:600;transition:top .15s" onfocus="this.style.top='0'" onblur="this.style.top='-100px'">Skip to main content</a>
+
 <!-- ===== SIDEBAR ===== -->
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
 
   <!-- Brand + collapse toggle -->
   <div class="sb-brand">
     <img class="sb-logo-img" src="favicon.png" alt="novatab logo" aria-hidden="true">
-    <span class="sb-brand-name">novatab</span>
-    <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar">
-      <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
-      <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
+    <span class="sb-brand-name" aria-hidden="true">novatab</span>
+    <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar" aria-controls="sbNav">
+      <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+      <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
     </button>
   </div>
 
   <!-- Scrollable nav -->
   <div class="sb-nav-wrap">
-    <nav class="sb-nav" id="sbNav">
+    <nav class="sb-nav" id="sbNav" role="menubar" aria-label="Navigation groups">
 
       <!-- 1. HOME GROUP -->
       <div class="sb-group" id="sbg-home">
         <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="home" data-tip="Home" aria-expanded="false">
+          <button class="sb-group-btn" data-group="home" data-tip="Home" aria-expanded="false" aria-controls="sbg-home-items" role="menuitem">
             <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="sb-group-label">Home</span>
             <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -385,10 +388,10 @@
 </aside><!-- /sidebar -->
 
 <!-- ===== MAIN ===== -->
-<main class="main">
+<main class="main" id="app" role="main">
 
   <!-- TOPBAR -->
-  <header class="topbar">
+  <header class="topbar" role="banner">
     <button class="search-trigger" id="searchTriggerBtn" aria-label="Open search palette (press /)">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <span class="search-trigger-text">Search bookmarks, notes…</span>
@@ -421,7 +424,7 @@
   <input type="file" id="heroBgUploadInput" accept="image/*" style="display:none">
 
   <!-- CONTENT -->
-  <div class="content-wrapper">
+  <div class="content-wrapper" id="mainContent" tabindex="-1">
 
     <!-- ===== HOME VIEW ===== -->
     <div id="view-home" class="view active">
