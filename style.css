@@ -1141,7 +1141,7 @@ svg { flex-shrink: 0; }
 /* Empty state */
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:48px 22px; color:var(--text-3); text-align:center; }
 .empty-state-icon { font-size:36px; opacity:.5; }
-.empty-state-text { font-size:13px; }
+.empty-state-text { font-size: var(--ty-body-sm); color: var(--text-3); }
 
 /* ── 16. SETTINGS PANEL ──────────────────────────────────── */
 .settings-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(3px); z-index:200; opacity:0; pointer-events:none; transition:opacity .2s; }
@@ -1581,7 +1581,7 @@ svg { flex-shrink: 0; }
   display:flex; align-items:center; justify-content:space-between;
   padding-bottom:10px; border-bottom:2px solid var(--border-2); margin-bottom:8px; flex-shrink:0;
 }
-.kanban-col-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.kanban-col-title { font-size: var(--ty-overline); font-weight: var(--fw-black); text-transform: uppercase; letter-spacing: .08em; }
 .col-todo .kanban-col-title { color:var(--text-2); }
 .col-doing .kanban-col-title { color:var(--accent-2); }
 .col-done .kanban-col-title { color:var(--success); }
