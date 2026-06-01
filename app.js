@@ -2572,6 +2572,7 @@ function renderAll() {
   renderSnavGoogle();
   renderSnavProjects();
   renderSnavOthers();
+  renderSnavSocials();
   renderTabsWorkspaces();
   renderSidebarFolders();
   applyWidgetVisibility();
@@ -2712,6 +2713,9 @@ function renderSnavProjects() {
 function renderSnavOthers() {
   _renderSnavGlobalLinks("snavOthersItems", "others");
 }
+function renderSnavSocials() {
+  _renderSnavGlobalLinks("snavSocialsItems", "socials");
+}
 
 // Render global (non-workspace) sidebar link lists
 function _getSbGlobalLinks(group) {
@@ -2756,9 +2760,11 @@ function removeSbGlobalLink(group, linkId) {
   _renderSnavGlobalLinks(
     group === "google"
       ? "snavGoogleItems"
-      : group === "projects"
-        ? "snavProjectsItems"
-        : "snavOthersItems",
+      : group === "socials"
+        ? "snavSocialsItems"
+        : group === "projects"
+          ? "snavProjectsItems"
+          : "snavOthersItems",
     group,
   );
 }
@@ -2781,6 +2787,7 @@ function openSbAddLink(group) {
     ai: "Add AI Tool",
     dev: "Add Dev Tool",
     google: "Add Google Link",
+    socials: "Add Social Link",
     projects: "Add Project",
     others: "Add Link",
   };
@@ -2800,11 +2807,12 @@ function saveSbLink() {
   }
   const group = S._sbAddLinkGroup;
   // Global groups (not workspace-based)
-  if (group === "google" || group === "projects" || group === "others") {
+  if (group === "google" || group === "socials" || group === "projects" || group === "others") {
     _getSbGlobalLinks(group).push({ id: Date.now(), name, url });
     save();
     closeModal("sbAddLinkModal");
     if (group === "google") renderSnavGoogle();
+    else if (group === "socials") renderSnavSocials();
     else if (group === "projects") renderSnavProjects();
     else renderSnavOthers();
     showToast("Link added", "success");
@@ -4764,21 +4772,17 @@ async function loadDownloads() {
               : "Unknown";
       return `<div class="download-item ${stateCls}">
       <div class="download-ext-badge" style="color:${color};background:${bg}">${escH(badge)}</div>
-      <div class="download-info">
-        <div class="download-name">${escH(fn)}</div>
-        <div class="download-meta">${fmtBytes(it.fileSize || 0)}<span class="dl-sep">·</span>${it.startTime ? new Date(it.startTime).toLocaleDateString() : ""}</div>
-      </div>
-      <div class="download-actions">
-        <span class="download-status-badge ${stateCls}">${stateLabel}</span>
-        ${
-          it.state === "complete"
-            ? `<button class="dl-show-btn" data-dlid="${it.id}" data-tip="Show in folder">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9,14 12,17 15,14"/></svg>
-          Show in folder
-        </button>`
-            : ""
-        }
-      </div>
+      <span class="download-name">${escH(fn)}</span>
+      <span class="download-meta">${fmtBytes(it.fileSize || 0)}<span class="dl-sep">·</span>${it.startTime ? new Date(it.startTime).toLocaleDateString() : ""}</span>
+      <span class="download-status-badge">${stateLabel}</span>
+      ${
+        it.state === "complete"
+          ? `<button class="dl-show-btn" data-dlid="${it.id}" data-tip="Show in folder">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9,14 12,17 15,14"/></svg>
+        Show in folder
+      </button>`
+          : ""
+      }
     </div>`;
     })
     .join("");
@@ -7786,6 +7790,7 @@ function renderSessions() {
           <a href="${escH(t.url)}" class="session-tab" target="_blank" rel="noopener">
             <img src="${t.favicon || ""}" alt="" onerror="this.style.display='none'" width="14" height="14">
             <span class="session-tab-title">${escH(t.title)}</span>
+            <span class="session-tab-url">${escH(t.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</span>
           </a>`,
           )
           .join("")}

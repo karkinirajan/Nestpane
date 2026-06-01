@@ -271,7 +271,7 @@ svg { flex-shrink: 0; }
   transition: max-height .22s cubic-bezier(.4,0,.2,1);
   display: flex; flex-direction: column;
 }
-.sb-group.open > .sb-group-items { max-height: 600px; }
+.sb-group.open > .sb-group-items { max-height: 320px; overflow-y: auto; }
 .sidebar-collapsed .sb-group-items { max-height: 0 !important; }
 
 .sb-group.tab-active > .sb-group-btn::before {
@@ -951,14 +951,40 @@ svg { flex-shrink: 0; }
 .history-item-del:hover { background:var(--error-bg); color:var(--error); }
 
 /* Downloads */
-.downloads-list { padding:0 22px 32px; display:flex; flex-direction:column; gap:4px; }
-.dl-item { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); transition:border-color .12s; cursor:pointer; }
-.dl-item:hover { border-color:var(--border-2); }
-.dl-icon { font-size:22px; flex-shrink:0; }
-.dl-info { flex:1; min-width:0; }
-.dl-name { font-size:13px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.dl-meta { font-size:11.5px; color:var(--text-3); margin-top:2px; }
-.dl-size { font-size:11.5px; color:var(--text-3); flex-shrink:0; }
+.downloads-list { padding:0 22px 32px; display:flex; flex-direction:column; gap:0; }
+.download-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 18px 9px 12px; width:100%;
+  cursor:pointer; transition:background .1s; text-decoration:none;
+  border-bottom:1px solid var(--border);
+}
+.download-item:hover { background:var(--surface-2); }
+.download-ext-badge {
+  font-size:9px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  padding:2px 5px; border-radius:4px; flex-shrink:0; font-family:var(--font-mono);
+}
+.download-name {
+  flex:1; font-size:var(--ty-body-sm); color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+}
+.download-meta {
+  font-size:11px; color:var(--text-3); flex-shrink:0;
+  white-space:nowrap; padding-left:12px;
+}
+.download-status-badge {
+  font-size:10px; font-weight:600; padding:2px 7px; border-radius:var(--radius-pill);
+  flex-shrink:0; margin-left:8px;
+}
+.dl-complete .download-status-badge { background:rgba(184,187,38,.15); color:#b8bb26; }
+.dl-progress .download-status-badge { background:rgba(131,165,152,.15); color:#83a598; }
+.dl-interrupted .download-status-badge { background:rgba(251,73,52,.1); color:var(--error); }
+.dl-show-btn {
+  display:flex; align-items:center; gap:5px; margin-left:6px; padding:4px 8px;
+  font-size:11px; color:var(--text-3); border-radius:var(--radius-xs);
+  transition:background .1s, color .1s; flex-shrink:0; white-space:nowrap;
+}
+.dl-show-btn:hover { background:var(--surface-2); color:var(--text); }
+.dl-sep { margin:0 5px; color:var(--border-2); }
 
 /* Notes view */
 .notes-view-toolbar { display:flex; align-items:center; gap:10px; padding:0 22px 12px; flex-wrap:wrap; }
@@ -1523,13 +1549,21 @@ svg { flex-shrink: 0; }
 .session-restore-btn:hover { opacity:.85; }
 .session-tabs-list { border-top:1px solid var(--border); display:flex; flex-direction:column; }
 .session-tab {
-  display:flex; align-items:center; gap:9px; padding:8px 16px 8px 24px;
+  display:flex; align-items:center; gap:10px; padding:8px 18px 8px 16px;
   cursor:pointer; transition:background .1s; color:var(--text); text-decoration:none;
+  width:100%;
 }
 .session-tab:hover { background:var(--surface-2); }
 .session-tab img { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
-.session-tab-title { flex:1; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.session-tab-url { font-size:11px; color:var(--text-3); }
+.session-tab-title {
+  flex:1; font-size:var(--ty-body-sm); color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+}
+.session-tab-url {
+  font-size:11px; color:var(--text-3); flex-shrink:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:220px; margin-left:auto; padding-left:12px;
+}
 
 /* ── 29. DAILY JOURNAL ───────────────────────────────────── */
 .journal-layout { display:flex; gap:18px; padding:0 22px 32px; align-items:flex-start; }
