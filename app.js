@@ -3375,23 +3375,15 @@ function renderAllBookmarks(folders) {
           ${f.items
             .map(
               (it) => `
-            <div class="bm-item-row">
-              <a href="${escH(it.url)}" class="bm-item" target="_self">
-                <div class="bm-favicon-wrap"><img src="${favSrc(it.url)}" onerror="this.style.display='none'" alt=""></div>
-                <div class="bm-item-text">
-                  <span class="bm-item-title">${escH(it.title || it.url)}</span>
-                  <span class="bm-item-url">${escH(getDomain(it.url))}</span>
-                </div>
-              </a>
-              ${
-                IS_CHROME
-                  ? `
+            <a href="${escH(it.url)}" class="bm-item" target="_self">
+              <img src="${favSrc(it.url)}" onerror="this.style.display='none'" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
+              <span class="bm-item-title">${escH(it.title || it.url)}</span>
+              <span class="bm-item-url">${escH(getDomain(it.url))}</span>
+              ${IS_CHROME ? `<span class="bm-item-actions">
                 <button class="bm-action-btn" data-action="edit-bm" data-bmid="${escH(it.id)}" data-tip="Edit">${editIcon}</button>
                 <button class="bm-action-btn bm-del-btn" data-action="delete-bm" data-bmid="${escH(it.id)}" data-tip="Delete">${delIcon}</button>
-              `
-                  : ""
-              }
-            </div>`,
+              </span>` : ""}
+            </a>`,
             )
             .join("")}
           ${IS_CHROME ? `<button class="bm-add-item-btn" data-action="add-bm" data-fid="${escH(f.id)}">+ Add bookmark</button>` : ""}
@@ -4661,15 +4653,10 @@ async function loadHistory(q) {
             );
             return `<div class="history-item-wrap">
             <a href="${escH(it.url)}" class="history-item" target="_blank">
-              <div class="history-favicon-wrap">
-                <img src="${favSrc(it.url)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" alt="">
-                <span class="history-favicon-initial" style="display:none">${initial}</span>
-              </div>
-              <div class="history-item-body">
-                <span class="history-title">${escH(it.title || it.url)}</span>
-                <span class="history-url">${escH(getDomain(it.url))}</span>
-              </div>
-              <span class="history-time">${fmtTimeAgo(it.lastVisitTime)}</span>
+              <img src="${favSrc(it.url)}" onerror="this.style.display='none'" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
+              <span class="history-item-title">${escH(it.title || getDomain(it.url) || it.url)}</span>
+              <span class="history-item-url">${escH(getDomain(it.url))}</span>
+              <span class="history-item-time">${fmtTimeAgo(it.lastVisitTime)}</span>
             </a>
             <button class="history-delete-btn" data-url="${escH(it.url)}" data-tip="Remove from history">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -6671,16 +6658,14 @@ function renderBmForActiveWorkspace() {
           ${bms
             .map(
               (bm) => `
-            <div class="bm-item-row">
-              <a href="${escH(bm.url)}" class="bm-item" target="_self">
-                <div class="bm-favicon-wrap"><img src="${favSrc(bm.url)}" onerror="this.style.display='none'" alt=""></div>
-                <div class="bm-item-text">
-                  <span class="bm-item-title">${escH(bm.title || bm.url)}</span>
-                  <span class="bm-item-url">${escH(getDomain(bm.url))}</span>
-                </div>
-              </a>
-              <button class="bm-action-btn bm-del-btn ws-bm-remove" data-bmid="${escH(bm.id)}" data-tip="Remove">${delIcon}</button>
-            </div>`,
+            <a href="${escH(bm.url)}" class="bm-item" target="_self">
+              <img src="${favSrc(bm.url)}" onerror="this.style.display='none'" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
+              <span class="bm-item-title">${escH(bm.title || bm.url)}</span>
+              <span class="bm-item-url">${escH(getDomain(bm.url))}</span>
+              <span class="bm-item-actions">
+                <button class="bm-action-btn bm-del-btn ws-bm-remove" data-bmid="${escH(bm.id)}" data-tip="Remove">${delIcon}</button>
+              </span>
+            </a>`,
             )
             .join("")}
         </div>
