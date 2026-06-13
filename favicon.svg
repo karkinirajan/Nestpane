@@ -1,14 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2c6650"/>
-      <stop offset="100%" stop-color="#79c59f"/>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fe8019"/>
+      <stop offset="100%" stop-color="#fabd2f"/>
     </linearGradient>
   </defs>
   <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <rect x="7" y="8" width="8" height="6" rx="1.8" fill="#f5fff8" opacity="0.9"/>
-  <rect x="17" y="8" width="8" height="6" rx="1.8" fill="#f5fff8" opacity="0.56"/>
-  <rect x="7" y="17" width="8" height="6" rx="1.8" fill="#f5fff8" opacity="0.56"/>
-  <rect x="17" y="17" width="8" height="6" rx="1.8" fill="#f5fff8" opacity="0.9"/>
-  <path d="M9 23L23 9" stroke="#fdfefc" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- nova burst -->
+  <path d="M16 3 C16.7 11 21 15.3 29 16 C21 16.7 16.7 21 16 29 C15.3 21 11 16.7 3 16 C11 15.3 15.3 11 16 3 Z" fill="#1d2021"/>
+  <!-- companion spark -->
+  <path d="M24.5 4.5 C24.85 6.85 26.15 8.15 28.5 8.5 C26.15 8.85 24.85 10.15 24.5 12.5 C24.15 10.15 22.85 8.85 20.5 8.5 C22.85 8.15 24.15 6.85 24.5 4.5 Z" fill="#1d2021" opacity=".42"/>
 </svg>
