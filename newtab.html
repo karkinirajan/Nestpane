@@ -501,6 +501,20 @@
             <div class="notes-list" id="notesList"></div>
           </div>
 
+          <!-- Tasks widget -->
+          <div class="widget tasks-widget" id="widget-tasks">
+            <div class="widget-top-row">
+              <span class="widget-label">Tasks</span>
+              <div class="widget-top-actions">
+                <span class="tasks-progress-chip" id="tasksProgressChip"></span>
+                <button class="widget-action-btn" id="addTaskBtn" data-tip="New task">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="tasks-list" id="tasksList"></div>
+          </div>
+
           <!-- Focus Timer widget -->
           <div class="widget timer-widget" id="widget-timer">
             <div class="widget-top-row">
@@ -909,15 +923,23 @@
           </button>
         </div>
       </div>
-      <div class="settings-row">
-        <div class="settings-label"><span>Accent Color</span></div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Accent Color</div>
         <div class="color-swatches" id="accentColors">
-          <div class="color-swatch active" data-color="#6366f1" style="background:#6366f1"></div>
+          <div class="color-swatch active" data-color="#fe8019" style="background:#fe8019"></div>
+          <div class="color-swatch" data-color="#fb4934" style="background:#fb4934"></div>
+          <div class="color-swatch" data-color="#b8bb26" style="background:#b8bb26"></div>
+          <div class="color-swatch" data-color="#fabd2f" style="background:#fabd2f"></div>
+          <div class="color-swatch" data-color="#83a598" style="background:#83a598"></div>
+          <div class="color-swatch" data-color="#d3869b" style="background:#d3869b"></div>
+          <div class="color-swatch" data-color="#8ec07c" style="background:#8ec07c"></div>
+          <div class="color-swatch" data-color="#6366f1" style="background:#6366f1"></div>
           <div class="color-swatch" data-color="#2563eb" style="background:#2563eb"></div>
           <div class="color-swatch" data-color="#059669" style="background:#059669"></div>
           <div class="color-swatch" data-color="#d97706" style="background:#d97706"></div>
           <div class="color-swatch" data-color="#dc2626" style="background:#dc2626"></div>
           <div class="color-swatch" data-color="#db2777" style="background:#db2777"></div>
+          <input type="color" class="color-swatch accent-color-custom-input" id="accentColorCustomInput" value="#fe8019" title="Pick any color">
         </div>
       </div>
     </div>

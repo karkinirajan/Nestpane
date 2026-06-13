@@ -173,13 +173,15 @@ const API = {
   history: (query = "") =>
     new Promise((res) => {
       if (IS_CHROME && chrome.history) {
+        const ownPrefix = chrome.runtime.getURL("");
         chrome.history.search(
           {
             text: query,
             maxResults: 100,
             startTime: Date.now() - 30 * 86400000,
           },
-          res,
+          (items) =>
+            res((items || []).filter((it) => !it.url?.startsWith(ownPrefix))),
         );
       } else {
         res([
@@ -674,8 +676,94 @@ const DEFAULT_WS_DATA = (id) => {
         // Automation
         { id: 219, name: "n8n", url: "https://n8n.io" },
       ],
-      notes: [],
-      tasks: [],
+      notes: [
+        {
+          id: 2101,
+          title: "Prompt Engineering Tips",
+          content:
+            "Be specific about format, audience, and constraints.\nGive examples (few-shot) for tricky output formats.\nAsk the model to think step-by-step before answering for reasoning tasks.\nIterate: refine the prompt based on what the first response gets wrong.",
+          tags: ["ai", "prompts"],
+          pinned: true,
+          createdAt: Date.now() - 86400000 * 4,
+        },
+        {
+          id: 2102,
+          title: "Useful AI Tools by Category",
+          content:
+            "Chat: Claude, ChatGPT, Gemini, Perplexity\nCoding: Cursor, Copilot, v0, Bolt\nImage: Midjourney, Leonardo, Stable Diffusion\nVideo & audio: Runway, Pika, ElevenLabs\nResearch: Hugging Face, Exa",
+          tags: ["ai", "tools"],
+          pinned: false,
+          createdAt: Date.now() - 86400000 * 3,
+        },
+        {
+          id: 2103,
+          title: "Model Comparison Notes",
+          content:
+            "Claude — strong at long-context reasoning and writing tone.\nGPT-4 — broad general knowledge, large plugin ecosystem.\nGemini — tight Google Workspace integration.\nDeepSeek — strong reasoning at a low cost, good for batch jobs.",
+          tags: ["ai", "research"],
+          pinned: false,
+          createdAt: Date.now() - 86400000 * 2,
+        },
+        {
+          id: 2104,
+          title: "Automation Ideas with n8n",
+          content:
+            "1. Summarize new emails and post a digest to Slack.\n2. Watch RSS feeds and draft social posts with an LLM.\n3. Auto-tag and file incoming invoices.\n4. Sync new Notion tasks to the Kanban board.",
+          tags: ["ai", "automation"],
+          pinned: false,
+          createdAt: Date.now() - 86400000,
+        },
+        {
+          id: 2105,
+          title: "AI Image Generation Prompts",
+          content:
+            "Cinematic portrait, golden hour, 85mm lens, shallow depth of field, soft rim light.\nIsometric app icon, flat colors, subtle gradient, rounded corners, minimal shadow.\nCozy workspace illustration, warm palette, Gruvbox-inspired colors.",
+          tags: ["ai", "creative"],
+          pinned: false,
+          createdAt: Date.now() - 3600000 * 6,
+        },
+        {
+          id: 2106,
+          title: "RAG Project Notes",
+          content:
+            "Chunk size ~500 tokens with 50-token overlap worked best for docs.\nUse hybrid search (keyword + embeddings) for better recall.\nCache embeddings — re-embedding on every request is wasteful.\nNext: try re-ranking results before passing to the model.",
+          tags: ["ai", "dev"],
+          pinned: false,
+          createdAt: Date.now() - 1800000,
+        },
+      ],
+      tasks: [
+        {
+          id: 2201,
+          text: "Test new prompt templates for the writing assistant",
+          done: false,
+        },
+        {
+          id: 2202,
+          text: "Compare Claude, GPT-4, and Gemini on the same benchmark task",
+          done: false,
+        },
+        {
+          id: 2203,
+          text: "Set up an n8n workflow for a daily AI news digest",
+          done: false,
+        },
+        {
+          id: 2204,
+          text: "Fine-tune a small classifier on Hugging Face",
+          done: true,
+        },
+        {
+          id: 2205,
+          text: "Organize saved AI image generation prompts into folders",
+          done: false,
+        },
+        {
+          id: 2206,
+          text: "Write a blog post about effective prompt engineering",
+          done: true,
+        },
+      ],
       folders: [
         { name: "AI Chatbots" },
         { name: "AI Image & Video" },
@@ -896,8 +984,94 @@ const DEFAULT_WS_DATA = (id) => {
         { id: 323, name: "DevDocs", url: "https://devdocs.io" },
         { id: 324, name: "DEV.to", url: "https://dev.to" },
       ],
-      notes: [],
-      tasks: [],
+      notes: [
+        {
+          id: 3101,
+          title: "Git Workflow Cheatsheet",
+          content:
+            "Feature branches off main: feature/<short-name>\nRebase before opening a PR to keep history linear.\nSquash merge for small fixes, regular merge for multi-commit features.\nTag releases as vMAJOR.MINOR.PATCH and write a short changelog entry.",
+          tags: ["dev", "git"],
+          pinned: true,
+          createdAt: Date.now() - 86400000 * 4,
+        },
+        {
+          id: 3102,
+          title: "API Design Checklist",
+          content:
+            "Use plural nouns for resources (/users, /projects).\nVersion the API (/v1/...) from day one.\nReturn consistent error shapes: { error: { code, message } }.\nPaginate list endpoints with cursor or page params.\nDocument auth requirements per endpoint.",
+          tags: ["dev", "backend"],
+          pinned: false,
+          createdAt: Date.now() - 86400000 * 3,
+        },
+        {
+          id: 3103,
+          title: "Code Review Guidelines",
+          content:
+            "Keep PRs small — under ~400 lines where possible.\nLeave comments as questions, not commands.\nApprove with nits if the only issues are style/naming.\nBlock only for correctness, security, or maintainability concerns.",
+          tags: ["dev", "process"],
+          pinned: false,
+          createdAt: Date.now() - 86400000 * 2,
+        },
+        {
+          id: 3104,
+          title: "Deployment Runbook",
+          content:
+            "1. Run full test suite and lint.\n2. Tag release and push to remote.\n3. Deploy to staging, smoke test critical flows.\n4. Promote to production, watch error rates for 15 min.\n5. Roll back via previous deployment if errors spike.",
+          tags: ["dev", "devops"],
+          pinned: false,
+          createdAt: Date.now() - 86400000,
+        },
+        {
+          id: 3105,
+          title: "Useful CLI Snippets",
+          content:
+            "git log --oneline --graph --all\ndocker compose up -d --build\nlsof -i :3000   # find process on a port\nfind . -name '*.log' -mtime +7 -delete",
+          tags: ["dev", "cli"],
+          pinned: false,
+          createdAt: Date.now() - 3600000 * 6,
+        },
+        {
+          id: 3106,
+          title: "Bug Triage Notes",
+          content:
+            "Reproduce first, then label severity (P0–P3).\nP0/P1: fix or hotfix same day.\nAlways add a regression test alongside the fix.\nLink the fixing commit/PR back to the issue.",
+          tags: ["dev", "bugs"],
+          pinned: false,
+          createdAt: Date.now() - 1800000,
+        },
+      ],
+      tasks: [
+        {
+          id: 3201,
+          text: "Set up CI pipeline for automated testing",
+          done: false,
+        },
+        {
+          id: 3202,
+          text: "Refactor auth module to use JWT refresh tokens",
+          done: false,
+        },
+        {
+          id: 3203,
+          text: "Write API documentation for the v2 endpoints",
+          done: false,
+        },
+        {
+          id: 3204,
+          text: "Investigate memory leak in the background worker",
+          done: false,
+        },
+        {
+          id: 3205,
+          text: "Upgrade dependencies and resolve breaking changes",
+          done: true,
+        },
+        {
+          id: 3206,
+          text: "Add error monitoring and alerting (Sentry)",
+          done: true,
+        },
+      ],
       folders: [
         { name: "Code & Repos" },
         { name: "Docs & Reference" },
@@ -1164,8 +1338,28 @@ let S = {
           name: "Search Console",
           url: "https://search.google.com/search-console",
         },
+        { id: 4006, name: "Sheets", url: "https://sheets.google.com" },
+        { id: 4007, name: "Meet", url: "https://meet.google.com" },
+        { id: 4008, name: "Photos", url: "https://photos.google.com" },
+        { id: 4009, name: "Maps", url: "https://maps.google.com" },
+        { id: 4010, name: "Keep", url: "https://keep.google.com" },
       ],
-      projects: [],
+      projects: [
+        { id: 6001, name: "Asana", url: "https://asana.com" },
+        { id: 6002, name: "Jira", url: "https://atlassian.com/software/jira" },
+        { id: 6003, name: "ClickUp", url: "https://clickup.com" },
+        { id: 6004, name: "Basecamp", url: "https://basecamp.com" },
+        { id: 6005, name: "Airtable", url: "https://airtable.com" },
+        { id: 6006, name: "Slack", url: "https://slack.com" },
+        { id: 6007, name: "Miro", url: "https://miro.com" },
+        { id: 6008, name: "Todoist", url: "https://todoist.com" },
+        {
+          id: 6009,
+          name: "Confluence",
+          url: "https://atlassian.com/software/confluence",
+        },
+        { id: 6010, name: "Smartsheet", url: "https://smartsheet.com" },
+      ],
       others: [
         { id: 5001, name: "Notion", url: "https://notion.so" },
         { id: 5002, name: "Readwise", url: "https://readwise.io" },
@@ -1177,6 +1371,18 @@ let S = {
         { id: 5008, name: "Mobbin", url: "https://mobbin.com" },
         { id: 5009, name: "Clockify", url: "https://clockify.me" },
         { id: 5010, name: "Kagi", url: "https://kagi.com" },
+      ],
+      socials: [
+        { id: 7001, name: "Facebook", url: "https://facebook.com" },
+        { id: 7002, name: "TikTok", url: "https://tiktok.com" },
+        { id: 7003, name: "Pinterest", url: "https://pinterest.com" },
+        { id: 7004, name: "WhatsApp", url: "https://web.whatsapp.com" },
+        { id: 7005, name: "Telegram", url: "https://web.telegram.org" },
+        { id: 7006, name: "Snapchat", url: "https://snapchat.com" },
+        { id: 7007, name: "Threads", url: "https://threads.net" },
+        { id: 7008, name: "Twitch", url: "https://twitch.tv" },
+        { id: 7009, name: "Mastodon", url: "https://mastodon.social" },
+        { id: 7010, name: "Bluesky", url: "https://bsky.app" },
       ],
     },
   },
@@ -1213,6 +1419,8 @@ let S = {
 document.addEventListener("DOMContentLoaded", async () => {
   await loadState();
   migrateAddSocials();
+  migrateSyncSbLinksToQA();
+  migrateAddWorkspaceContent();
   initClock();
   updateGreeting();
   autoDetectWeather();
@@ -1314,13 +1522,12 @@ async function loadState() {
         sbLinks: {
           ...S.settings.sbLinks,
           ...(d.settings.sbLinks || {}),
-          // Per-group: keep defaults if the saved array is empty
-          others: d.settings.sbLinks?.others?.length
-            ? d.settings.sbLinks.others
-            : S.settings.sbLinks.others,
-          google: d.settings.sbLinks?.google?.length
-            ? d.settings.sbLinks.google
-            : S.settings.sbLinks.google,
+          // Per-group: keep saved links, but top up to at least 10 with any
+          // newly-added defaults the user hasn't already got (by URL).
+          others: _topUpSbGroup(d.settings.sbLinks?.others, S.settings.sbLinks.others),
+          google: _topUpSbGroup(d.settings.sbLinks?.google, S.settings.sbLinks.google),
+          projects: _topUpSbGroup(d.settings.sbLinks?.projects, S.settings.sbLinks.projects),
+          socials: _topUpSbGroup(d.settings.sbLinks?.socials, S.settings.sbLinks.socials),
         },
       }
     : S.settings;
@@ -2183,10 +2390,6 @@ async function findDriveFiles(token) {
 
 // ── Build the payload that goes to Drive ────────────────────────────────
 function buildDrivePayload() {
-  // Exclude heroBg data-url (can be multi-MB); keep color: prefix only
-  const heroBg = S.settings.heroBg?.startsWith("data:")
-    ? null
-    : S.settings.heroBg || null;
   return {
     _version: 2,
     _savedAt: Date.now(),
@@ -2194,7 +2397,7 @@ function buildDrivePayload() {
     workspaces: S.workspaces,
     activeWsId: S.activeWsId,
     wsData: S.wsData,
-    settings: { ...S.settings, heroBg },
+    settings: S.settings,
     habits: S.habits,
     readingQueue: S.readingQueue,
     tabSessions: S.tabSessions,
@@ -2264,6 +2467,187 @@ function applyCloudData(cloud) {
   });
 }
 
+// ── Merge helpers: combine a cloud collection with the local one without
+// dropping either side's entries (used by the connect-time backup+merge). ──
+// `idKey` falls back to `_deletedAt`, then a structural key, for items (like
+// trash entries) that may not carry an `id`.
+function _mergeById(cloudArr, localArr, preferCloud, idKey = "id") {
+  cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
+  localArr = Array.isArray(localArr) ? localArr : [];
+  const keyOf = (item) => item?.[idKey] ?? item?._deletedAt ?? JSON.stringify(item);
+  const byKey = new Map();
+  const base = preferCloud ? localArr : cloudArr;
+  const winner = preferCloud ? cloudArr : localArr;
+  base.forEach((item) => byKey.set(keyOf(item), item));
+  winner.forEach((item) => byKey.set(keyOf(item), item));
+  const order = [];
+  const seen = new Set();
+  cloudArr.concat(localArr).forEach((item) => {
+    const k = keyOf(item);
+    if (seen.has(k)) return;
+    seen.add(k);
+    order.push(byKey.get(k));
+  });
+  return order;
+}
+
+// Merge name-only collections (e.g. workspace folders) by `name`.
+function _mergeByName(cloudArr, localArr) {
+  cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
+  localArr = Array.isArray(localArr) ? localArr : [];
+  const seen = new Set(cloudArr.map((f) => f?.name));
+  const merged = cloudArr.slice();
+  localArr.forEach((f) => {
+    if (f && !seen.has(f.name)) {
+      seen.add(f.name);
+      merged.push(f);
+    }
+  });
+  return merged;
+}
+
+// Merge date/id-keyed maps (journal, mood) — the "winning" side's entries
+// take priority for shared keys, the other side's unique keys are kept.
+function _mergeKeyedObjects(cloudObj, localObj, preferCloud) {
+  cloudObj = cloudObj && typeof cloudObj === "object" ? cloudObj : {};
+  localObj = localObj && typeof localObj === "object" ? localObj : {};
+  return preferCloud ? { ...localObj, ...cloudObj } : { ...cloudObj, ...localObj };
+}
+
+// ── Merge a previously-backed-up cloud snapshot with the current local
+// state. Collections (Quick Access, notes, tasks, sidebar links, etc.) are
+// unioned by id so neither side's items — e.g. newly-introduced default Quick
+// Access links that only exist locally so far — get silently discarded. For
+// items present on both sides, whichever snapshot has the newer _savedAt
+// "wins" the conflict. ───────────────────────────────────────────────────
+function mergeCloudWithLocal(cloud) {
+  const local = buildDrivePayload();
+  if (!cloud || cloud._version < 1) return local;
+  const preferCloud = (cloud._savedAt || 0) > (local._savedAt || 0);
+
+  const wsIds = new Set([
+    ...Object.keys(cloud.wsData || {}),
+    ...Object.keys(local.wsData || {}),
+  ]);
+  const wsData = {};
+  wsIds.forEach((wsId) => {
+    const c = (cloud.wsData || {})[wsId] || {};
+    const l = (local.wsData || {})[wsId] || {};
+    wsData[wsId] = {
+      quickAccess: _mergeById(c.quickAccess, l.quickAccess, preferCloud),
+      notes: _mergeById(c.notes, l.notes, preferCloud),
+      tasks: _mergeById(c.tasks, l.tasks, preferCloud),
+      importedBookmarks: _mergeById(c.importedBookmarks, l.importedBookmarks, preferCloud),
+      folders: _mergeByName(c.folders, l.folders),
+    };
+  });
+
+  const sbLinks = { ...local.settings.sbLinks, ...(cloud.settings?.sbLinks || {}) };
+  ["google", "projects", "others", "socials"].forEach((g) => {
+    sbLinks[g] = _mergeById(cloud.settings?.sbLinks?.[g], local.settings?.sbLinks?.[g], preferCloud);
+  });
+
+  const kanbanIds = new Set([
+    ...Object.keys(cloud.kanban || {}),
+    ...Object.keys(local.kanban || {}),
+  ]);
+  const kanban = {};
+  kanbanIds.forEach((wsId) => {
+    const c = (cloud.kanban || {})[wsId] || {};
+    const l = (local.kanban || {})[wsId] || {};
+    kanban[wsId] = {
+      todo: _mergeById(c.todo, l.todo, preferCloud),
+      doing: _mergeById(c.doing, l.doing, preferCloud),
+      done: _mergeById(c.done, l.done, preferCloud),
+    };
+  });
+
+  return {
+    _version: 2,
+    _savedAt: Math.max(cloud._savedAt || 0, local._savedAt || 0),
+    user: preferCloud
+      ? { ...local.user, ...cloud.user }
+      : { ...cloud.user, ...local.user },
+    workspaces: _mergeById(cloud.workspaces, local.workspaces, preferCloud),
+    activeWsId:
+      preferCloud && cloud.activeWsId != null
+        ? Number(cloud.activeWsId)
+        : local.activeWsId,
+    wsData,
+    settings: {
+      ...local.settings,
+      ...(preferCloud ? cloud.settings : {}),
+      widgets: { ...local.settings.widgets, ...(cloud.settings?.widgets || {}) },
+      sbLinks,
+    },
+    habits: _mergeById(cloud.habits, local.habits, preferCloud),
+    readingQueue: _mergeById(cloud.readingQueue, local.readingQueue, preferCloud),
+    tabSessions: _mergeById(cloud.tabSessions, local.tabSessions, preferCloud),
+    journal: _mergeKeyedObjects(cloud.journal, local.journal, preferCloud),
+    kanban,
+    mood: _mergeKeyedObjects(cloud.mood, local.mood, preferCloud),
+    calEvents: _mergeById(cloud.calEvents, local.calEvents, preferCloud),
+    countdowns: _mergeById(cloud.countdowns, local.countdowns, preferCloud),
+    trash: _mergeById(cloud.trash, local.trash, preferCloud, "id"),
+    weatherLocation:
+      preferCloud && cloud.weatherLocation !== undefined
+        ? cloud.weatherLocation
+        : local.weatherLocation,
+  };
+}
+
+// Fetch the raw payload from Drive, trying each file newest-first and
+// skipping any that return 403/404 (file from a previous OAuth client).
+async function _fetchCloudPayload(token, fileIds) {
+  for (const fileId of fileIds) {
+    try {
+      const r = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (r.ok) return await r.json();
+      if (r.status !== 403 && r.status !== 404) return null; // unexpected error — stop
+      // 403/404: file from a previous OAuth client — try next
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+// Persist the current in-memory state to local storage.
+async function _persistLocalState() {
+  await API.setLocal({
+    user: S.user,
+    workspaces: S.workspaces,
+    activeWsId: S.activeWsId,
+    wsData: S.wsData,
+    settings: S.settings,
+    habits: S.habits,
+    readingQueue: S.readingQueue,
+    tabSessions: S.tabSessions,
+    journal: S.journal,
+    kanban: S.kanban,
+    mood: S.mood,
+    calEvents: S.calEvents,
+    countdowns: S.countdowns,
+    weatherLocation: S.weatherLocation,
+    trash: S.trash,
+    _savedAt: S._savedAt,
+  });
+}
+
+// Re-apply theme/accent and re-render everything after cloud data lands.
+function _refreshAfterCloudApply() {
+  applyTheme(S.settings.theme || "dark");
+  applyAccent(S.settings.accentColor || "#fe8019");
+  renderAll();
+  updateGreeting();
+  updateAvatarDisplay();
+  window._heroBgSessionCache = null;
+  loadHeroBg();
+}
+
 // ── Pull from Drive: called on sign-in and on new tab load ───────────────
 async function pullFromDrive() {
   const token = await getAuthToken(false);
@@ -2271,48 +2655,14 @@ async function pullFromDrive() {
   const fileIds = await findDriveFiles(token);
   if (!fileIds.length) return false; // no cloud save yet
 
-  // Try each file newest-first; skip any that return 403/404 (wrong OAuth client)
-  let cloud = null;
-  for (const fileId of fileIds) {
-    try {
-      const r = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (r.ok) { cloud = await r.json(); break; }
-      if (r.status !== 403 && r.status !== 404) break; // unexpected error — stop
-      // 403/404: file from a previous OAuth client — try next
-    } catch { break; }
-  }
+  const cloud = await _fetchCloudPayload(token, fileIds);
   if (!cloud) return false;
 
   try {
-    const cloudTime = cloud._savedAt || 0;
-    if (cloudTime > S._savedAt) {
+    if ((cloud._savedAt || 0) > S._savedAt) {
       applyCloudData(cloud);
-      await API.setLocal({
-        user: S.user,
-        workspaces: S.workspaces,
-        activeWsId: S.activeWsId,
-        wsData: S.wsData,
-        settings: S.settings,
-        habits: S.habits,
-        readingQueue: S.readingQueue,
-        tabSessions: S.tabSessions,
-        journal: S.journal,
-        kanban: S.kanban,
-        mood: S.mood,
-        calEvents: S.calEvents,
-        countdowns: S.countdowns,
-        weatherLocation: S.weatherLocation,
-        trash: S.trash,
-        _savedAt: S._savedAt,
-      });
-      applyTheme(S.settings.theme || "dark");
-      applyAccent(S.settings.accentColor || "#fe8019");
-      renderAll();
-      updateGreeting();
-      updateAvatarDisplay();
+      await _persistLocalState();
+      _refreshAfterCloudApply();
       showToast("Data synced from cloud ☁", "success");
     }
     return true;
@@ -2384,6 +2734,10 @@ async function _doPush(token) {
         Drive._fileId = result.id;
       }
       Drive._lastSyncAt = Date.now();
+      // Keep local _savedAt in step with what we just pushed so an immediately
+      // following pull doesn't treat our own data as a "newer" cloud change.
+      S._savedAt = payload._savedAt;
+      await API.setLocal({ _savedAt: S._savedAt });
       setSyncStatus("synced");
     } else {
       const err = await r.json().catch(() => ({}));
@@ -2454,8 +2808,35 @@ async function checkGoogleIdentity() {
 
   updateAvatarDisplay();
   updateGreeting();
-  await pullFromDrive();
+  await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
+}
+
+// ── First contact with Drive for this account: back up the current local
+// state (including any freshly-initialized defaults) BEFORE pulling, then
+// merge it with whatever was already in the cloud so neither side's items —
+// e.g. new default Quick Access links that only exist locally so far, or
+// older items that only exist in the cloud — get silently dropped. The
+// merged "old + recent" result is applied locally and pushed back up as the
+// new backup. ───────────────────────────────────────────────────────────
+async function syncWithDriveOnConnect(token) {
+  const fileIds = await findDriveFiles(token);
+  if (!fileIds.length) {
+    // No cloud backup yet — push current (including any default/initial) data first.
+    await pushToDrive();
+    return;
+  }
+
+  const cloud = await _fetchCloudPayload(token, fileIds);
+  if (cloud) {
+    const merged = mergeCloudWithLocal(cloud);
+    applyCloudData(merged);
+    await _persistLocalState();
+    _refreshAfterCloudApply();
+  }
+
+  // Push the merged (old + recent) result back to Drive as the new backup.
+  await pushToDrive();
 }
 
 // ── Sign in: interactive token request ──────────────────────────────────
@@ -2481,9 +2862,10 @@ async function signIn() {
   save();
   updateAvatarDisplay();
   updateGreeting();
-  // Pull first, then push current data if no cloud file exists
-  const pulled = await pullFromDrive();
-  if (!pulled) await pushToDrive(); // first time — create the cloud file
+  // First load for this account: upload local data to Drive before retrieving
+  // anything from the cloud, so local items are never overwritten by a stale
+  // or empty cloud copy.
+  await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
   showToast("Signed in & synced ☁", "success");
 }
@@ -2809,12 +3191,14 @@ function saveSbLink() {
   // Global groups (not workspace-based)
   if (group === "google" || group === "socials" || group === "projects" || group === "others") {
     _getSbGlobalLinks(group).push({ id: Date.now(), name, url });
+    _mirrorLinkToHomeQA({ name, url });
     save();
     closeModal("sbAddLinkModal");
     if (group === "google") renderSnavGoogle();
     else if (group === "socials") renderSnavSocials();
     else if (group === "projects") renderSnavProjects();
     else renderSnavOthers();
+    if (S.activeWsId === 1) renderQuickAccess();
     showToast("Link added", "success");
     return;
   }
@@ -4864,7 +5248,7 @@ function removeQA(e, id) {
   showToast("Removed from Quick Access", "success");
 }
 
-const QA_MAX = 50;
+const QA_MAX = 100;
 
 // Maps domain → category label for Quick Access section headers
 const QA_CATEGORY_MAP = {
@@ -5320,6 +5704,77 @@ function migrateAddSocials() {
   save();
 }
 
+// Normalize a URL for de-dupe comparisons (ignore protocol/trailing slash/case)
+function _normUrl(u) {
+  return (u || "")
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "")
+    .toLowerCase();
+}
+
+// Ensure a saved sidebar link group has at least `min` items, topping up with
+// any newly-added default links the user doesn't already have (by URL).
+// Preserves the user's saved order and any links they've added themselves.
+function _topUpSbGroup(saved, defaults, min = 10) {
+  const arr = saved && saved.length ? [...saved] : [...(defaults || [])];
+  if (arr.length >= min) return arr;
+  const existing = new Set(arr.map((l) => _normUrl(l.url)));
+  for (const item of defaults || []) {
+    if (arr.length >= min) break;
+    const key = _normUrl(item.url);
+    if (!existing.has(key)) {
+      arr.push(item);
+      existing.add(key);
+    }
+  }
+  return arr;
+}
+
+// Add a sidebar link to the Home workspace's Quick Access, skipping it if a
+// link to the same URL already exists there.
+function _mirrorLinkToHomeQA(link) {
+  const home = S.wsData[1];
+  if (!home?.quickAccess) return false;
+  const key = _normUrl(link.url);
+  if (home.quickAccess.some((q) => _normUrl(q.url) === key)) return false;
+  home.quickAccess.push({
+    id: Date.now() + Math.floor(Math.random() * 100000),
+    name: link.name,
+    url: link.url,
+  });
+  return true;
+}
+
+// ===== MIGRATION: populate sample notes/tasks for AI & Dev workspaces =====
+function migrateAddWorkspaceContent() {
+  let added = false;
+  [2, 3].forEach((wsId) => {
+    const data = S.wsData[wsId];
+    if (!data) return;
+    const defaults = DEFAULT_WS_DATA(wsId);
+    if (Array.isArray(data.notes) && !data.notes.length && defaults.notes.length) {
+      data.notes = defaults.notes;
+      added = true;
+    }
+    if (Array.isArray(data.tasks) && !data.tasks.length && defaults.tasks.length) {
+      data.tasks = defaults.tasks;
+      added = true;
+    }
+  });
+  if (added) save();
+}
+
+// ===== MIGRATION: mirror all global sidebar links into Home Quick Access =====
+function migrateSyncSbLinksToQA() {
+  let added = false;
+  ["google", "projects", "others", "socials"].forEach((group) => {
+    (S.settings.sbLinks?.[group] || []).forEach((link) => {
+      if (_mirrorLinkToHomeQA(link)) added = true;
+    });
+  });
+  if (added) save();
+}
+
 // ===== TASKS =====
 function renderTasksWidget() {
   const tasks = wsTasks();
@@ -5574,10 +6029,16 @@ function renderTrash() {
             ? "⚡"
             : "📝";
       const key = item.id || item._deletedAt;
+      const typeClass =
+        item._type === "task"
+          ? "task-type"
+          : item._type === "quickAccess"
+            ? "qa-type"
+            : "note-type";
       return `<div class="trash-item">
       <span>${icon}</span>
       <span class="trash-item-name">${escH(name)}</span>
-      <span class="trash-item-type">${item._type || "item"}</span>
+      <span class="trash-item-type ${typeClass}">${item._type || "item"}</span>
       <button class="restore-btn" data-key="${key}">Restore</button>
     </div>`;
     })
@@ -5635,6 +6096,8 @@ function emptyTrash() {
 async function renderAnalytics() {
   const container = el("analyticsContent");
   if (!container) return;
+
+  if (!S.allBookmarks.length) await loadBookmarks();
 
   // ── Aggregate stats ──────────────────────────────────────────────────────
   let totalBookmarks = 0,
@@ -6011,13 +6474,16 @@ async function renderAnalytics() {
       (items) => {
         const card = el("an-history");
         if (!card) return;
+        const ownPrefix = chrome.runtime.getURL("");
         const domainCounts = {};
         let totalVisits = 0;
-        (items || []).forEach((item) => {
-          const d = getDomain(item.url);
-          domainCounts[d] = (domainCounts[d] || 0) + (item.visitCount || 1);
-          totalVisits += item.visitCount || 1;
-        });
+        (items || [])
+          .filter((item) => !item.url?.startsWith(ownPrefix))
+          .forEach((item) => {
+            const d = getDomain(item.url);
+            domainCounts[d] = (domainCounts[d] || 0) + (item.visitCount || 1);
+            totalVisits += item.visitCount || 1;
+          });
         const topDomains = Object.entries(domainCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 10);
@@ -6173,9 +6639,7 @@ function openSettings() {
     );
   });
   // Highlight active accent
-  document.querySelectorAll("#accentColors .color-swatch").forEach((s) => {
-    s.classList.toggle("active", s.dataset.color === S.settings.accentColor);
-  });
+  _syncAccentSwatchUI(S.settings.accentColor || "#fe8019");
   document.querySelectorAll("#avatarColors .color-swatch").forEach((s) => {
     s.classList.toggle(
       "active",
@@ -6231,6 +6695,7 @@ function applyAccent(color) {
   if (!color) return;
   S.settings.accentColor = color;
   document.documentElement.style.setProperty("--accent", color);
+  document.documentElement.style.setProperty("--accent-2", color + "cc");
   document.documentElement.style.setProperty("--accent-light", color + "cc");
   document.documentElement.style.setProperty("--accent-bg", color + "2e");
   document.documentElement.style.setProperty("--accent-subtle", color + "14");
@@ -6238,6 +6703,24 @@ function applyAccent(color) {
   try {
     localStorage.setItem("__nt_accent", color);
   } catch (e) {}
+  _syncAccentSwatchUI(color);
+}
+
+// Keep the settings-panel accent swatches (and custom picker) in sync with
+// the active accent color, including on initial load and after a cloud pull.
+function _syncAccentSwatchUI(color) {
+  const norm = (c) => (c || "").toLowerCase();
+  let matched = false;
+  document.querySelectorAll("#accentColors .color-swatch[data-color]").forEach((s) => {
+    const isMatch = norm(s.dataset.color) === norm(color);
+    s.classList.toggle("active", isMatch);
+    if (isMatch) matched = true;
+  });
+  const customInput = el("accentColorCustomInput");
+  if (customInput) {
+    customInput.classList.toggle("active", !matched);
+    if (/^#[0-9a-fA-F]{6}$/.test(color)) customInput.value = color;
+  }
 }
 function applyCardGlow(mode) {
   document.documentElement.dataset.cardGlow = mode || "glow";
@@ -6413,10 +6896,10 @@ function _renderCmdResults(q) {
   }
 
   if (!bmMatches.length && !noteMatches.length) {
-    html += `<div class="cmd-empty"><div class="cmd-empty-icon" style="font-size:20px">∅</div>No results for "<em style="color:var(--accent-light)">${escH(q)}</em>"</div>`;
+    html += `<div class="cmd-empty"><div class="cmd-empty-icon" style="font-size:20px">∅</div>No results for "<em style="color:var(--accent-2)">${escH(q)}</em>"</div>`;
   }
 
-  html += `<a href="https://www.google.com/search?q=${encodeURIComponent(q)}" class="cmd-google-item" target="_blank" data-cmd-item>
+  html += `<a href="https://www.google.com/search?q=${encodeURIComponent(q)}" class="cmd-result-item cmd-google-item" target="_blank" data-cmd-item>
     <div class="cmd-google-icon">G</div>
     <div class="cmd-google-label">Search Google for <em>"${escH(q)}"</em></div>
   </a>`;
@@ -6868,16 +7351,20 @@ function setupEventListeners() {
   });
 
   // Accent colors
-  document.querySelectorAll("#accentColors .color-swatch").forEach((s) => {
+  document.querySelectorAll("#accentColors .color-swatch[data-color]").forEach((s) => {
     s.addEventListener("click", () => {
-      document
-        .querySelectorAll("#accentColors .color-swatch")
-        .forEach((x) => x.classList.remove("active"));
-      s.classList.add("active");
       applyAccent(s.dataset.color);
       save();
     });
   });
+  // Custom accent color picker
+  const accentCustomInput = el("accentColorCustomInput");
+  if (accentCustomInput) {
+    accentCustomInput.addEventListener("input", (e) => {
+      applyAccent(e.target.value);
+      save();
+    });
+  }
   // Avatar colors
   document.querySelectorAll("#avatarColors .color-swatch").forEach((s) => {
     s.addEventListener("click", () => {
@@ -8139,27 +8626,6 @@ const HERO_COLORS = [
   { hex: "#1d2021", name: "Gruvbox dark" },
 ];
 
-const UNSPLASH_QUERIES = [
-  "mountain landscape",
-  "ocean sunset",
-  "forest morning",
-  "desert dunes",
-  "city skyline night",
-  "snowy peaks",
-  "tropical beach",
-  "aurora borealis",
-  "misty valley",
-  "waterfall nature",
-  "dark moody landscape",
-  "starry sky",
-];
-
-function _unsplashUrl(query) {
-  const q = encodeURIComponent(query || "landscape nature");
-  // Use picsum as reliable fallback alongside source.unsplash
-  return `https://source.unsplash.com/featured/1920x1080/?${q}`;
-}
-
 async function loadHeroBg() {
   const stored = S.settings.heroBg;
   if (stored && stored.startsWith("data:")) {
@@ -8212,6 +8678,7 @@ function applyHeroColor(hex) {
   _applyHeroColor(hex, true);
   el("heroColorPalette").style.display = "none";
   _buildColorPalette();
+  syncWallpaperNow();
 }
 
 function _applyHeroColor(hex, showReset = true) {
@@ -8225,8 +8692,6 @@ function _applyHeroColor(hex, showReset = true) {
 }
 
 async function fetchRandomWallpaper() {
-  const query =
-    UNSPLASH_QUERIES[Math.floor(Math.random() * UNSPLASH_QUERIES.length)];
   const bgEl = el("heroBgImg");
   if (!bgEl) return;
   // Show low-res gradient while loading
@@ -8235,18 +8700,11 @@ async function fetchRandomWallpaper() {
   bgEl.style.opacity = "1";
 
   // Preload image before applying
-  const url = _unsplashUrl(query);
+  const url = `https://picsum.photos/seed/${Date.now()}-${Math.floor(Math.random() * 1e6)}/1920/1080`;
   const img = new Image();
   img.onload = () => {
-    const finalUrl = img.currentSrc || url;
-    window._heroBgSessionCache = finalUrl;
-    _applyHeroBgImage(finalUrl);
-  };
-  img.onerror = () => {
-    // Fallback to picsum
-    const fallback = `https://picsum.photos/seed/${Date.now()}/1920/1080`;
-    window._heroBgSessionCache = fallback;
-    _applyHeroBgImage(fallback);
+    window._heroBgSessionCache = url;
+    _applyHeroBgImage(url);
   };
   img.src = url;
 }
@@ -8281,6 +8739,7 @@ async function handleWallpaperUpload(file) {
   save();
   _applyHeroBgImage(dataUrl, true);
   showToast("Wallpaper updated!", "success");
+  syncWallpaperNow();
 }
 
 function resetWallpaper() {
@@ -8290,6 +8749,15 @@ function resetWallpaper() {
   window._heroBgSessionCache = null;
   fetchRandomWallpaper();
   showToast("Wallpaper reset to random", "success");
+  syncWallpaperNow();
+}
+
+// Push the new wallpaper to Drive immediately, bypassing the normal debounce,
+// so it's available on other devices right away.
+function syncWallpaperNow() {
+  if (!S.googleUser) return;
+  clearTimeout(Drive._syncTimer);
+  pushToDrive();
 }
 
 function _resizeImageFile(file, maxW, maxH) {

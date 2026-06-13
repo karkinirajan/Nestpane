@@ -47,7 +47,6 @@
     "https://motivational-spark-api.vercel.app/*",
     "https://ipwho.is/*",
     "https://nominatim.openstreetmap.org/*",
-    "https://source.unsplash.com/*",
     "https://picsum.photos/*"
   ]
 }
