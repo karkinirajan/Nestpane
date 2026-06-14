@@ -253,8 +253,9 @@ cd dist && zip -r ../novatab-v1.2.0-chrome.zip . && cd ..
 3. Fill in the listing:
    - **Category**: Productivity
    - **Screenshots**: 1280×800 or 640×400 px (at least one required)
-   - **Privacy policy**: required — the extension collects Google account data for Drive sync
-4. Submit for review.
+   - **Privacy policy**: required — host [`privacy.html`](privacy.html) (e.g. via GitHub Pages) and link it here
+4. Complete the **Privacy practices** tab using [docs/CWS_SUBMISSION.md](docs/CWS_SUBMISSION.md) — it has copy-paste permission justifications and data-usage answers for every permission this extension requests.
+5. Submit for review.
 
 **Step 5 — Update an existing listing**
 
@@ -300,6 +301,7 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 - **MV3 CSP.** Chrome Extension pages follow Manifest V3's default Content Security Policy which disallows `eval` and external scripts.
 - **AI API key.** If you enable AI features, your Anthropic API key is stored only in `chrome.storage.local` on your device, excluded from both Drive sync and the E2E-encrypted payload, and sent only to `https://api.anthropic.com` with each AI request.
 - **End-to-end encryption.** When enabled, Drive backups are encrypted client-side with AES-GCM using a key derived from your passphrase via PBKDF2. The passphrase itself is never stored or transmitted — if you lose it, encrypted backups cannot be recovered.
+- **Privacy policy.** See [`privacy.html`](privacy.html) for the full data-handling disclosure (required for Chrome Web Store and OAuth consent screen verification — see [docs/CWS_SUBMISSION.md](docs/CWS_SUBMISSION.md)).
 
 ---
 
