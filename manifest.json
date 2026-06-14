@@ -2,21 +2,21 @@
   "manifest_version": 3,
   "name": "novatab",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxMGoo4aGby3zGvUPXjv3FVRxyLg+VVNYmotopNKGmMeCB/4xSXwMoxC/e1+Hmdt5lERKOGj1j7XIQ/rg+bq9aVwvZ1DSOyHcpYQvnLSaK+vd62S0vlo1wrCZbQnHehD5pU10rQ0rZl0fRqhVXWznE216eTJVuKS8Tg9B8MZyqNDISAq5xj3Qrpe5o9KulkCCI+bHzRrmNroQ8hVHnbN97ngcJ7Tz+EWZs7tmtOcZY3OyreX/8OGcYqWS4eUSy8aAl1FvyGB0EN2HxyyUhhi315MgGFJGnFMN51BYK+LBdVYuJ/y0kZXoLVE4o4bXYq/k4rL4yzDtuzEA15GjKnRqRwIDAQAB",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A beautiful productivity new tab page with workspaces, bookmarks, notes, tasks, focus timer, and cloud sync.",
   "chrome_url_overrides": { "newtab": "newtab.html" },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icon-16.png",
-      "48": "icon-48.png",
-      "128": "favicon.png"
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/favicon.png"
     }
   },
   "icons": {
-    "16": "icon-16.png",
-    "48": "icon-48.png",
-    "128": "favicon.png"
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/favicon.png"
   },
   "oauth2": {
     "client_id": "1068722184119-5oo9t1q96u9r6ccb3gd02nm6jbp9ekq1.apps.googleusercontent.com",
@@ -35,7 +35,8 @@
     "topSites",
     "identity",
     "identity.email",
-    "geolocation"
+    "geolocation",
+    "declarativeNetRequest"
   ],
   "host_permissions": [
     "https://wttr.in/*",
@@ -47,6 +48,7 @@
     "https://motivational-spark-api.vercel.app/*",
     "https://ipwho.is/*",
     "https://nominatim.openstreetmap.org/*",
-    "https://picsum.photos/*"
+    "https://picsum.photos/*",
+    "https://api.anthropic.com/*"
   ]
 }

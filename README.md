@@ -17,14 +17,14 @@ It is a single-user, offline-first extension. All data lives in `chrome.storage.
 ## Features
 
 - **Workspaces** — separate bookmark, note, and task environments (Home, AI, Dev, or custom)
+- **Shareable Workspaces** — export any workspace (bookmarks, notes, tasks) as a JSON file and import it elsewhere
 - **Quick Access** — icon grid for frequently visited sites, drag-to-reorder
 - **Bookmark manager** — import Chrome bookmarks, create folders, search, sort, context-menu actions
+- **Smart Organize** — AI sorts your open tabs into existing workspaces with one click
 - **Notes** — per-workspace notes with tags, pin, full-text search, and a rich editor
 - **Tasks** — daily task list with completion tracking
-- **Focus Timer** — Pomodoro-style 5/15/25-minute countdown with visual ring
-- **Stopwatch** — with lap tracking
-- **World Clocks** — add multiple timezones side by side
-- **Countdown Timers** — named countdowns to future dates
+- **Voice Quick-Capture** — speak a note, task, or journal entry using the Web Speech API
+- **Focus Mode** — Pomodoro-style 5/15/25-minute timer with visual ring, plus optional distracting-site blocking
 - **Calendar** — mini monthly calendar with one-time, daily, weekly, and custom-interval events
 - **Daily Journal** — date-stamped entries with mood tagging and word count
 - **Habit Tracker** — daily habit streaks with completion history
@@ -34,14 +34,16 @@ It is a single-user, offline-first extension. All data lives in `chrome.storage.
 - **Tab Sessions** — save and restore groups of open tabs
 - **Browser History viewer** — searchable history list with per-URL delete
 - **Downloads viewer** — recent downloads with open-in-Finder support
-- **Analytics / Insights** — top visited sites, browsing activity, download stats
+- **Analytics / Insights** — top visited sites, browsing activity, download stats, and a 14-day site-activity trend chart
 - **Weather widget** — current conditions + 3-day forecast via wttr.in (auto-detect or manual city)
+- **AI Daily Briefing** — short LLM-generated morning summary covering weather and your top pending tasks
 - **Motivational quotes** — shuffle from API or write your own
-- **Wallpaper** — Unsplash random photo, solid color, or upload your own image
+- **Wallpaper** — random photo (via Picsum), solid color, or upload your own image
 - **Google Drive sync** — backs up all data to your private Drive appdata folder
-- **Themes** — Gruvbox-inspired dark and light modes, custom accent color picker
+- **End-to-end encrypted sync** — optional passphrase-based AES-GCM encryption layer on top of Drive backups
+- **Theme marketplace** — Gruvbox-inspired dark/light modes plus Nord, Dracula, Catppuccin, and Solarized presets, with a custom accent color picker
 - **Sidebar** — collapsible, with per-group custom link lists
-- **Command palette** — `/` opens a search over all bookmarks and notes
+- **Unified command palette / omni-search** — `/` searches bookmarks, notes, tasks, browser history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action for direct LLM answers
 - **Extension popup** — one-click bookmark save from any page via the toolbar button
 
 ---
@@ -55,6 +57,10 @@ It is a single-user, offline-first extension. All data lives in `chrome.storage.
 | Auth | Google OAuth 2.0 PKCE via `chrome.identity.launchWebAuthFlow` | Sign in with a Web application OAuth client |
 | Storage | `chrome.storage.local` | All user data and tokens, local only |
 | Sync | Google Drive REST API v3 (`appdata` scope) | Optional cloud backup |
+| End-to-end encryption | WebCrypto (`crypto.subtle`, PBKDF2 + AES-GCM) | Optional passphrase-based encryption of cloud backups |
+| AI | Anthropic Messages API (`api.anthropic.com`) | Command bar "Ask AI", daily briefing, smart organize — requires a user-supplied API key |
+| Voice | Web Speech API (`SpeechRecognition`) | Voice quick-capture, transcribed locally by the browser |
+| Site blocking | `chrome.declarativeNetRequest` | Focus mode — blocks chosen sites while a focus session is running |
 | Weather | wttr.in JSON API | No API key required |
 | Quotes | motivational-spark-api.vercel.app | No API key required |
 | Fonts | Inter + Playfair Display via Google Fonts | Loaded via `<link>` with preconnect |
@@ -68,17 +74,19 @@ It is a single-user, offline-first extension. All data lives in `chrome.storage.
 ```
 novatab/
 ├── manifest.json     Chrome Extension Manifest V3 — permissions, icons, OAuth client ID
-├── newtab.html       New tab page — full dashboard UI (~1600 lines)
-├── app.js            All application logic (~8200 lines)
-├── style.css         Design system and all component styles (~1600 lines)
+├── newtab.html       New tab page — full dashboard UI (~1800 lines)
+├── app.js            All application logic (~10300 lines)
+├── style.css         Design system and all component styles (~2300 lines)
 ├── fouc.js           Inline script — applies theme and accent color before CSS loads
 ├── popup.html        Extension popup — save current page as a bookmark to a workspace
 ├── popup.js          Popup logic
-├── favicon.svg       Source brand icon (32×32 SVG)
-├── favicon.png       128×128 extension icon (generated from SVG)
-├── icon-16.png       16×16 toolbar icon (generated from SVG)
-├── icon-48.png       48×48 extension management icon (generated from SVG)
 ├── build.js          Validation and dist copy script (Node.js, no dependencies)
+├── icons/            Brand & extension icons
+│   ├── favicon.svg   Source brand icon (32×32 SVG)
+│   ├── favicon.png   128×128 extension icon (generated from SVG)
+│   ├── icon-16.png   16×16 toolbar icon (generated from SVG)
+│   └── icon-48.png   48×48 extension management icon (generated from SVG)
+├── docs/             Additional setup guides (e.g. OAUTH_SETUP.md)
 └── dist/             Production build output — ZIP this folder for Chrome Web Store
 ```
 
@@ -88,7 +96,7 @@ novatab/
 
 - Chrome, Chromium, Edge, Brave, or Arc (any Chromium-based browser)
 - Node.js ≥ 18 — only needed to run `build.js`; not needed for local development
-- `rsvg-convert` (librsvg) or ImageMagick `convert` — only needed to regenerate PNG icons from `favicon.svg`
+- `rsvg-convert` (librsvg) or ImageMagick `convert` — only needed to regenerate PNG icons from `icons/favicon.svg`
 
 ---
 
@@ -114,10 +122,11 @@ cd novatab
 
 Edit `app.js`, `style.css`, `newtab.html`, or `popup.js` directly. After saving, go to `chrome://extensions` and click the reload icon (↻) under novatab, then open a new tab.
 
-**4. (Optional) Regenerate PNG icons after editing `favicon.svg`**
+**4. (Optional) Regenerate PNG icons after editing `icons/favicon.svg`**
 
 ```bash
 # Using rsvg-convert (recommended):
+cd icons
 rsvg-convert -w 128 -h 128 favicon.svg -o favicon.png
 rsvg-convert -w 48  -h 48  favicon.svg -o icon-48.png
 rsvg-convert -w 16  -h 16  favicon.svg -o icon-16.png
@@ -126,6 +135,7 @@ rsvg-convert -w 16  -h 16  favicon.svg -o icon-16.png
 convert -background none -resize 128x128 favicon.svg favicon.png
 convert -background none -resize 48x48  favicon.svg icon-48.png
 convert -background none -resize 16x16  favicon.svg icon-16.png
+cd ..
 ```
 
 ---
@@ -141,14 +151,17 @@ This project has no server and no environment variables. All configuration is em
 | OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
 | Weather endpoint | `app.js` | wttr.in URL | No key required |
 | Quotes endpoint | `app.js` | motivational-spark-api.vercel.app | No key required |
+| Anthropic API key | Settings → AI Assistant (`aiApiKey`) | User-supplied, optional | Entered by each user at runtime, stored only in `chrome.storage.local` on their device — never embedded in source or synced |
 
 > The Google OAuth Client ID is a **public** identifier. It is not a secret. Chrome extensions must embed it in source files. Never commit a `client_secret` — the PKCE flow used here does not require one.
+>
+> The Anthropic API key is **not** a build-time secret — it's entered per-user in Settings to power "Ask AI", the daily briefing, and Smart Organize. Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys). AI features are entirely optional and disabled by default.
 
 ---
 
 ## Google OAuth Setup
 
-See the step-by-step external configuration guide in [OAUTH_SETUP.md](OAUTH_SETUP.md), or follow the inline instructions in the **Authentication Setup** section below.
+See the step-by-step external configuration guide in [docs/OAUTH_SETUP.md](docs/OAUTH_SETUP.md), or follow the inline instructions in the **Authentication Setup** section below.
 
 ### How the auth flow works
 
@@ -200,7 +213,7 @@ This script:
 
 ```bash
 node build.js
-cd dist && zip -r ../novatab-v1.1.0-chrome.zip . && cd ..
+cd dist && zip -r ../novatab-v1.2.0-chrome.zip . && cd ..
 ```
 
 The ZIP must contain the **contents** of `dist/` at its root — not the `dist/` folder itself.
@@ -212,9 +225,11 @@ The ZIP must contain the **contents** of `dist/` at its root — not the `dist/`
 **Step 1 — Ensure icons are generated and up to date**
 
 ```bash
+cd icons
 rsvg-convert -w 128 -h 128 favicon.svg -o favicon.png
 rsvg-convert -w 48  -h 48  favicon.svg -o icon-48.png
 rsvg-convert -w 16  -h 16  favicon.svg -o icon-16.png
+cd ..
 ```
 
 **Step 2 — Build**
@@ -228,13 +243,13 @@ Verify no errors are reported.
 **Step 3 — Package**
 
 ```bash
-cd dist && zip -r ../novatab-v1.1.0-chrome.zip . && cd ..
+cd dist && zip -r ../novatab-v1.2.0-chrome.zip . && cd ..
 ```
 
 **Step 4 — Submit**
 
 1. Go to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
-2. Click **New Item** → upload `novatab-v1.1.0-chrome.zip`.
+2. Click **New Item** → upload `novatab-v1.2.0-chrome.zip`.
 3. Fill in the listing:
    - **Category**: Productivity
    - **Screenshots**: 1280×800 or 640×400 px (at least one required)
@@ -251,15 +266,16 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 
 | Permission | Why |
 |---|---|
-| `tabs` | Tab Sessions feature — save and restore groups of open tabs |
+| `tabs` | Tab Sessions, Smart Organize, and Omni-Search (open-tabs lookup) |
 | `bookmarks` | Read and write Chrome bookmarks |
-| `history` | History viewer, Analytics |
+| `history` | History viewer, Analytics, Omni-Search |
 | `downloads` | Downloads viewer |
 | `storage` | Persist all user data (local storage) |
 | `topSites` | Analytics view — Top Visited Sites card |
 | `identity` | Google OAuth sign-in (`launchWebAuthFlow`) |
 | `identity.email` | Read signed-in Chrome account email for the sync card |
 | `geolocation` | Auto-detect city for weather widget |
+| `declarativeNetRequest` | Focus Mode — blocks chosen sites while a focus session is active |
 
 | Host | Why |
 |---|---|
@@ -270,7 +286,8 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 | `motivational-spark-api.vercel.app` | Daily motivational quotes |
 | `ipwho.is` | IP-based city detection for weather |
 | `nominatim.openstreetmap.org` | Geocoding city names to coordinates |
-| `source.unsplash.com` / `picsum.photos` | Wallpaper photos |
+| `picsum.photos` | Wallpaper photos |
+| `api.anthropic.com` | AI command bar, daily briefing, and smart organize (only used if you add an Anthropic API key in Settings) |
 
 ---
 
@@ -281,6 +298,8 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 - **All user-generated content is HTML-escaped** via `escH()` before DOM insertion. No `eval`, no `document.write`, no raw `innerHTML` with user input.
 - **URL sanitization.** All user-supplied URLs pass through `safeUrl()` which validates the scheme (http/https only), blocking `javascript:`, `data:`, and other dangerous protocols.
 - **MV3 CSP.** Chrome Extension pages follow Manifest V3's default Content Security Policy which disallows `eval` and external scripts.
+- **AI API key.** If you enable AI features, your Anthropic API key is stored only in `chrome.storage.local` on your device, excluded from both Drive sync and the E2E-encrypted payload, and sent only to `https://api.anthropic.com` with each AI request.
+- **End-to-end encryption.** When enabled, Drive backups are encrypted client-side with AES-GCM using a key derived from your passphrase via PBKDF2. The passphrase itself is never stored or transmitted — if you lose it, encrypted backups cannot be recovered.
 
 ---
 
@@ -288,7 +307,7 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 
 | Problem | Solution |
 |---|---|
-| Extension icon is blank or broken | Regenerate `favicon.png`, `icon-16.png`, `icon-48.png` from `favicon.svg` and reload the extension |
+| Extension icon is blank or broken | Regenerate `icons/favicon.png`, `icons/icon-16.png`, `icons/icon-48.png` from `icons/favicon.svg` and reload the extension |
 | "Sign in" button does nothing | Confirm your OAuth client's redirect URI includes `https://<extension-id>.chromiumapp.org/` (trailing slash required) |
 | Sign-in shows "access_denied" | Add your Google account as a Test User on the OAuth consent screen in Google Cloud Console |
 | "Session expired. Sign in again." | Token refresh failed. Click Sign in again to re-authenticate interactively |
@@ -303,7 +322,7 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 ## Maintenance Checklist
 
 - [ ] Bump `version` in `manifest.json` before each release
-- [ ] Regenerate PNG icons after any change to `favicon.svg`
+- [ ] Regenerate PNG icons after any change to `icons/favicon.svg`
 - [ ] Run `node build.js` and confirm no errors before packaging
 - [ ] Test sign-in, Drive sync, and sign-out after any auth-related changes
 - [ ] Verify the extension ID still matches the OAuth redirect URI after any reinstall from a new folder

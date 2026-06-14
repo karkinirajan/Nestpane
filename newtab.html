@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>novatab</title>
-  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,700&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
 
   <!-- Brand + collapse toggle -->
   <div class="sb-brand">
-    <img class="sb-logo-img" src="favicon.png" alt="novatab logo" aria-hidden="true">
+    <img class="sb-logo-img" src="icons/favicon.png" alt="novatab logo" aria-hidden="true">
     <span class="sb-brand-name" aria-hidden="true">novatab</span>
     <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar" aria-controls="sbNav">
       <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
@@ -141,7 +141,7 @@
         </div>
         <div class="sb-group-items">
           <div id="sidebarWorkspacesList" class="sidebar-folders-list sb-dynamic-list"></div>
-          <div style="display:flex;gap:4px;padding:2px 0">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;padding:2px 0">
             <button class="sb-work-action" id="newWorkspaceTabBtn" data-tip="New Workspace">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New
@@ -149,6 +149,10 @@
             <button class="sb-work-action" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               Manage
+            </button>
+            <button class="sb-work-action" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+              Organize
             </button>
           </div>
           <button id="addWorkspaceBtn" style="display:none"></button>
@@ -286,7 +290,7 @@
   <header class="topbar" role="banner">
     <button class="search-trigger" id="searchTriggerBtn" aria-label="Open search palette (press /)">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <span class="search-trigger-text">Search bookmarks, notes…</span>
+      <span class="search-trigger-text">Search everything…</span>
       <kbd class="search-kbd">/</kbd>
     </button>
     <div class="topbar-actions">
@@ -466,6 +470,25 @@
 
         </section>
 
+        <!-- AI Daily Briefing -->
+        <section class="section ai-briefing-section" id="aiBriefingSection" style="display:none">
+          <div class="section-title-row">
+            <h2 class="section-title" style="display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+              Daily Briefing
+            </h2>
+            <button class="edit-btn" id="refreshBriefingBtn" data-tip="Regenerate briefing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              Refresh
+            </button>
+          </div>
+          <div class="ai-briefing-body" id="aiBriefingBody">
+            <div class="skeleton skeleton-text" style="width:95%"></div>
+            <div class="skeleton skeleton-text" style="width:88%"></div>
+            <div class="skeleton skeleton-text" style="width:60%"></div>
+          </div>
+        </section>
+
         <!-- Widgets — pinned to bottom -->
         <div class="widgets-row" id="widgetsRow">
 
@@ -523,6 +546,9 @@
                 <button class="preset-btn active" data-min="25">25m</button>
                 <button class="preset-btn" data-min="15">15m</button>
                 <button class="preset-btn" data-min="5">5m</button>
+                <button class="timer-focus-btn" id="focusModeBtn" aria-label="Focus mode settings" data-tip="Block distracting sites while focused">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </button>
               </div>
             </div>
             <div class="timer-body">
@@ -910,16 +936,32 @@
 
     <div class="settings-section">
       <div class="settings-section-title">Appearance</div>
-      <div class="settings-row">
-        <div class="settings-label"><span>Theme</span></div>
-        <div class="toggle-group">
-          <button class="toggle-opt active" data-theme="dark" id="darkThemeBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            Dark
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Theme</div>
+        <div class="theme-grid" id="themeGrid">
+          <button class="theme-card active" data-theme="dark" title="Gruvbox Dark">
+            <span class="theme-card-swatches"><span style="background:#1d2021"></span><span style="background:#282828"></span><span style="background:#fe8019"></span></span>
+            <span>Dark</span>
           </button>
-          <button class="toggle-opt" data-theme="light" id="lightThemeBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            Light
+          <button class="theme-card" data-theme="light" title="Gruvbox Light">
+            <span class="theme-card-swatches"><span style="background:#fbf1c7"></span><span style="background:#f9f5d7"></span><span style="background:#af3a03"></span></span>
+            <span>Light</span>
+          </button>
+          <button class="theme-card" data-theme="nord" title="Nord">
+            <span class="theme-card-swatches"><span style="background:#2e3440"></span><span style="background:#3b4252"></span><span style="background:#88c0d0"></span></span>
+            <span>Nord</span>
+          </button>
+          <button class="theme-card" data-theme="dracula" title="Dracula">
+            <span class="theme-card-swatches"><span style="background:#282a36"></span><span style="background:#383b4d"></span><span style="background:#bd93f9"></span></span>
+            <span>Dracula</span>
+          </button>
+          <button class="theme-card" data-theme="catppuccin" title="Catppuccin Mocha">
+            <span class="theme-card-swatches"><span style="background:#1e1e2e"></span><span style="background:#313244"></span><span style="background:#cba6f7"></span></span>
+            <span>Catppuccin</span>
+          </button>
+          <button class="theme-card" data-theme="solarized" title="Solarized Dark">
+            <span class="theme-card-swatches"><span style="background:#002b36"></span><span style="background:#073642"></span><span style="background:#268bd2"></span></span>
+            <span>Solarized</span>
           </button>
         </div>
       </div>
@@ -998,6 +1040,49 @@
     </div>
 
     <div class="settings-section">
+      <div class="settings-section-title">AI Assistant</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span>Enable AI Features</span>
+          <small>Powers the command bar's "Ask AI", daily briefing, and smart organize</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="aiToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Anthropic API Key</div>
+        <input type="password" id="aiApiKey" class="settings-input" style="width:100%" placeholder="sk-ant-…" autocomplete="off">
+        <small style="color:var(--text-3);font-size:11px;line-height:1.5">Stored only on this device and never synced. Get a key at <a class="credit-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</small>
+        <button class="settings-action-btn" id="testAiKeyBtn" style="margin-top:8px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+          Test Connection
+        </button>
+        <small id="aiTestStatus" style="font-size:11px;line-height:1.5"></small>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Security</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span>Encrypt Cloud Backups</span>
+          <small>End-to-end encryption with your passphrase</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="e2eToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Sync Passphrase</div>
+        <input type="password" id="e2ePassphrase" class="settings-input" style="width:100%" placeholder="Enter a strong passphrase" autocomplete="new-password">
+        <small style="color:var(--text-3);font-size:11px;line-height:1.5">Stored only on this device and never uploaded. Use the exact same passphrase on every device you sync with — if you lose it, encrypted backups cannot be recovered.</small>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="settings-section-title">Data Management</div>
       <div class="settings-row-block">
         <div class="settings-sub-label">Export / Import</div>
@@ -1010,6 +1095,16 @@
           Import Data
         </button>
         <input type="file" id="importFileInput" accept=".json" style="display:none">
+        <div class="settings-sub-label" style="margin-top:8px">Workspaces</div>
+        <button class="settings-action-btn" id="exportWorkspaceBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Current Workspace
+        </button>
+        <button class="settings-action-btn" id="importWorkspaceBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Workspace from File
+        </button>
+        <input type="file" id="importWorkspaceFileInput" accept=".json" style="display:none">
         <div class="settings-sub-label" style="margin-top:8px">Clear Specific Data</div>
         <button class="settings-action-btn danger-soft" id="clearNotesBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1038,7 +1133,7 @@
     <div class="settings-section">
       <div class="settings-section-title">About</div>
       <div class="settings-about">
-        <div class="about-logo"><img src="favicon.png" alt="novatab logo" width="32" height="32" style="border-radius:6px;object-fit:contain"></div>
+        <div class="about-logo"><img src="icons/favicon.png" alt="novatab logo" width="32" height="32" style="border-radius:6px;object-fit:contain"></div>
         <div>
           <div style="font-weight:700;font-size:15px">novatab</div>
           <div style="color:var(--text-2);font-size:12px">Version 1.1.0</div>
@@ -1062,8 +1157,8 @@
   <div id="cmdPalette">
     <div class="cmd-search-row">
       <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <label for="cmdInput" class="sr-only">Search bookmarks and notes</label>
-      <input id="cmdInput" class="cmd-input" placeholder="Search bookmarks, notes…" autocomplete="off" spellcheck="false"
+      <label for="cmdInput" class="sr-only">Search everything</label>
+      <input id="cmdInput" class="cmd-input" placeholder="Search bookmarks, notes, tasks, history, tabs…" autocomplete="off" spellcheck="false"
              role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="cmdResults">
       <kbd class="cmd-esc-badge" id="cmdEscBadge" aria-hidden="true">ESC</kbd>
     </div>
@@ -1105,6 +1200,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
     </span>
     <span class="fab-item-label">Add Bookmark</span>
+  </button>
+  <button class="fab-menu-item" id="fabVoiceCapture">
+    <span class="fab-item-icon fab-item-icon--voice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </span>
+    <span class="fab-item-label">Voice Capture</span>
   </button>
 </div>
 
@@ -1216,6 +1317,36 @@
     <div class="modal-footer">
       <button class="btn-secondary" data-modal="quickAccessModal">Cancel</button>
       <button class="btn-primary" id="saveQuickAccessBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Focus Mode Modal -->
+<div class="modal-overlay" id="focusModeModal" role="dialog" aria-modal="true" aria-labelledby="focusModeModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="focusModeModalTitle">Focus Mode</h3>
+      <button class="modal-close" data-modal="focusModeModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-row" style="padding:0">
+        <div class="settings-label">
+          <span>Block sites while timer runs</span>
+          <small>Blocked sites are unreachable until you pause or finish</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="focusModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <label for="focusModeSites">Blocked sites (one per line)</label>
+      <textarea id="focusModeSites" class="modal-input" rows="6" placeholder="youtube.com&#10;twitter.com&#10;reddit.com" style="resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="focusModeModal">Cancel</button>
+      <button class="btn-primary" id="saveFocusModeBtn">Save</button>
     </div>
   </div>
 </div>
@@ -1464,6 +1595,50 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Workspace
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Smart Organize Modal -->
+<div class="modal-overlay" id="smartOrganizeModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>Smart Organize</h3>
+      <button class="modal-close" data-modal="smartOrganizeModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="organizeModalBody" style="max-height:55vh"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="smartOrganizeModal">Cancel</button>
+      <button class="btn-primary" id="applyOrganizeBtn" style="display:none">Add to Workspaces</button>
+    </div>
+  </div>
+</div>
+
+<!-- Voice Capture Modal -->
+<div class="modal-overlay" id="voiceCaptureModal" role="dialog" aria-modal="true" aria-labelledby="voiceCaptureTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="voiceCaptureTitle">Voice Capture</h3>
+      <button class="modal-close" data-modal="voiceCaptureModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="voice-capture-body">
+        <button class="voice-mic-btn" id="voiceMicBtn" aria-label="Toggle voice recording" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <div class="voice-status" id="voiceStatus">Tap the mic to start speaking</div>
+        <label class="sr-only" for="voiceTranscript">Transcript</label>
+        <textarea id="voiceTranscript" class="voice-transcript" rows="4" placeholder="Your speech will appear here — you can edit it before saving."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer voice-capture-actions">
+      <button class="btn-secondary" id="voiceSaveNoteBtn">Save as Note</button>
+      <button class="btn-secondary" id="voiceSaveTaskBtn">Add as Task</button>
+      <button class="btn-primary" id="voiceSaveJournalBtn">Add to Journal</button>
     </div>
   </div>
 </div>
