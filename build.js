@@ -15,10 +15,10 @@ const REQUIRED_FILES = [
   "app.js",
   "style.css",
   "fouc.js",
-  "favicon.svg",
-  "favicon.png",
-  "icon-16.png",
-  "icon-48.png",
+  "icons/favicon.svg",
+  "icons/favicon.png",
+  "icons/icon-16.png",
+  "icons/icon-48.png",
   "popup.html",
   "popup.js",
 ];
@@ -63,18 +63,16 @@ if (!ok) {
   process.exit(1);
 }
 
-if (!fs.existsSync(DIST)) {
-  fs.mkdirSync(DIST);
-} else {
-  fs.readdirSync(DIST).forEach((f) => {
-    const fp = path.join(DIST, f);
-    if (fs.statSync(fp).isFile()) fs.unlinkSync(fp);
-  });
+if (fs.existsSync(DIST)) {
+  fs.rmSync(DIST, { recursive: true, force: true });
 }
+fs.mkdirSync(DIST);
 
 console.log("\nCopying to dist/...");
 REQUIRED_FILES.forEach((file) => {
-  fs.copyFileSync(path.join(ROOT, file), path.join(DIST, file));
+  const dest = path.join(DIST, file);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, file), dest);
   console.log("  ✓", file);
 });
 

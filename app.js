@@ -1323,6 +1323,10 @@ let S = {
     qaMode: "icon",
     qaEditMode: false,
     heroQuote: null,
+    e2e: { enabled: false },
+    focus: { enabled: false, blockedSites: [] },
+    ai: { enabled: false },
+    aiBriefingCache: null,
     sbLinks: {
       google: [
         { id: 4001, name: "Colab", url: "https://colab.research.google.com" },
@@ -1531,10 +1535,20 @@ async function loadState() {
         },
       }
     : S.settings;
+  // Self-heal duplicate sidebar links (e.g. left over from id-based merges
+  // across versions where default link ids were renumbered).
+  ["google", "projects", "others", "socials"].forEach((g) => {
+    S.settings.sbLinks[g] = _dedupeByUrl(S.settings.sbLinks[g]);
+  });
   S.weatherLocation = d.weatherLocation || null;
   S.wsData = d.wsData || {};
   S.workspaces.forEach((ws) => {
     if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
+  });
+  // Self-heal duplicate Quick Access / imported-bookmark entries per workspace.
+  Object.values(S.wsData).forEach((wd) => {
+    if (wd.quickAccess) wd.quickAccess = _dedupeByUrl(wd.quickAccess);
+    if (wd.importedBookmarks) wd.importedBookmarks = _dedupeByUrl(wd.importedBookmarks);
   });
   // Migration: ensure AI (id:2) and Dev (id:3) preset workspaces exist
   const wsIds = S.workspaces.map((w) => w.id);
@@ -1570,6 +1584,8 @@ async function loadState() {
   applyAccent(S.settings.accentColor);
   applyTheme(S.settings.theme);
   applyCardGlow(S.settings.cardGlow || "glow");
+  _syncFocusModeUI();
+  _syncAiUI();
   document.body.classList.toggle("grid-view-mode", !!S.settings.gridView);
   el("gridViewBtn")?.classList.toggle("active", !!S.settings.gridView);
   document.body.classList.toggle(
@@ -2388,6 +2404,169 @@ async function findDriveFiles(token) {
   return [];
 }
 
+// ===== END-TO-END ENCRYPTED SYNC =====
+// The passphrase is stored locally (chrome.storage.local) under a key that
+// is intentionally excluded from buildDrivePayload()/_persistLocalState(), so
+// it never leaves this device and is never written into the synced file.
+let _e2ePassCache = null;
+
+async function _e2eLoadPassphrase() {
+  if (_e2ePassCache !== null) return _e2ePassCache;
+  const d = await API.getLocal(["_e2ePass"]);
+  _e2ePassCache = d._e2ePass || "";
+  return _e2ePassCache;
+}
+
+async function _e2eSavePassphrase(pass) {
+  _e2ePassCache = pass || "";
+  await API.setLocal({ _e2ePass: _e2ePassCache });
+}
+
+function _e2eBytesToB64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function _e2eB64ToBytes(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function _e2eDeriveKey(passphrase, saltBytes) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: saltBytes, iterations: 100000, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+// Encrypts a payload into a self-describing envelope. _savedAt/_version are
+// kept outside the ciphertext so pullFromDrive can compare freshness without
+// decrypting first.
+async function _e2eEncryptPayload(payload, passphrase) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await _e2eDeriveKey(passphrase, salt);
+  const data = new TextEncoder().encode(JSON.stringify(payload));
+  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
+  return {
+    _e2e: 1,
+    _version: payload._version,
+    _savedAt: payload._savedAt,
+    salt: _e2eBytesToB64(salt),
+    iv: _e2eBytesToB64(iv),
+    data: _e2eBytesToB64(new Uint8Array(cipher)),
+  };
+}
+
+async function _e2eDecryptPayload(envelope, passphrase) {
+  const salt = _e2eB64ToBytes(envelope.salt);
+  const iv = _e2eB64ToBytes(envelope.iv);
+  const data = _e2eB64ToBytes(envelope.data);
+  const key = await _e2eDeriveKey(passphrase, salt);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+// ===== AI ASSISTANT (Anthropic) =====
+// The API key is stored locally (chrome.storage.local) under a key that is
+// intentionally excluded from buildDrivePayload()/_persistLocalState(), so
+// it never leaves this device and is never written into the synced file.
+const AI_MODEL = "claude-haiku-4-5-20251001";
+let _aiKeyCache = null;
+
+async function _aiLoadApiKey() {
+  if (_aiKeyCache !== null) return _aiKeyCache;
+  const d = await API.getLocal(["_aiApiKey"]);
+  _aiKeyCache = d._aiApiKey || "";
+  return _aiKeyCache;
+}
+
+async function _aiSaveApiKey(key) {
+  _aiKeyCache = key || "";
+  await API.setLocal({ _aiApiKey: _aiKeyCache });
+}
+
+function aiEnabled() {
+  return !!S.settings.ai?.enabled;
+}
+
+// Sends a single-turn prompt to the Anthropic Messages API and returns the
+// text of the first content block. Throws on missing key or non-OK response.
+async function aiComplete(prompt, opts = {}) {
+  const apiKey = await _aiLoadApiKey();
+  if (!apiKey) {
+    const err = new Error("AI not configured");
+    err.code = "AI_NOT_CONFIGURED";
+    throw err;
+  }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: opts.model || AI_MODEL,
+      max_tokens: opts.maxTokens || 1024,
+      ...(opts.system ? { system: opts.system } : {}),
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const err = new Error(`AI request failed (${res.status})`);
+    err.code = "AI_REQUEST_FAILED";
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  return (data.content || [])
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
+}
+
+// Tests the API key currently typed into the settings field (not yet saved).
+async function testAiApiKey() {
+  const status = el("aiTestStatus");
+  const key = el("aiApiKey").value.trim();
+  if (!status) return;
+  if (!key) {
+    status.textContent = "Enter an API key first.";
+    status.style.color = "var(--error)";
+    return;
+  }
+  status.textContent = "Testing…";
+  status.style.color = "var(--text-3)";
+  const prevCache = _aiKeyCache;
+  _aiKeyCache = key;
+  try {
+    await aiComplete("Reply with just the word OK.", { maxTokens: 5 });
+    status.textContent = "✓ Connected successfully.";
+    status.style.color = "var(--success)";
+  } catch (err) {
+    status.textContent = `✗ ${err.message || "Connection failed"}`;
+    status.style.color = "var(--error)";
+  } finally {
+    _aiKeyCache = prevCache;
+  }
+}
+
 // ── Build the payload that goes to Drive ────────────────────────────────
 function buildDrivePayload() {
   return {
@@ -2469,26 +2648,66 @@ function applyCloudData(cloud) {
 
 // ── Merge helpers: combine a cloud collection with the local one without
 // dropping either side's entries (used by the connect-time backup+merge). ──
-// `idKey` falls back to `_deletedAt`, then a structural key, for items (like
-// trash entries) that may not carry an `id`.
-function _mergeById(cloudArr, localArr, preferCloud, idKey = "id") {
+// Generic union-by-key merge: for keys present on both sides, the "winning"
+// side's item is kept; cloud-order is preserved with local-only items
+// appended. Any pre-existing duplicate keys WITHIN a single side are also
+// collapsed to one entry as a side effect.
+function _mergeByKey(cloudArr, localArr, preferCloud, keyFn) {
   cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
   localArr = Array.isArray(localArr) ? localArr : [];
-  const keyOf = (item) => item?.[idKey] ?? item?._deletedAt ?? JSON.stringify(item);
   const byKey = new Map();
   const base = preferCloud ? localArr : cloudArr;
   const winner = preferCloud ? cloudArr : localArr;
-  base.forEach((item) => byKey.set(keyOf(item), item));
-  winner.forEach((item) => byKey.set(keyOf(item), item));
+  base.forEach((item) => byKey.set(keyFn(item), item));
+  winner.forEach((item) => byKey.set(keyFn(item), item));
   const order = [];
   const seen = new Set();
   cloudArr.concat(localArr).forEach((item) => {
-    const k = keyOf(item);
+    const k = keyFn(item);
     if (seen.has(k)) return;
     seen.add(k);
     order.push(byKey.get(k));
   });
   return order;
+}
+
+// `idKey` falls back to `_deletedAt`, then a structural key, for items (like
+// trash entries) that may not carry an `id`.
+function _mergeById(cloudArr, localArr, preferCloud, idKey = "id") {
+  return _mergeByKey(
+    cloudArr,
+    localArr,
+    preferCloud,
+    (item) => item?.[idKey] ?? item?._deletedAt ?? JSON.stringify(item),
+  );
+}
+
+// Merge link-like collections (Quick Access, sidebar links, imported
+// bookmarks) by normalized URL rather than `id`. Default link ids have been
+// renumbered across app versions, so the same link can carry different ids
+// on the cloud vs. local side — merging by `id` would treat those as two
+// different links and duplicate them. The URL is the link's true identity.
+function _mergeByUrl(cloudArr, localArr, preferCloud) {
+  return _mergeByKey(
+    cloudArr,
+    localArr,
+    preferCloud,
+    (item) => (item?.url ? _normUrl(item.url) : (item?.id ?? JSON.stringify(item))),
+  );
+}
+
+// Remove duplicate entries by normalized URL, keeping the first occurrence.
+// Self-heals any duplicates already sitting in local/cloud storage from
+// earlier id-based merges or renumbered defaults.
+function _dedupeByUrl(arr) {
+  if (!Array.isArray(arr)) return arr;
+  const seen = new Set();
+  return arr.filter((item) => {
+    const key = item?.url ? _normUrl(item.url) : (item?.id ?? JSON.stringify(item));
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // Merge name-only collections (e.g. workspace folders) by `name`.
@@ -2534,17 +2753,17 @@ function mergeCloudWithLocal(cloud) {
     const c = (cloud.wsData || {})[wsId] || {};
     const l = (local.wsData || {})[wsId] || {};
     wsData[wsId] = {
-      quickAccess: _mergeById(c.quickAccess, l.quickAccess, preferCloud),
+      quickAccess: _mergeByUrl(c.quickAccess, l.quickAccess, preferCloud),
       notes: _mergeById(c.notes, l.notes, preferCloud),
       tasks: _mergeById(c.tasks, l.tasks, preferCloud),
-      importedBookmarks: _mergeById(c.importedBookmarks, l.importedBookmarks, preferCloud),
+      importedBookmarks: _mergeByUrl(c.importedBookmarks, l.importedBookmarks, preferCloud),
       folders: _mergeByName(c.folders, l.folders),
     };
   });
 
   const sbLinks = { ...local.settings.sbLinks, ...(cloud.settings?.sbLinks || {}) };
   ["google", "projects", "others", "socials"].forEach((g) => {
-    sbLinks[g] = _mergeById(cloud.settings?.sbLinks?.[g], local.settings?.sbLinks?.[g], preferCloud);
+    sbLinks[g] = _mergeByUrl(cloud.settings?.sbLinks?.[g], local.settings?.sbLinks?.[g], preferCloud);
   });
 
   const kanbanIds = new Set([
@@ -2658,9 +2877,30 @@ async function pullFromDrive() {
   const cloud = await _fetchCloudPayload(token, fileIds);
   if (!cloud) return false;
 
+  let decoded = cloud;
+  if (cloud._e2e === 1) {
+    const pass = await _e2eLoadPassphrase();
+    if (!pass) {
+      showToast(
+        "Cloud backup is encrypted — enter your sync passphrase in Settings",
+        "error",
+      );
+      return false;
+    }
+    try {
+      decoded = await _e2eDecryptPayload(cloud, pass);
+    } catch {
+      showToast(
+        "Could not decrypt cloud backup — check your sync passphrase",
+        "error",
+      );
+      return false;
+    }
+  }
+
   try {
-    if ((cloud._savedAt || 0) > S._savedAt) {
-      applyCloudData(cloud);
+    if ((decoded._savedAt || 0) > S._savedAt) {
+      applyCloudData(decoded);
       await _persistLocalState();
       _refreshAfterCloudApply();
       showToast("Data synced from cloud ☁", "success");
@@ -2690,7 +2930,15 @@ async function pushToDrive() {
 async function _doPush(token) {
   setSyncStatus("syncing");
   const payload = buildDrivePayload();
-  const body = JSON.stringify(payload);
+  let body;
+  if (S.settings.e2e?.enabled) {
+    const pass = await _e2eLoadPassphrase();
+    body = pass
+      ? JSON.stringify(await _e2eEncryptPayload(payload, pass))
+      : JSON.stringify(payload);
+  } else {
+    body = JSON.stringify(payload);
+  }
   const boundary = "novatab_boundary_" + Date.now();
   // Only PATCH if Drive._fileId was set by a successful POST *in this session*.
   // Never search for existing files on push — avoids 403s from files created by
@@ -3483,6 +3731,72 @@ function deleteWorkspace(e, wsId) {
       showToast(`Workspace deleted`, "success");
     },
   );
+}
+
+// ===== SHAREABLE WORKSPACES (export/import) =====
+function exportWorkspace() {
+  const ws = S.workspaces.find((w) => w.id === S.activeWsId);
+  if (!ws) return;
+  const data = S.wsData[ws.id] || {};
+  const payload = {
+    __novatabWorkspace: true,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    workspace: { name: ws.name, icon: ws.icon },
+    data: {
+      quickAccess: data.quickAccess || [],
+      notes: data.notes || [],
+      tasks: data.tasks || [],
+      importedBookmarks: data.importedBookmarks || [],
+      folders: data.folders || [],
+    },
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `novatab-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
+  a.click();
+  showToast(`Exported "${ws.name}"`, "success");
+}
+
+function importWorkspaceFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (!d.__novatabWorkspace || !d.workspace || !d.data) {
+        showToast("Not a valid workspace file", "error");
+        return;
+      }
+      const baseName = d.workspace.name || "Imported";
+      const existingNames = new Set(S.workspaces.map((w) => w.name));
+      let finalName = baseName,
+        n = 1;
+      while (existingNames.has(finalName)) finalName = `${baseName} (${++n})`;
+      const ws = { id: Date.now(), name: finalName, icon: d.workspace.icon || "📥" };
+      S.workspaces.push(ws);
+      S.wsData[ws.id] = {
+        quickAccess: _dedupeByUrl(
+          Array.isArray(d.data.quickAccess) ? d.data.quickAccess : [],
+        ),
+        notes: Array.isArray(d.data.notes) ? d.data.notes : [],
+        tasks: Array.isArray(d.data.tasks) ? d.data.tasks : [],
+        importedBookmarks: _dedupeByUrl(
+          Array.isArray(d.data.importedBookmarks) ? d.data.importedBookmarks : [],
+        ),
+        folders: Array.isArray(d.data.folders) ? d.data.folders : [],
+      };
+      save();
+      setActiveWorkspace(ws.id);
+      renderAll();
+      showToast(`Imported workspace "${finalName}"`, "success");
+    } catch {
+      showToast("Could not import — invalid workspace file", "error");
+    }
+  };
+  reader.readAsText(file);
 }
 
 // ===== FIX #2 — BOOKMARKS (Real Chrome API) =====
@@ -5952,6 +6266,406 @@ function saveHeroQuoteEdit() {
   }
 }
 
+// ===== AI DAILY BRIEFING =====
+function _syncAiUI() {
+  const section = el("aiBriefingSection");
+  if (!section) return;
+  if (!aiEnabled()) {
+    section.style.display = "none";
+    return;
+  }
+  section.style.display = "";
+  const cache = S.settings.aiBriefingCache;
+  const todayKey = new Date().toDateString();
+  if (cache && cache.date === todayKey) {
+    _renderAiBriefingText(cache.text);
+  } else {
+    loadAiBriefing();
+  }
+}
+
+async function loadAiBriefing() {
+  const body = el("aiBriefingBody");
+  if (!body || !aiEnabled()) return;
+  const apiKey = await _aiLoadApiKey();
+  if (!apiKey) {
+    _renderAiBriefingSetup();
+    return;
+  }
+  body.innerHTML = `
+    <div class="skeleton skeleton-text" style="width:95%"></div>
+    <div class="skeleton skeleton-text" style="width:88%"></div>
+    <div class="skeleton skeleton-text" style="width:60%"></div>
+  `;
+  const tasks = wsTasks().filter((t) => !t.done);
+  const taskList =
+    tasks
+      .slice(0, 5)
+      .map((t) => `- ${t.text}`)
+      .join("\n") || "(none)";
+  const weatherCity = el("weatherCity")?.textContent || "";
+  const weatherTemp = el("weatherTemp")?.textContent || "";
+  const weatherDesc = el("weatherDesc")?.textContent || "";
+  const weatherLine =
+    weatherCity && !["Detecting…", "Unavailable"].includes(weatherCity)
+      ? `${weatherTemp}, ${weatherDesc} in ${weatherCity}`
+      : "unavailable";
+  const prompt = `Write a short, warm daily briefing (2-3 sentences max) for ${S.user?.name || "the user"}.
+Weather: ${weatherLine}
+Open tasks for today:
+${taskList}
+Mention the weather naturally if available, nudge toward the most important pending task (if any), and end on a brief upbeat note. Plain text only, no markdown, no greeting like "Good morning".`;
+  try {
+    const text = await aiComplete(prompt, {
+      system:
+        "You are a concise, friendly assistant that writes short daily briefings for a personal dashboard. Keep it under 60 words, plain text, no markdown.",
+      maxTokens: 200,
+    });
+    S.settings.aiBriefingCache = { date: new Date().toDateString(), text };
+    save();
+    _renderAiBriefingText(text);
+  } catch (err) {
+    _renderAiBriefingError(err);
+  }
+}
+
+function _renderAiBriefingText(text) {
+  const body = el("aiBriefingBody");
+  if (!body) return;
+  body.innerHTML = `<div class="ai-briefing-text"></div>`;
+  body.querySelector(".ai-briefing-text").textContent = text;
+}
+
+function _renderAiBriefingSetup() {
+  const body = el("aiBriefingBody");
+  if (!body) return;
+  body.innerHTML = `<div class="ai-briefing-setup">
+    <span>Add your Anthropic API key to enable AI-generated briefings.</span>
+    <button class="edit-btn" id="aiBriefingSetupBtn">Open Settings</button>
+  </div>`;
+  el("aiBriefingSetupBtn")?.addEventListener("click", openSettings);
+}
+
+function _renderAiBriefingError(err) {
+  const body = el("aiBriefingBody");
+  if (!body) return;
+  if (err?.code === "AI_NOT_CONFIGURED") {
+    _renderAiBriefingSetup();
+    return;
+  }
+  body.innerHTML = `<div class="ai-briefing-setup"><span>Couldn't generate a briefing right now (${escH(err?.message || "error")}).</span></div>`;
+}
+
+function refreshAiBriefing() {
+  S.settings.aiBriefingCache = null;
+  save();
+  loadAiBriefing();
+}
+
+// ===== SMART AUTO-ORGANIZE =====
+let _organizeResults = []; // [{title, url, workspace}]
+
+function _organizeSetupHtml(msg) {
+  return `<div class="organize-setup">
+    <span>${escH(msg)}</span>
+    <button class="settings-action-btn" id="organizeOpenSettingsBtn">Open Settings</button>
+  </div>`;
+}
+
+async function openSmartOrganizeModal() {
+  openModal("smartOrganizeModal");
+  el("applyOrganizeBtn").style.display = "none";
+  const body = el("organizeModalBody");
+  _organizeResults = [];
+
+  if (!IS_CHROME || !chrome.tabs) {
+    body.innerHTML = `<div class="organize-empty">Requires Chrome extension.</div>`;
+    return;
+  }
+  if (!aiEnabled()) {
+    body.innerHTML = _organizeSetupHtml(
+      "Add your Anthropic API key in Settings to enable Smart Organize.",
+    );
+    el("organizeOpenSettingsBtn").addEventListener("click", () => {
+      closeModal("smartOrganizeModal");
+      openSettings();
+    });
+    return;
+  }
+  if (S.workspaces.length < 1) {
+    body.innerHTML = `<div class="organize-empty">Create a workspace first.</div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Scanning open tabs…</div>`;
+  const tabs = await new Promise((res) => chrome.tabs.query({}, res));
+  const ownPrefix = chrome.runtime.getURL("");
+  const existingUrls = new Set();
+  S.workspaces.forEach((ws) =>
+    (S.wsData[ws.id]?.importedBookmarks || []).forEach((b) =>
+      existingUrls.add(_normUrl(b.url)),
+    ),
+  );
+  const candidates = [];
+  const seen = new Set();
+  (tabs || []).forEach((t) => {
+    if (!t.url) return;
+    if (t.url.startsWith("chrome://") || t.url.startsWith(ownPrefix)) return;
+    const key = _normUrl(t.url);
+    if (existingUrls.has(key) || seen.has(key)) return;
+    seen.add(key);
+    candidates.push(t);
+  });
+
+  if (!candidates.length) {
+    body.innerHTML = `<div class="organize-empty">No new tabs to organize — everything open is already saved.</div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Asking AI to sort ${candidates.length} tab${candidates.length === 1 ? "" : "s"}…</div>`;
+  const wsNames = S.workspaces.map((w) => w.name);
+  const list = candidates
+    .map((t, i) => `${i}. [${getDomain(t.url)}] ${(t.title || t.url).slice(0, 80)}`)
+    .join("\n");
+  const prompt = `You are sorting browser tabs into existing workspaces.
+Workspaces: ${wsNames.join(", ")}
+
+Tabs:
+${list}
+
+For each numbered tab, pick the single best-matching workspace from the list above. Respond with ONLY a JSON array (no markdown, no commentary), one object per tab in the same order: {"workspace": "<exact workspace name from the list>"}`;
+
+  try {
+    const raw = await aiComplete(prompt, {
+      system:
+        "You are a precise JSON-only classification engine. Always respond with valid JSON and nothing else.",
+      maxTokens: 1500,
+    });
+    const parsed = _organizeParseJson(raw);
+    _organizeResults = candidates.map((t, i) => ({
+      title: t.title || t.url,
+      url: t.url,
+      workspace: wsNames.includes(parsed?.[i]?.workspace)
+        ? parsed[i].workspace
+        : S.workspaces.find((w) => w.id === S.activeWsId)?.name || wsNames[0],
+    }));
+    _renderOrganizeResults();
+  } catch (err) {
+    if (err?.code === "AI_NOT_CONFIGURED") {
+      body.innerHTML = _organizeSetupHtml(
+        "Add your Anthropic API key in Settings to enable Smart Organize.",
+      );
+      el("organizeOpenSettingsBtn").addEventListener("click", () => {
+        closeModal("smartOrganizeModal");
+        openSettings();
+      });
+    } else {
+      body.innerHTML = `<div class="organize-empty">Couldn't sort tabs right now (${escH(err?.message || "error")}).</div>`;
+    }
+  }
+}
+
+function _organizeParseJson(raw) {
+  const match = raw.match(/\[[\s\S]*\]/);
+  return JSON.parse(match ? match[0] : raw);
+}
+
+function _renderOrganizeResults() {
+  const body = el("organizeModalBody");
+  const groups = {};
+  _organizeResults.forEach((r, i) => {
+    (groups[r.workspace] = groups[r.workspace] || []).push(i);
+  });
+  body.innerHTML = Object.entries(groups)
+    .map(
+      ([wsName, idxs]) => `
+    <div class="organize-group">
+      <div class="organize-group-title">${escH(wsName)} <span class="cmd-domain-tag">${idxs.length}</span></div>
+      ${idxs
+        .map((i) => {
+          const r = _organizeResults[i];
+          return `<label class="organize-item">
+            <input type="checkbox" checked data-organize-idx="${i}">
+            <img src="${favSrc(r.url)}" onerror="this.style.opacity=0" alt="">
+            <span class="organize-item-title">${escH(r.title)}</span>
+            <span class="organize-item-domain">${escH(getDomain(r.url))}</span>
+          </label>`;
+        })
+        .join("")}
+    </div>`,
+    )
+    .join("");
+  el("applyOrganizeBtn").style.display = "";
+}
+
+function applySmartOrganize() {
+  const checked = el("organizeModalBody").querySelectorAll(
+    "input[data-organize-idx]:checked",
+  );
+  let count = 0;
+  checked.forEach((cb) => {
+    const r = _organizeResults[Number(cb.dataset.organizeIdx)];
+    if (!r) return;
+    const ws =
+      S.workspaces.find((w) => w.name === r.workspace) ||
+      S.workspaces.find((w) => w.id === S.activeWsId);
+    if (!ws) return;
+    if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
+    const d = S.wsData[ws.id];
+    if (!d.importedBookmarks) d.importedBookmarks = [];
+    d.importedBookmarks.push({
+      id: "ai_" + Date.now() + "_" + count,
+      title: r.title,
+      url: r.url,
+      folderName: "Smart Organize",
+    });
+    d.importedBookmarks = _dedupeByUrl(d.importedBookmarks);
+    count++;
+  });
+  save();
+  renderWorkspaceBookmarks();
+  renderSidebarFolders();
+  closeModal("smartOrganizeModal");
+  showToast(`Organized ${count} tab${count === 1 ? "" : "s"}`, "success");
+}
+
+// ===== VOICE QUICK-CAPTURE =====
+let _voiceRecognition = null;
+let _voiceListening = false;
+let _voiceFinalText = "";
+
+function _voiceSupported() {
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function openVoiceCaptureModal() {
+  _voiceFinalText = "";
+  el("voiceTranscript").value = "";
+  const micBtn = el("voiceMicBtn");
+  if (!_voiceSupported()) {
+    el("voiceStatus").textContent =
+      "Voice capture isn't supported in this browser.";
+    micBtn.disabled = true;
+  } else {
+    el("voiceStatus").textContent = "Tap the mic to start speaking";
+    micBtn.disabled = false;
+    micBtn.classList.remove("listening");
+  }
+  openModal("voiceCaptureModal");
+}
+
+function toggleVoiceRecording() {
+  if (!_voiceSupported()) return;
+  if (_voiceListening) {
+    _voiceStopRecognition();
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _voiceRecognition = new SR();
+  _voiceRecognition.continuous = true;
+  _voiceRecognition.interimResults = true;
+  _voiceRecognition.lang = navigator.language || "en-US";
+
+  _voiceRecognition.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        _voiceFinalText += (_voiceFinalText ? " " : "") + transcript.trim();
+      } else {
+        interim += transcript;
+      }
+    }
+    el("voiceTranscript").value = [_voiceFinalText, interim]
+      .filter(Boolean)
+      .join(" ");
+  };
+  _voiceRecognition.onerror = (event) => {
+    el("voiceStatus").textContent = `Mic error: ${event.error}`;
+    _voiceStopRecognition();
+  };
+  _voiceRecognition.onend = () => {
+    _voiceListening = false;
+    el("voiceMicBtn").classList.remove("listening");
+    el("voiceStatus").textContent = _voiceFinalText
+      ? "Stopped. Edit the text below, then save it."
+      : "Tap the mic to start speaking";
+  };
+
+  try {
+    _voiceRecognition.start();
+    _voiceListening = true;
+    el("voiceMicBtn").classList.add("listening");
+    el("voiceStatus").textContent = "Listening… tap the mic to stop.";
+  } catch {
+    el("voiceStatus").textContent = "Couldn't start the microphone.";
+  }
+}
+
+function _voiceStopRecognition() {
+  if (_voiceRecognition && _voiceListening) {
+    _voiceRecognition.stop();
+  }
+  _voiceListening = false;
+  el("voiceMicBtn")?.classList.remove("listening");
+}
+
+function _voiceGetText() {
+  return el("voiceTranscript").value.trim();
+}
+
+function saveVoiceAsNote() {
+  const text = _voiceGetText();
+  if (!text) {
+    showToast("Say or type something first", "error");
+    return;
+  }
+  _voiceStopRecognition();
+  const now = Date.now();
+  wsData().notes.unshift({
+    id: now,
+    title: text.slice(0, 60),
+    content: text,
+    date: now,
+    updatedAt: now,
+    tags: ["voice"],
+    pinned: false,
+  });
+  save();
+  renderNotesWidget();
+  renderNotesView();
+  closeModal("voiceCaptureModal");
+  showToast("Saved as note", "success");
+}
+
+function saveVoiceAsTask() {
+  const text = _voiceGetText();
+  if (!text) {
+    showToast("Say or type something first", "error");
+    return;
+  }
+  _voiceStopRecognition();
+  addTask(text.slice(0, 200));
+  closeModal("voiceCaptureModal");
+}
+
+function saveVoiceAsJournal() {
+  const text = _voiceGetText();
+  if (!text) {
+    showToast("Say or type something first", "error");
+    return;
+  }
+  _voiceStopRecognition();
+  const key = _todayKey();
+  const entry = S.journal[key] || {};
+  entry.text = entry.text ? `${entry.text}\n\n${text}` : text;
+  entry.updatedAt = Date.now();
+  S.journal[key] = entry;
+  save();
+  closeModal("voiceCaptureModal");
+  showToast("Added to today's journal", "success");
+}
+
 // ===== FOCUS TIMER =====
 const T = { total: 1500, remaining: 1500, running: false, iv: null };
 const CIRC = 2 * Math.PI * 44;
@@ -5976,12 +6690,14 @@ function timerPlay() {
   T.running = true;
   el("timerPlayBtn").innerHTML =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+  applyFocusBlockRules(true);
   T.iv = setInterval(() => {
     if (T.remaining <= 0) {
       clearInterval(T.iv);
       T.running = false;
       el("timerPlayBtn").innerHTML =
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+      applyFocusBlockRules(false);
       showToast("⏰ Focus session complete! Great job!", "success");
       return;
     }
@@ -5994,6 +6710,7 @@ function pauseTimer() {
   T.running = false;
   el("timerPlayBtn").innerHTML =
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
+  applyFocusBlockRules(false);
 }
 function resetTimer(mins) {
   clearInterval(T.iv);
@@ -6008,6 +6725,73 @@ function resetTimer(mins) {
       b.classList.toggle("active", parseInt(b.dataset.min) === (mins || 25)),
     );
   renderTimerDisplay();
+  applyFocusBlockRules(false);
+}
+
+// ===== FOCUS MODE — SITE BLOCKING =====
+const FOCUS_RULE_BASE_ID = 9000;
+
+// Toggle declarativeNetRequest rules that block S.settings.focus.blockedSites.
+// `active` reflects whether a focus session is currently running; blocking
+// only takes effect when the user has also enabled Focus Mode in settings.
+async function applyFocusBlockRules(active) {
+  if (!IS_CHROME || !chrome.declarativeNetRequest) return;
+  const sites = S.settings.focus?.blockedSites || [];
+  const removeRuleIds = sites.map((_, i) => FOCUS_RULE_BASE_ID + i);
+  const shouldBlock = active && S.settings.focus?.enabled && sites.length;
+  const addRules = shouldBlock
+    ? sites.map((domain, i) => ({
+        id: FOCUS_RULE_BASE_ID + i,
+        priority: 1,
+        action: { type: "block" },
+        condition: {
+          urlFilter: `||${domain}`,
+          resourceTypes: ["main_frame"],
+        },
+      }))
+    : [];
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds,
+      addRules,
+    });
+  } catch (e) {
+    console.warn("Focus mode: failed to update block rules", e);
+  }
+}
+
+function _syncFocusModeUI() {
+  el("focusModeBtn")?.classList.toggle("active", !!S.settings.focus?.enabled);
+}
+
+function openFocusModeModal() {
+  el("focusModeToggle").checked = !!S.settings.focus?.enabled;
+  el("focusModeSites").value = (S.settings.focus?.blockedSites || []).join("\n");
+  openModal("focusModeModal");
+}
+
+function saveFocusModeSettings() {
+  const lines = el("focusModeSites").value.split("\n");
+  const sites = [];
+  const seen = new Set();
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const domain = getDomain(safeUrl(trimmed) || trimmed) || trimmed;
+    if (!seen.has(domain)) {
+      seen.add(domain);
+      sites.push(domain);
+    }
+  });
+  S.settings.focus = {
+    enabled: el("focusModeToggle").checked,
+    blockedSites: sites,
+  };
+  save();
+  _syncFocusModeUI();
+  applyFocusBlockRules(T.running);
+  closeModal("focusModeModal");
+  showToast("Focus mode settings saved", "success");
 }
 
 // ===== TRASH =====
@@ -6431,6 +7215,13 @@ async function renderAnalytics() {
           <div class="skeleton skeleton-text" style="width:75%"></div>
         </div>
       </div>
+      <div class="insights-card full" id="an-activity">
+        <div class="insights-card-hd"><span class="insights-card-title">Site Activity — Last 14 Days</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
+          <div class="skeleton skeleton-block" style="height:90px"></div>
+          <div class="ins-empty" style="display:none"></div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -6516,6 +7307,64 @@ async function renderAnalytics() {
     const c = el("an-history");
     if (c)
       c.querySelector(".ins-empty").textContent = "Requires Chrome extension.";
+  }
+
+  // --- Site Activity trend (async) ---
+  if (IS_CHROME && chrome.history) {
+    const DAYS = 14;
+    const since = Date.now() - DAYS * 86400000;
+    chrome.history.search(
+      { text: "", startTime: since, maxResults: 5000 },
+      (items) => {
+        const card = el("an-activity");
+        if (!card) return;
+        const ownPrefix = chrome.runtime.getURL("");
+        const dayCounts = {};
+        const todayKey = new Date().toDateString();
+        (items || [])
+          .filter((item) => !item.url?.startsWith(ownPrefix))
+          .forEach((item) => {
+            const key = new Date(item.lastVisitTime).toDateString();
+            dayCounts[key] = (dayCounts[key] || 0) + (item.visitCount || 1);
+          });
+        const buckets = [];
+        for (let i = DAYS - 1; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 86400000);
+          const key = d.toDateString();
+          buckets.push({
+            label: d.toLocaleDateString(undefined, { weekday: "short" })[0],
+            count: dayCounts[key] || 0,
+            isToday: key === todayKey,
+          });
+        }
+        const max = Math.max(1, ...buckets.map((b) => b.count));
+        card.innerHTML = `
+          <div class="insights-card-hd">
+            <span class="insights-card-title">Site Activity — Last ${DAYS} Days</span>
+            <span class="insights-card-badge muted">${(dayCounts[todayKey] || 0).toLocaleString()} pages today</span>
+          </div>
+          <div class="ins-vbar-chart">
+            ${buckets
+              .map(
+                (b) => `
+              <div class="ins-vbar-col${b.isToday ? " today" : ""}" data-tip="${b.count.toLocaleString()} pages">
+                <span class="ins-vbar-val">${b.count || ""}</span>
+                <div class="ins-vbar" style="height:${Math.max(3, Math.round((b.count / max) * 90))}px"></div>
+                <span class="ins-vbar-label">${escH(b.label)}</span>
+              </div>`,
+              )
+              .join("")}
+          </div>
+        `;
+      },
+    );
+  } else {
+    const c = el("an-activity");
+    const empty = c?.querySelector(".ins-empty");
+    if (empty) {
+      empty.style.display = "";
+      empty.textContent = "Requires Chrome extension.";
+    }
   }
 
   // --- Downloads (async) ---
@@ -6614,7 +7463,7 @@ function initTooltips() {
 }
 
 // ===== FIX #4 — SETTINGS PANEL =====
-function openSettings() {
+async function openSettings() {
   const alreadyImported = S.workspaces.some(
     (w) => w.name === "Chrome Bookmarks",
   );
@@ -6622,8 +7471,12 @@ function openSettings() {
     alreadyImported ? "none" : "";
   // Populate current values
   el("settingsName").value = S.user.name;
-  el("darkThemeBtn").classList.toggle("active", S.settings.theme === "dark");
-  el("lightThemeBtn").classList.toggle("active", S.settings.theme === "light");
+  _syncThemeGridUI();
+  el("e2eToggle").checked = !!S.settings.e2e?.enabled;
+  el("e2ePassphrase").value = await _e2eLoadPassphrase();
+  el("aiToggle").checked = !!S.settings.ai?.enabled;
+  el("aiApiKey").value = await _aiLoadApiKey();
+  el("aiTestStatus").textContent = "";
   el("clock12Btn").classList.toggle("active", S.settings.clockFormat === "12");
   el("clock24Btn").classList.toggle("active", S.settings.clockFormat === "24");
   el("showSecondsToggle").checked = !!S.settings.showSeconds;
@@ -6653,7 +7506,7 @@ function closeSettings() {
   el("settingsPanel").classList.remove("open");
   el("settingsOverlay").classList.remove("open");
 }
-function saveSettings() {
+async function saveSettings() {
   const name = el("settingsName").value.trim() || S.user.name;
   S.user.name = name;
   S.settings.widgets.notes = el("widgetNotesToggle").checked;
@@ -6663,10 +7516,17 @@ function saveSettings() {
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
+  S.settings.e2e = S.settings.e2e || {};
+  S.settings.e2e.enabled = el("e2eToggle").checked;
+  await _e2eSavePassphrase(el("e2ePassphrase").value);
+  S.settings.ai = S.settings.ai || {};
+  S.settings.ai.enabled = el("aiToggle").checked;
+  await _aiSaveApiKey(el("aiApiKey").value.trim());
   applyCardGlow(S.settings.cardGlow);
   updateAvatarDisplay();
   updateGreeting();
   applyWidgetVisibility();
+  _syncAiUI();
   save();
   closeSettings();
   showToast("Settings saved!", "success");
@@ -6688,8 +7548,27 @@ function applyTheme(theme) {
     if (icon)
       icon.innerHTML =
         '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
-    if (label) label.textContent = "Dark";
+    if (label)
+      label.textContent =
+        THEME_PRESETS.find((t) => t.id === theme)?.label || "Dark";
   }
+  _syncThemeGridUI();
+}
+
+// Theme marketplace — curated theme presets for the Settings theme grid
+const THEME_PRESETS = [
+  { id: "dark", label: "Dark" },
+  { id: "light", label: "Light" },
+  { id: "nord", label: "Nord" },
+  { id: "dracula", label: "Dracula" },
+  { id: "catppuccin", label: "Catppuccin" },
+  { id: "solarized", label: "Solarized" },
+];
+
+function _syncThemeGridUI() {
+  document.querySelectorAll("#themeGrid .theme-card").forEach((c) => {
+    c.classList.toggle("active", c.dataset.theme === S.settings.theme);
+  });
 }
 function applyAccent(color) {
   if (!color) return;
@@ -6811,7 +7690,7 @@ function closeCmdPalette() {
 }
 
 function _cmdEmptyState() {
-  return `<div class="cmd-empty"><div class="cmd-empty-icon">⌕</div>Type to search bookmarks and notes</div>`;
+  return `<div class="cmd-empty"><div class="cmd-empty-icon">⌕</div>Search bookmarks, notes, tasks, history, tabs &amp; more</div>`;
 }
 
 function _buildCmdResults(q) {
@@ -6853,15 +7732,63 @@ function _buildCmdResults(q) {
         noteMatches.push(n);
     });
   }
+  const taskMatches = [];
+  for (const ws of S.workspaces) {
+    const tasks = S.wsData[ws.id]?.tasks || [];
+    tasks.forEach((t) => {
+      if ((t.text || "").toLowerCase().includes(ql)) taskMatches.push(t);
+    });
+  }
+  const readingMatches = (S.readingQueue || []).filter(
+    (r) =>
+      (r.title || "").toLowerCase().includes(ql) ||
+      (r.url || "").toLowerCase().includes(ql),
+  );
+  const sessionMatches = (S.tabSessions || []).filter(
+    (s) =>
+      (s.name || "").toLowerCase().includes(ql) ||
+      (s.tabs || []).some(
+        (t) =>
+          (t.title || "").toLowerCase().includes(ql) ||
+          (t.url || "").toLowerCase().includes(ql),
+      ),
+  );
+  const journalMatches = Object.entries(S.journal || {})
+    .filter(([, entry]) => (entry?.text || "").toLowerCase().includes(ql))
+    .map(([date, entry]) => ({ date, ...entry }))
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
   return {
     bmMatches: bmMatches.slice(0, 8),
     noteMatches: noteMatches.slice(0, 3),
+    taskMatches: taskMatches.slice(0, 4),
+    readingMatches: readingMatches.slice(0, 3),
+    sessionMatches: sessionMatches.slice(0, 3),
+    journalMatches: journalMatches.slice(0, 3),
   };
 }
 
+let _cmdAsyncToken = 0;
+
 function _renderCmdResults(q) {
-  const { bmMatches, noteMatches } = _buildCmdResults(q);
+  const {
+    bmMatches,
+    noteMatches,
+    taskMatches,
+    readingMatches,
+    sessionMatches,
+    journalMatches,
+  } = _buildCmdResults(q);
   let html = "";
+
+  if (aiEnabled()) {
+    html += `<div class="cmd-result-item cmd-ai-item" data-cmd-item data-cmd-ai>
+      <div class="cmd-favicon-wrap cmd-ai-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+      </div>
+      <div class="cmd-ai-label">Ask AI: <em>"${escH(q)}"</em></div>
+      <span class="cmd-ai-hint">⏎</span>
+    </div>`;
+  }
 
   if (bmMatches.length) {
     html += `<div class="cmd-section-label">Bookmarks</div>`;
@@ -6895,7 +7822,79 @@ function _renderCmdResults(q) {
       .join("");
   }
 
-  if (!bmMatches.length && !noteMatches.length) {
+  if (taskMatches.length) {
+    html += `<div class="cmd-section-label">Tasks</div>`;
+    html += taskMatches
+      .map(
+        (t) => `
+      <div class="cmd-result-item" data-cmd-item data-task-id="${t.id}">
+        <div class="cmd-type-icon">${t.done ? "✅" : "☐"}</div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${escH(t.text)}</div>
+        </div>
+      </div>`,
+      )
+      .join("");
+  }
+
+  if (readingMatches.length) {
+    html += `<div class="cmd-section-label">Reading Queue</div>`;
+    html += readingMatches
+      .map(
+        (r) => `
+      <div class="cmd-result-item" data-cmd-item data-reading-id="${r.id}">
+        <div class="cmd-type-icon">📖</div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${escH(r.title || r.url)}</div>
+        </div>
+        <div class="cmd-domain-tag">${escH(getDomain(r.url))}</div>
+      </div>`,
+      )
+      .join("");
+  }
+
+  if (sessionMatches.length) {
+    html += `<div class="cmd-section-label">Sessions</div>`;
+    html += sessionMatches
+      .map(
+        (s) => `
+      <div class="cmd-result-item" data-cmd-item data-session-id="${s.id}">
+        <div class="cmd-type-icon">🖥️</div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${escH(s.name)}</div>
+        </div>
+        <div class="cmd-domain-tag">${s.tabs.length} tabs</div>
+      </div>`,
+      )
+      .join("");
+  }
+
+  if (journalMatches.length) {
+    html += `<div class="cmd-section-label">Journal</div>`;
+    html += journalMatches
+      .map((j) => {
+        const snippet = (j.text || "").slice(0, 60);
+        return `
+      <div class="cmd-result-item" data-cmd-item data-journal-date="${j.date}">
+        <div class="cmd-type-icon">${j.mood || "📓"}</div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${escH(j.date)}</div>
+          <div class="cmd-item-sub">${escH(snippet)}${(j.text || "").length > 60 ? "…" : ""}</div>
+        </div>
+      </div>`;
+      })
+      .join("");
+  }
+
+  const syncEmpty =
+    !bmMatches.length &&
+    !noteMatches.length &&
+    !taskMatches.length &&
+    !readingMatches.length &&
+    !sessionMatches.length &&
+    !journalMatches.length;
+
+  if (syncEmpty) {
     html += `<div class="cmd-empty"><div class="cmd-empty-icon" style="font-size:20px">∅</div>No results for "<em style="color:var(--accent-2)">${escH(q)}</em>"</div>`;
   }
 
@@ -6917,6 +7916,245 @@ function _renderCmdResults(q) {
         closeCmdPalette();
       });
     });
+
+  // Wire task clicks
+  el("cmdResults")
+    .querySelectorAll("[data-task-id]")
+    .forEach((el2) => {
+      el2.addEventListener("click", () => {
+        navigateTo("home");
+        closeCmdPalette();
+      });
+    });
+
+  // Wire reading queue clicks
+  el("cmdResults")
+    .querySelectorAll("[data-reading-id]")
+    .forEach((el2) => {
+      el2.addEventListener("click", () => {
+        navigateTo("reading");
+        closeCmdPalette();
+      });
+    });
+
+  // Wire session clicks
+  el("cmdResults")
+    .querySelectorAll("[data-session-id]")
+    .forEach((el2) => {
+      el2.addEventListener("click", () => {
+        navigateTo("sessions");
+        closeCmdPalette();
+      });
+    });
+
+  // Wire journal clicks
+  el("cmdResults")
+    .querySelectorAll("[data-journal-date]")
+    .forEach((el2) => {
+      el2.addEventListener("click", () => {
+        const date = el2.dataset.journalDate;
+        navigateTo("journal");
+        setTimeout(() => selectJournalDay(date), 150);
+        closeCmdPalette();
+      });
+    });
+
+  // Wire "Ask AI" click
+  el("cmdResults")
+    .querySelector("[data-cmd-ai]")
+    ?.addEventListener("click", () => _cmdAskAI(q));
+
+  _cmdSearchAsync(q);
+}
+
+// Appends "Open Tabs" and "History" sections once async lookups resolve.
+async function _cmdSearchAsync(q) {
+  if (!IS_CHROME || !chrome.tabs) return;
+  const token = ++_cmdAsyncToken;
+  const ql = q.toLowerCase();
+  const ownPrefix = chrome.runtime.getURL("");
+
+  const [tabs, historyItems] = await Promise.all([
+    new Promise((res) => chrome.tabs.query({}, (t) => res(t || []))),
+    API.history(q),
+  ]);
+  if (token !== _cmdAsyncToken) return; // query changed / palette closed
+  if (el("cmdInput").value.trim().toLowerCase() !== ql) return;
+
+  const tabMatches = tabs
+    .filter(
+      (t) =>
+        t.url &&
+        !t.url.startsWith("chrome://") &&
+        !t.url.startsWith(ownPrefix) &&
+        ((t.title || "").toLowerCase().includes(ql) ||
+          t.url.toLowerCase().includes(ql)),
+    )
+    .slice(0, 5);
+
+  const historyMatches = (historyItems || [])
+    .filter((h) => !h.url?.startsWith(ownPrefix))
+    .slice(0, 5);
+
+  if (!tabMatches.length && !historyMatches.length) return;
+
+  let html = "";
+  if (tabMatches.length) {
+    html += `<div class="cmd-section-label">Open Tabs</div>`;
+    html += tabMatches
+      .map(
+        (t) => `
+      <div class="cmd-result-item" data-cmd-item data-tab-id="${t.id}" data-tab-winid="${t.windowId}">
+        <div class="cmd-favicon-wrap"><img src="${favSrc(t.url)}" onerror="this.style.opacity=0" alt=""></div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${escH(t.title || t.url)}</div>
+        </div>
+        <div class="cmd-domain-tag">${escH(getDomain(t.url))}</div>
+      </div>`,
+      )
+      .join("");
+  }
+  if (historyMatches.length) {
+    html += `<div class="cmd-section-label">History</div>`;
+    html += historyMatches
+      .map(
+        (h) => `
+      <a href="${escH(h.url)}" class="cmd-result-item" target="_blank" data-cmd-item>
+        <div class="cmd-favicon-wrap"><img src="${favSrc(h.url)}" onerror="this.style.opacity=0" alt=""></div>
+        <div class="cmd-item-body">
+          <div class="cmd-item-title">${escH(h.title || h.url)}</div>
+        </div>
+        <div class="cmd-domain-tag">${escH(getDomain(h.url))}</div>
+      </a>`,
+      )
+      .join("");
+  }
+
+  const results = el("cmdResults");
+  // Insert after the synced "no results" block (if present) but before the
+  // trailing Google search item, so the order stays predictable.
+  const googleItem = results.querySelector(".cmd-google-item");
+  const wrap = document.createElement("div");
+  wrap.innerHTML = html;
+  if (googleItem) {
+    while (wrap.firstChild) results.insertBefore(wrap.firstChild, googleItem);
+  } else {
+    while (wrap.firstChild) results.appendChild(wrap.firstChild);
+  }
+
+  // Remove the generic "no results" message now that we have async results
+  const emptyEl = results.querySelector(".cmd-empty");
+  if (emptyEl && (tabMatches.length || historyMatches.length))
+    emptyEl.remove();
+
+  // Wire open-tab clicks
+  results.querySelectorAll("[data-tab-id]").forEach((el2) => {
+    el2.addEventListener("click", () => {
+      const tabId = Number(el2.dataset.tabId);
+      const winId = Number(el2.dataset.tabWinid);
+      chrome.tabs.update(tabId, { active: true });
+      chrome.windows.update(winId, { focused: true });
+      closeCmdPalette();
+    });
+  });
+}
+
+async function _cmdAskAI(q) {
+  if (!q) return;
+  const results = el("cmdResults");
+  results.innerHTML = `<div class="cmd-ai-panel">
+    <div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Asking AI…</div>
+  </div>`;
+  _cmdActiveIdx = -1;
+  try {
+    const text = await aiComplete(q, {
+      system:
+        "You are a helpful assistant embedded in a browser new-tab dashboard. Answer the user's question concisely in plain text — no markdown formatting.",
+      maxTokens: 600,
+    });
+    _cmdRenderAiResponse(q, text);
+  } catch (err) {
+    _cmdRenderAiError(q, err);
+  }
+}
+
+function _cmdRenderAiResponse(q, text) {
+  const results = el("cmdResults");
+  results.innerHTML = `<div class="cmd-ai-panel">
+    <div class="cmd-ai-response"></div>
+    <div class="cmd-ai-actions">
+      <button class="cmd-ai-action-btn" data-ai-action="copy">Copy</button>
+      <button class="cmd-ai-action-btn" data-ai-action="note">Save as Note</button>
+      <button class="cmd-ai-action-btn" data-ai-action="task">Add as Task</button>
+      <button class="cmd-ai-action-btn" data-ai-action="again">Ask Another</button>
+    </div>
+  </div>`;
+  results.querySelector(".cmd-ai-response").textContent =
+    text || "(empty response)";
+
+  results
+    .querySelector('[data-ai-action="copy"]')
+    .addEventListener("click", () => {
+      navigator.clipboard?.writeText(text);
+      showToast("Copied to clipboard", "success");
+    });
+  results
+    .querySelector('[data-ai-action="note"]')
+    .addEventListener("click", () => {
+      const now = Date.now();
+      wsData().notes.unshift({
+        id: now,
+        title: q.slice(0, 60),
+        content: text,
+        date: now,
+        updatedAt: now,
+        tags: ["ai"],
+        pinned: false,
+      });
+      save();
+      renderNotesWidget();
+      showToast("Saved as note", "success");
+      closeCmdPalette();
+    });
+  results
+    .querySelector('[data-ai-action="task"]')
+    .addEventListener("click", () => {
+      addTask(text.slice(0, 200));
+      showToast("Added as task", "success");
+      closeCmdPalette();
+    });
+  results
+    .querySelector('[data-ai-action="again"]')
+    .addEventListener("click", () => {
+      const inp = el("cmdInput");
+      inp.value = "";
+      inp.focus();
+      el("cmdResults").innerHTML = _cmdEmptyState();
+    });
+}
+
+function _cmdRenderAiError(q, err) {
+  const results = el("cmdResults");
+  if (err?.code === "AI_NOT_CONFIGURED") {
+    results.innerHTML = `<div class="cmd-ai-panel">
+      <div class="cmd-ai-error">AI features aren't set up yet. Add your Anthropic API key in Settings to enable "Ask AI".</div>
+      <div class="cmd-ai-actions">
+        <button class="cmd-ai-action-btn" id="cmdAiOpenSettings">Open Settings</button>
+      </div>
+    </div>`;
+    el("cmdAiOpenSettings").addEventListener("click", () => {
+      closeCmdPalette();
+      openSettings();
+    });
+    return;
+  }
+  results.innerHTML = `<div class="cmd-ai-panel">
+    <div class="cmd-ai-error">Something went wrong asking AI: ${escH(err?.message || "request failed")}</div>
+    <div class="cmd-ai-actions">
+      <button class="cmd-ai-action-btn" id="cmdAiRetry">Retry</button>
+    </div>
+  </div>`;
+  el("cmdAiRetry").addEventListener("click", () => _cmdAskAI(q));
 }
 
 function _cmdItems() {
@@ -7302,17 +8540,11 @@ function setupEventListeners() {
   el("settingsOverlay").addEventListener("click", closeSettings);
   el("saveSettingsBtn").addEventListener("click", saveSettings);
 
-  // Settings theme toggles
-  el("darkThemeBtn").addEventListener("click", () => {
-    applyTheme("dark");
-    el("darkThemeBtn").classList.add("active");
-    el("lightThemeBtn").classList.remove("active");
-    save();
-  });
-  el("lightThemeBtn").addEventListener("click", () => {
-    applyTheme("light");
-    el("lightThemeBtn").classList.add("active");
-    el("darkThemeBtn").classList.remove("active");
+  // Settings theme grid (theme marketplace)
+  el("themeGrid")?.addEventListener("click", (e) => {
+    const card = e.target.closest(".theme-card");
+    if (!card) return;
+    applyTheme(card.dataset.theme);
     save();
   });
 
@@ -7394,6 +8626,17 @@ function setupEventListeners() {
   );
   el("importFileInput").addEventListener("change", (e) => {
     if (e.target.files[0]) importData(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  // Shareable workspaces — export/import
+  el("exportWorkspaceBtn").addEventListener("click", exportWorkspace);
+  el("importWorkspaceBtn").addEventListener("click", () =>
+    el("importWorkspaceFileInput").click(),
+  );
+  el("importWorkspaceFileInput").addEventListener("change", (e) => {
+    if (e.target.files[0]) importWorkspaceFile(e.target.files[0]);
+    e.target.value = "";
   });
 
   // Granular data clear
@@ -7681,6 +8924,18 @@ function setupEventListeners() {
     b.addEventListener("click", () => resetTimer(parseInt(b.dataset.min)));
   });
 
+  // Focus mode
+  el("focusModeBtn").addEventListener("click", openFocusModeModal);
+  el("saveFocusModeBtn").addEventListener("click", saveFocusModeSettings);
+
+  // AI assistant
+  el("testAiKeyBtn")?.addEventListener("click", testAiApiKey);
+  el("refreshBriefingBtn")?.addEventListener("click", refreshAiBriefing);
+
+  // Smart Organize
+  el("smartOrganizeBtn")?.addEventListener("click", openSmartOrganizeModal);
+  el("applyOrganizeBtn")?.addEventListener("click", applySmartOrganize);
+
   // View all folders → bookmarks
   el("viewAllFolders")?.addEventListener("click", (e) => {
     e.preventDefault();
@@ -7749,9 +9004,23 @@ function setupEventListeners() {
     closeFab();
     openAddBookmarkModal();
   });
+  el("fabVoiceCapture").addEventListener("click", () => {
+    closeFab();
+    openVoiceCaptureModal();
+  });
   document.addEventListener("click", (e) => {
     if (!el("fabBtn").contains(e.target) && !el("fabMenu").contains(e.target))
       closeFab();
+  });
+
+  // Voice quick-capture
+  el("voiceMicBtn").addEventListener("click", toggleVoiceRecording);
+  el("voiceSaveNoteBtn").addEventListener("click", saveVoiceAsNote);
+  el("voiceSaveTaskBtn").addEventListener("click", saveVoiceAsTask);
+  el("voiceSaveJournalBtn").addEventListener("click", saveVoiceAsJournal);
+  el("voiceCaptureModal").addEventListener("click", (e) => {
+    if (e.target === el("voiceCaptureModal") || e.target.closest("[data-modal='voiceCaptureModal']"))
+      _voiceStopRecognition();
   });
 
   // Trash
