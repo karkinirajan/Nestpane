@@ -1437,12 +1437,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderAll();
   loadBookmarks();
   loadHistory("");
+  _scheduleHabitNotifications();
   loadDownloads();
   checkGoogleIdentity();
 
-  // Pull from Drive every 60 s to stay in sync across devices/browsers
-  // pullFromDrive() already calls renderAll() internally when cloud is newer
-  setInterval(() => { if (S.googleUser) pullFromDrive(); }, 60000);
+  // Auto-push 60 s after last edit; pull on visibility regain and sign-in.
+  // No polling interval — sync is edit-triggered, not time-triggered.
 
   // Pull when this tab regains focus (switching back from another device's session)
   document.addEventListener("visibilitychange", () => {
@@ -1450,9 +1450,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
-      e.preventDefault();
-      openCmdPalette();
+    const inInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
+    const kb = S.settings.shortcuts || {};
+    const searchKey = kb.search || "/";
+    const timerKey = kb.timer || "";
+    const noteKey = kb.note || "";
+    const taskKey = kb.task || "";
+
+    if (!inInput) {
+      if (_kbMatch(e, searchKey)) { e.preventDefault(); openCmdPalette(); return; }
+      if (timerKey && _kbMatch(e, timerKey)) { e.preventDefault(); navigateTo("timer"); return; }
+      if (noteKey && _kbMatch(e, noteKey)) { e.preventDefault(); navigateTo("notes"); return; }
+      if (taskKey && _kbMatch(e, taskKey)) { e.preventDefault(); navigateTo("tasks"); return; }
     }
     if (e.key === "Escape") {
       if (el("cmdPaletteOverlay").classList.contains("open")) {
@@ -1487,6 +1496,8 @@ async function loadState() {
     "calEvents",
     "_savedAt",
     "googleUser",
+    "_focusSessions",
+    "_focusMinutes",
   ]);
   // One-time migration: pull from sync storage if local is still empty
   if (!d.settings && IS_CHROME && chrome.storage) {
@@ -1573,6 +1584,8 @@ async function loadState() {
   S.mood = d.mood && typeof d.mood === "object" ? d.mood : {};
   S.countdowns = Array.isArray(d.countdowns) ? d.countdowns : [];
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
+  S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
+  S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
   S._savedAt = d._savedAt || 0;
   S.stopwatch = { running: false, startTime: null, elapsed: 0, laps: [] };
   // Restore Google user so the signed-in state survives hard refresh
@@ -1619,6 +1632,8 @@ function save() {
     countdowns: S.countdowns,
     calEvents: S.calEvents,
     _savedAt: S._savedAt,
+    _focusSessions: S._focusSessions || {},
+    _focusMinutes: S._focusMinutes || {},
   });
   // Debounce cloud push — 4 s after last change
   if (S.googleUser) scheduleDriveSync();
@@ -2343,6 +2358,8 @@ function setSyncStatus(status, detail = "") {
     if (desc) desc.textContent = `Synced ${ago}`;
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
+    _showManualSyncBtns(true);
+    _updateSyncTimestamp();
     if (ftrName) ftrName.textContent = uname || "Synced";
     if (ftrSub)  { ftrSub.textContent = `Synced ${ago}`; ftrSub.classList.add("sync-ok"); }
     if (ftrDot)  ftrDot.classList.add("synced");
@@ -2503,8 +2520,14 @@ function aiEnabled() {
   return !!S.settings.ai?.enabled;
 }
 
-// Sends a single-turn prompt to the Anthropic Messages API and returns the
-// text of the first content block. Throws on missing key or non-OK response.
+// AI conversation history for multi-turn chat in the Command Bar
+let _aiConvHistory = [];
+
+function _aiResetConversation() {
+  _aiConvHistory = [];
+}
+
+// Non-streaming single-turn call (used by briefing, smart-organize, voice)
 async function aiComplete(prompt, opts = {}) {
   const apiKey = await _aiLoadApiKey();
   if (!apiKey) {
@@ -2512,6 +2535,7 @@ async function aiComplete(prompt, opts = {}) {
     err.code = "AI_NOT_CONFIGURED";
     throw err;
   }
+  const messages = opts.messages || [{ role: "user", content: prompt }];
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -2524,7 +2548,7 @@ async function aiComplete(prompt, opts = {}) {
       model: opts.model || AI_MODEL,
       max_tokens: opts.maxTokens || 1024,
       ...(opts.system ? { system: opts.system } : {}),
-      messages: [{ role: "user", content: prompt }],
+      messages,
     }),
   });
   if (!res.ok) {
@@ -2539,6 +2563,67 @@ async function aiComplete(prompt, opts = {}) {
     .map((b) => b.text)
     .join("")
     .trim();
+}
+
+// Streaming multi-turn call — appends to _aiConvHistory, calls onChunk(text) per delta
+async function aiStream(userPrompt, opts = {}) {
+  const apiKey = await _aiLoadApiKey();
+  if (!apiKey) {
+    const err = new Error("AI not configured");
+    err.code = "AI_NOT_CONFIGURED";
+    throw err;
+  }
+  _aiConvHistory.push({ role: "user", content: userPrompt });
+  const messages = _aiConvHistory.slice();
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: opts.model || AI_MODEL,
+      max_tokens: opts.maxTokens || 2048,
+      stream: true,
+      ...(opts.system ? { system: opts.system } : {}),
+      messages,
+    }),
+  });
+  if (!res.ok) {
+    _aiConvHistory.pop(); // roll back
+    const err = new Error(`AI request failed (${res.status})`);
+    err.code = "AI_REQUEST_FAILED";
+    err.status = res.status;
+    throw err;
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = "";
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (payload === "[DONE]") break;
+      try {
+        const evt = JSON.parse(payload);
+        if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+          const chunk = evt.delta.text || "";
+          fullText += chunk;
+          if (opts.onChunk) opts.onChunk(chunk, fullText);
+        }
+      } catch { /* ignore malformed SSE line */ }
+    }
+  }
+  _aiConvHistory.push({ role: "assistant", content: fullText });
+  return fullText;
 }
 
 // Tests the API key currently typed into the settings field (not yet saved).
@@ -3014,10 +3099,51 @@ async function _doPush(token) {
   }
 }
 
-// ── Debounce: schedule a push 2 s after last change ─────────────────────
+// ── Debounce: push 60 s after the last edit (reset on every save()) ──────
 function scheduleDriveSync() {
   clearTimeout(Drive._syncTimer);
-  Drive._syncTimer = setTimeout(pushToDrive, 2000);
+  Drive._syncTimer = setTimeout(pushToDrive, 60000);
+}
+
+// ── Manual push/pull buttons ──────────────────────────────────────────────
+async function manualPushToDrive() {
+  const btn = el("pushCloudBtn");
+  if (btn) btn.disabled = true;
+  try {
+    await pushToDrive();
+    showToast("Pushed to cloud ☁️", "success");
+    _updateSyncTimestamp();
+  } catch {
+    showToast("Push failed", "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function manualPullFromDrive() {
+  const btn = el("pullCloudBtn");
+  if (btn) btn.disabled = true;
+  try {
+    const pulled = await pullFromDrive();
+    showToast(pulled ? "Pulled from cloud ☁️" : "Already up to date", "success");
+    _updateSyncTimestamp();
+  } catch {
+    showToast("Pull failed", "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function _updateSyncTimestamp() {
+  const ts = el("sbSyncTs");
+  if (!ts) return;
+  const now = new Date();
+  ts.textContent = `Last sync: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function _showManualSyncBtns(show) {
+  const d = el("sbSyncManual");
+  if (d) d.style.display = show ? "flex" : "none";
 }
 
 // ── Main identity check: called on every new tab open ───────────────────
@@ -3214,6 +3340,10 @@ function renderAll() {
   renderNotesView();
   renderTrash();
   renderCalendarWidget();
+  renderStopwatchWidget();
+  renderWorldClocks();
+  renderCountdowns();
+  renderTimerStats();
   updateSidebarTabActive();
 }
 
@@ -3461,6 +3591,11 @@ function saveSbLink() {
       importedBookmarks: [],
     };
   if (!S.wsData[wsId].quickAccess) S.wsData[wsId].quickAccess = [];
+  const normNew = _normUrl(url);
+  if (S.wsData[wsId].quickAccess.some((l) => _normUrl(l.url) === normNew)) {
+    showToast("Link already in Quick Access", "error");
+    return;
+  }
   S.wsData[wsId].quickAccess.push({ id: Date.now(), name, url });
   save();
   closeModal("sbAddLinkModal");
@@ -5696,6 +5831,64 @@ function openQACtxMenu(btn, item) {
   _ctxSub.classList.remove("open");
 }
 
+// ===== MARKDOWN RENDERER =====
+function _mdRender(text) {
+  if (!text) return "";
+  let html = escH(text);
+  // Code blocks (``` ... ```)
+  html = html.replace(/```([\s\S]*?)```/g, (_, code) => `<pre class="md-code-block"><code>${code.trim()}</code></pre>`);
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, (_, c) => `<code class="md-code">${c}</code>`);
+  // Headers
+  html = html.replace(/^### (.+)$/gm, (_, t) => `<h3 class="md-h3">${t}</h3>`);
+  html = html.replace(/^## (.+)$/gm, (_, t) => `<h2 class="md-h2">${t}</h2>`);
+  html = html.replace(/^# (.+)$/gm, (_, t) => `<h1 class="md-h1">${t}</h1>`);
+  // Bold + italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, (_, t) => `<strong><em>${t}</em></strong>`);
+  html = html.replace(/\*\*(.+?)\*\*/g, (_, t) => `<strong>${t}</strong>`);
+  html = html.replace(/\*(.+?)\*/g, (_, t) => `<em>${t}</em>`);
+  html = html.replace(/__(.+?)__/g, (_, t) => `<strong>${t}</strong>`);
+  html = html.replace(/_(.+?)_/g, (_, t) => `<em>${t}</em>`);
+  // Strikethrough
+  html = html.replace(/~~(.+?)~~/g, (_, t) => `<del>${t}</del>`);
+  // Links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => `<a href="${u}" target="_blank" rel="noopener" class="md-link">${t}</a>`);
+  // Unordered lists
+  html = html.replace(/^[\-\*] (.+)$/gm, (_, t) => `<li class="md-li">${t}</li>`);
+  html = html.replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul class="md-ul">${m}</ul>`);
+  // Ordered lists
+  html = html.replace(/^\d+\. (.+)$/gm, (_, t) => `<li class="md-li">${t}</li>`);
+  // Blockquote
+  html = html.replace(/^&gt; (.+)$/gm, (_, t) => `<blockquote class="md-bq">${t}</blockquote>`);
+  // Horizontal rule
+  html = html.replace(/^---+$/gm, "<hr class='md-hr'>");
+  // Newlines → <br> (skip inside blocks)
+  html = html.replace(/\n/g, "<br>");
+  return html;
+}
+
+let _noteMdPreviewOn = false;
+
+function _toggleNoteMarkdown() {
+  const ta = el("noteContent");
+  const preview = el("noteMdPreview");
+  const btn = el("noteMdToggle");
+  if (!ta || !preview || !btn) return;
+  _noteMdPreviewOn = !_noteMdPreviewOn;
+  btn.setAttribute("aria-pressed", String(_noteMdPreviewOn));
+  if (_noteMdPreviewOn) {
+    preview.innerHTML = _mdRender(ta.value);
+    preview.style.display = "";
+    ta.style.display = "none";
+    btn.classList.add("active");
+  } else {
+    preview.style.display = "none";
+    ta.style.display = "";
+    ta.focus();
+    btn.classList.remove("active");
+  }
+}
+
 // ===== NOTES =====
 function renderNotesWidget() {
   const notes = wsNotes();
@@ -5914,6 +6107,8 @@ function saveNote() {
   save();
   renderNotesWidget();
   renderNotesView();
+  // Reset markdown preview state
+  if (_noteMdPreviewOn) _toggleNoteMarkdown();
   closeModal("noteModal");
   showToast("Note saved!", "success");
 }
@@ -5921,6 +6116,7 @@ function saveNote() {
 function deleteNote() {
   if (!S.editingNoteId) return;
   deleteNoteById(S.editingNoteId);
+  if (_noteMdPreviewOn) _toggleNoteMarkdown();
   closeModal("noteModal");
 }
 
@@ -6667,7 +6863,7 @@ function saveVoiceAsJournal() {
 }
 
 // ===== FOCUS TIMER =====
-const T = { total: 1500, remaining: 1500, running: false, iv: null };
+const T = { total: 1500, remaining: 1500, running: false, iv: null, _mode: "focus" };
 const CIRC = 2 * Math.PI * 44;
 
 function renderTimerDisplay() {
@@ -6698,34 +6894,117 @@ function timerPlay() {
       el("timerPlayBtn").innerHTML =
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
       applyFocusBlockRules(false);
+      _timerAudioDing();
       showToast("⏰ Focus session complete! Great job!", "success");
+      _notifyUser("novatab Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
+      if (T._mode === "focus") {
+        const today = _todayKey();
+        S._focusSessions = S._focusSessions || {};
+        S._focusSessions[today] = (S._focusSessions[today] || 0) + 1;
+        S._focusMinutes = S._focusMinutes || {};
+        S._focusMinutes[today] = (S._focusMinutes[today] || 0) + Math.round(T.total / 60);
+        save();
+        renderTimerStats();
+      }
       return;
     }
     T.remaining--;
     renderTimerDisplay();
+    // Persist timer state for popup dashboard (every 5s to avoid excessive writes)
+    if (T.remaining % 5 === 0) {
+      API.setLocal({ _timerState: { running: true, remaining: T.remaining, total: T.total } });
+    }
   }, 1000);
 }
 function pauseTimer() {
   clearInterval(T.iv);
   T.running = false;
+  API.setLocal({ _timerState: { running: false, remaining: T.remaining, total: T.total } });
   el("timerPlayBtn").innerHTML =
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
   applyFocusBlockRules(false);
 }
-function resetTimer(mins) {
+function resetTimer(mins, mode) {
   clearInterval(T.iv);
   T.running = false;
+  T._mode = mode || "focus";
   T.total = (mins || 25) * 60;
   T.remaining = T.total;
   el("timerPlayBtn").innerHTML =
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>';
-  document
-    .querySelectorAll(".preset-btn")
-    .forEach((b) =>
-      b.classList.toggle("active", parseInt(b.dataset.min) === (mins || 25)),
-    );
+  document.querySelectorAll(".preset-btn").forEach((b) => {
+    b.classList.remove("active");
+    if (b.dataset.type === T._mode && parseInt(b.dataset.min) === (mins || 25)) b.classList.add("active");
+  });
+  const badge = el("timerModeBadge");
+  if (badge) {
+    if (T._mode === "short") { badge.textContent = "☕ Short Break"; badge.style.display = ""; }
+    else if (T._mode === "long") { badge.textContent = "🌿 Long Break"; badge.style.display = ""; }
+    else { badge.style.display = "none"; }
+  }
   renderTimerDisplay();
   applyFocusBlockRules(false);
+}
+
+// ── Chrome notification helper ───────────────────────────────────────────
+function _notifyUser(title, opts = {}) {
+  if (!IS_CHROME || !chrome.notifications) return;
+  chrome.notifications.create("novatab-" + Date.now(), {
+    type: "basic",
+    iconUrl: opts.icon || "icons/favicon.png",
+    title,
+    message: opts.body || "",
+  });
+}
+
+// ── Habit reminder notification (fires once per day at 9am if habits exist)
+function _scheduleHabitNotifications() {
+  if (!IS_CHROME || !chrome.notifications) return;
+  const habits = S.habits || [];
+  if (!habits.length) return;
+  const now = new Date();
+  const nineAM = new Date(now);
+  nineAM.setHours(9, 0, 0, 0);
+  if (now >= nineAM) nineAM.setDate(nineAM.getDate() + 1);
+  const delay = nineAM - now;
+  setTimeout(() => {
+    const today = _todayKey();
+    const unchecked = habits.filter((h) => !h.days?.[today]);
+    if (unchecked.length) {
+      _notifyUser("novatab Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
+    }
+  }, delay);
+}
+
+// ── Web Audio ding on timer completion ──────────────────────────────────
+function _timerAudioDing() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.8);
+  } catch { /* no audio context available */ }
+}
+
+// ── Timer stats: session count & focus minutes today ────────────────────
+function renderTimerStats() {
+  const today = _todayKey();
+  const sessions = (S._focusSessions || {})[today] || 0;
+  const minutes = (S._focusMinutes || {})[today] || 0;
+  const sc = el("timerSessionCount");
+  const ft = el("timerFocusTotal");
+  if (sc) sc.textContent = sessions === 1 ? "1 session" : `${sessions} sessions`;
+  if (ft) ft.textContent = minutes > 0 ? `${minutes}m today` : "0m today";
+  const stats = el("timerStats");
+  if (stats) stats.style.display = "";
 }
 
 // ===== FOCUS MODE — SITE BLOCKING =====
@@ -6873,6 +7152,36 @@ function emptyTrash() {
       showToast("Trash emptied", "success");
     },
   );
+}
+
+// ── Canvas bar chart helper ──────────────────────────────────────────────
+function _drawBarChart(canvas, labels, values, unit, color) {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.offsetWidth || 240;
+  const H = canvas.height;
+  canvas.width = W;
+  const max = Math.max(...values, 1);
+  const barW = Math.floor(W / (labels.length * 1.5));
+  const gap = Math.floor((W - barW * labels.length) / (labels.length + 1));
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue("--text-3").trim() || "#888";
+  ctx.clearRect(0, 0, W, H);
+  labels.forEach((label, i) => {
+    const val = values[i];
+    const barH = Math.max(2, Math.floor((val / max) * (H - 28)));
+    const x = gap + i * (barW + gap);
+    const y = H - 18 - barH;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = val > 0 ? 0.85 : 0.2;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, barW, barH, 3) : ctx.rect(x, y, barW, barH);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = textColor;
+    ctx.font = "9px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(label, x + barW / 2, H - 4);
+    if (val > 0) ctx.fillText(val + (unit || ""), x + barW / 2, y - 3);
+  });
 }
 
 // ===== ANALYTICS VIEW =====
@@ -7223,7 +7532,71 @@ async function renderAnalytics() {
         </div>
       </div>
     </div>
+
+    <!-- Focus & Productivity Metrics -->
+    <div class="insights-section-hd">Focus & Productivity</div>
+    <div class="insights-cards-row">
+      <div class="insights-card">
+        <div class="insights-card-hd"><span class="insights-card-title">Focus Sessions (last 7 days)</span></div>
+        <canvas id="focusChart" class="prod-chart" height="80"></canvas>
+        ${Object.keys(S._focusSessions || {}).length === 0 ? '<div class="ins-empty">No focus sessions yet. Start the timer!</div>' : ""}
+      </div>
+      <div class="insights-card">
+        <div class="insights-card-hd"><span class="insights-card-title">Habit Completion (last 7 days)</span></div>
+        <canvas id="habitChart" class="prod-chart" height="80"></canvas>
+        ${(S.habits || []).length === 0 ? '<div class="ins-empty">No habits tracked. Add one in the Habits view!</div>' : ""}
+      </div>
+      <div class="insights-card">
+        <div class="insights-card-hd"><span class="insights-card-title">Focus Time Summary</span></div>
+        ${(() => {
+          const sessions = S._focusSessions || {};
+          const minutes = S._focusMinutes || {};
+          const keys = Object.keys(sessions).sort().slice(-7);
+          const totalSessions = keys.reduce((s, k) => s + (sessions[k] || 0), 0);
+          const totalMins = keys.reduce((s, k) => s + (minutes[k] || 0), 0);
+          const avgMins = keys.length ? Math.round(totalMins / keys.length) : 0;
+          return `
+            <div class="focus-stat-row"><span>Sessions (7d)</span><strong>${totalSessions}</strong></div>
+            <div class="focus-stat-row"><span>Total focus time</span><strong>${totalMins}m</strong></div>
+            <div class="focus-stat-row"><span>Daily average</span><strong>${avgMins}m</strong></div>
+          `;
+        })()}
+      </div>
+    </div>
   `;
+
+  // Draw focus chart
+  (function() {
+    const canvas = el("focusChart");
+    if (!canvas) return;
+    const sessions = S._focusSessions || {};
+    const today = new Date();
+    const days = Array.from({length: 7}, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().slice(0, 10);
+    });
+    const vals = days.map((d) => sessions[d] || 0);
+    const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", {weekday: "short"}));
+    _drawBarChart(canvas, labels, vals, "Sessions", "var(--accent)");
+  })();
+
+  // Draw habit chart
+  (function() {
+    const canvas = el("habitChart");
+    if (!canvas) return;
+    const habits = S.habits || [];
+    if (!habits.length) return;
+    const today = new Date();
+    const days = Array.from({length: 7}, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().slice(0, 10);
+    });
+    const vals = days.map((day) => habits.filter((h) => (h.days || {})[day]).length);
+    const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", {weekday: "short"}));
+    _drawBarChart(canvas, labels, vals, `/${habits.length}`, "var(--success)");
+  })();
 
   // --- Top Sites (async) ---
   if (IS_CHROME && chrome.topSites) {
@@ -7484,6 +7857,9 @@ async function openSettings() {
   el("widgetTasksToggle").checked = S.settings.widgets.tasks !== false;
   el("widgetQuoteToggle").checked = S.settings.widgets.quote !== false;
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
+  el("widgetStopwatchToggle") && (el("widgetStopwatchToggle").checked = S.settings.widgets.stopwatch !== false);
+  el("widgetWorldclockToggle") && (el("widgetWorldclockToggle").checked = S.settings.widgets.worldclock !== false);
+  el("widgetCountdownToggle") && (el("widgetCountdownToggle").checked = S.settings.widgets.countdown !== false);
   // Highlight active card glow
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
     b.classList.toggle(
@@ -7499,6 +7875,7 @@ async function openSettings() {
       s.dataset.color === (S.user.avatarColor || "#7c3aed"),
     );
   });
+  _loadShortcutsUI();
   el("settingsPanel").classList.add("open");
   el("settingsOverlay").classList.add("open");
 }
@@ -7513,6 +7890,9 @@ async function saveSettings() {
   S.settings.widgets.tasks = el("widgetTasksToggle").checked;
   S.settings.widgets.quote = el("widgetQuoteToggle").checked;
   S.settings.widgets.timer = el("widgetTimerToggle").checked;
+  if (el("widgetStopwatchToggle")) S.settings.widgets.stopwatch = el("widgetStopwatchToggle").checked;
+  if (el("widgetWorldclockToggle")) S.settings.widgets.worldclock = el("widgetWorldclockToggle").checked;
+  if (el("widgetCountdownToggle")) S.settings.widgets.countdown = el("widgetCountdownToggle").checked;
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
@@ -7613,6 +7993,9 @@ function applyWidgetVisibility() {
   show("widget-notes", w.notes);
   show("widget-tasks", w.tasks);
   show("widget-timer", w.timer);
+  show("widget-stopwatch", w.stopwatch !== false);
+  show("widget-worldclock", w.worldclock !== false);
+  show("widget-countdown", w.countdown !== false);
 }
 
 // Export / Import
@@ -7670,6 +8053,33 @@ function setupSearch() {
 
 // ===== COMMAND PALETTE =====
 let _cmdActiveIdx = -1;
+let _cmdRecentSearches = [];
+
+// Lightweight fuzzy match: returns a score (higher = better) or -1 if no match.
+// Consecutive-character bonus makes "yt" rank YouTube above unrelated hits.
+function _fuzzyScore(haystack, needle) {
+  if (!needle) return 0;
+  const h = haystack.toLowerCase();
+  const n = needle.toLowerCase();
+  if (h.includes(n)) return 100 + (n.length / h.length) * 50; // exact substring wins
+  let hi = 0, ni = 0, score = 0, consecutive = 0;
+  while (hi < h.length && ni < n.length) {
+    if (h[hi] === n[ni]) {
+      consecutive++;
+      score += consecutive * 2;
+      ni++;
+    } else {
+      consecutive = 0;
+    }
+    hi++;
+  }
+  if (ni < n.length) return -1; // all chars not found
+  return score;
+}
+
+function _fuzzyMatch(text, q) {
+  return _fuzzyScore(text, q) > 0;
+}
 
 function openCmdPalette(prefill) {
   const overlay = el("cmdPaletteOverlay");
@@ -7679,14 +8089,35 @@ function openCmdPalette(prefill) {
   _cmdActiveIdx = -1;
   setTimeout(() => inp.focus(), 50);
   if (prefill) _renderCmdResults(prefill);
-  else el("cmdResults").innerHTML = _cmdEmptyState();
+  else {
+    el("cmdResults").innerHTML = _cmdEmptyStateWithRecents();
+    el("cmdResults").querySelectorAll(".cmd-recent-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        inp.value = item.dataset.recent;
+        _renderCmdResults(item.dataset.recent);
+      });
+    });
+  }
 }
 
 function closeCmdPalette() {
+  const inp = el("cmdInput");
+  const q = inp ? inp.value.trim() : "";
+  if (q && q.length > 1 && !q.startsWith(">") && !q.startsWith("?")) {
+    _cmdRecentSearches = [q, ..._cmdRecentSearches.filter((s) => s !== q)].slice(0, 8);
+  }
   el("cmdPaletteOverlay").classList.remove("open");
-  el("cmdInput").value = "";
+  if (inp) inp.value = "";
   el("cmdResults").innerHTML = "";
   _cmdActiveIdx = -1;
+}
+
+function _cmdEmptyStateWithRecents() {
+  if (!_cmdRecentSearches.length) return _cmdEmptyState();
+  const recentHtml = _cmdRecentSearches.map((s) =>
+    `<div class="cmd-recent-item" data-recent="${escH(s)}">${escH(s)}</div>`
+  ).join("");
+  return `<div class="cmd-recents-section"><div class="cmd-section-label">Recent searches</div>${recentHtml}</div><div class="cmd-empty-hint">Search bookmarks, notes, tasks, history, tabs &amp; more</div>`;
 }
 
 function _cmdEmptyState() {
@@ -7694,71 +8125,57 @@ function _cmdEmptyState() {
 }
 
 function _buildCmdResults(q) {
-  const ql = q.toLowerCase();
-  const bmMatches = [];
+  const scoreItem = (title, url) => Math.max(_fuzzyScore(title || "", q), _fuzzyScore(url || "", q) * 0.7);
+
+  // Bookmarks — combine Chrome bookmarks + workspace bookmarks, deduplicate, sort by score
+  const allBmCandidates = [];
   for (const f of S.allBookmarks) {
-    for (const it of f.items) {
-      if (
-        (it.title || "").toLowerCase().includes(ql) ||
-        (it.url || "").toLowerCase().includes(ql)
-      ) {
-        bmMatches.push(it);
-        if (bmMatches.length >= 8) break;
-      }
-    }
-    if (bmMatches.length >= 8) break;
+    for (const it of f.items) allBmCandidates.push(it);
   }
-  // Also search workspace bookmarks
   for (const ws of S.workspaces) {
-    const wsBms = S.wsData[ws.id]?.importedBookmarks || [];
-    for (const bm of wsBms) {
-      if (bmMatches.length >= 8) break;
-      if (
-        (bm.title || "").toLowerCase().includes(ql) ||
-        (bm.url || "").toLowerCase().includes(ql)
-      ) {
-        if (!bmMatches.find((b) => b.url === bm.url)) bmMatches.push(bm);
-      }
+    for (const bm of S.wsData[ws.id]?.importedBookmarks || []) {
+      if (!allBmCandidates.find((b) => b.url === bm.url)) allBmCandidates.push({ title: bm.title, url: bm.url });
+    }
+    for (const qa of S.wsData[ws.id]?.quickAccess || []) {
+      if (!allBmCandidates.find((b) => b.url === qa.url)) allBmCandidates.push({ title: qa.name, url: qa.url });
     }
   }
+  const bmMatches = allBmCandidates
+    .map((it) => ({ it, score: scoreItem(it.title, it.url) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map((x) => x.it);
+
+  // Notes
   const noteMatches = [];
   for (const ws of S.workspaces) {
-    const notes = S.wsData[ws.id]?.notes || [];
-    notes.forEach((n) => {
-      if (
-        (n.title || "").toLowerCase().includes(ql) ||
-        (n.content || "").toLowerCase().includes(ql)
-      )
-        noteMatches.push(n);
-    });
+    for (const n of S.wsData[ws.id]?.notes || []) {
+      if (_fuzzyMatch(n.title || "", q) || _fuzzyMatch(n.content || "", q)) noteMatches.push(n);
+    }
   }
+
+  // Tasks
   const taskMatches = [];
   for (const ws of S.workspaces) {
-    const tasks = S.wsData[ws.id]?.tasks || [];
-    tasks.forEach((t) => {
-      if ((t.text || "").toLowerCase().includes(ql)) taskMatches.push(t);
-    });
+    for (const t of S.wsData[ws.id]?.tasks || []) {
+      if (_fuzzyMatch(t.text || "", q)) taskMatches.push(t);
+    }
   }
+
   const readingMatches = (S.readingQueue || []).filter(
-    (r) =>
-      (r.title || "").toLowerCase().includes(ql) ||
-      (r.url || "").toLowerCase().includes(ql),
+    (r) => _fuzzyMatch(r.title || "", q) || _fuzzyMatch(r.url || "", q),
   );
   const sessionMatches = (S.tabSessions || []).filter(
-    (s) =>
-      (s.name || "").toLowerCase().includes(ql) ||
-      (s.tabs || []).some(
-        (t) =>
-          (t.title || "").toLowerCase().includes(ql) ||
-          (t.url || "").toLowerCase().includes(ql),
-      ),
+    (s) => _fuzzyMatch(s.name || "", q) || (s.tabs || []).some((t) => _fuzzyMatch(t.title || "", q) || _fuzzyMatch(t.url || "", q)),
   );
   const journalMatches = Object.entries(S.journal || {})
-    .filter(([, entry]) => (entry?.text || "").toLowerCase().includes(ql))
+    .filter(([, entry]) => _fuzzyMatch(entry?.text || "", q))
     .map(([date, entry]) => ({ date, ...entry }))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
+
   return {
-    bmMatches: bmMatches.slice(0, 8),
+    bmMatches,
     noteMatches: noteMatches.slice(0, 3),
     taskMatches: taskMatches.slice(0, 4),
     readingMatches: readingMatches.slice(0, 3),
@@ -8062,35 +8479,69 @@ async function _cmdSearchAsync(q) {
 async function _cmdAskAI(q) {
   if (!q) return;
   const results = el("cmdResults");
+  const isFollowUp = _aiConvHistory.length > 0;
+  const historyLen = _aiConvHistory.length;
   results.innerHTML = `<div class="cmd-ai-panel">
-    <div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Asking AI…</div>
+    ${isFollowUp ? `<div class="cmd-ai-history-badge">Conversation (${historyLen / 2 | 0} turns) · <button class="cmd-ai-clear-btn" onclick="_aiResetConversation();el('cmdResults').innerHTML='';el('cmdInput').value='';el('cmdInput').focus()">Clear</button></div>` : ""}
+    <div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>${isFollowUp ? "Continuing…" : "Asking AI…"}</div>
   </div>`;
   _cmdActiveIdx = -1;
   try {
-    const text = await aiComplete(q, {
-      system:
-        "You are a helpful assistant embedded in a browser new-tab dashboard. Answer the user's question concisely in plain text — no markdown formatting.",
-      maxTokens: 600,
+    let accumulated = "";
+    const panel = results.querySelector(".cmd-ai-panel");
+    await aiStream(q, {
+      system: "You are a helpful assistant embedded in a browser new-tab dashboard. Answer the user's question concisely.",
+      maxTokens: 1200,
+      onChunk: (chunk, full) => {
+        accumulated = full;
+        const loading = panel.querySelector(".cmd-ai-loading");
+        if (loading) {
+          loading.outerHTML = `<div class="cmd-ai-response cmd-ai-streaming"></div>`;
+        }
+        const resp = panel.querySelector(".cmd-ai-response");
+        if (resp) resp.textContent = accumulated;
+      },
     });
-    _cmdRenderAiResponse(q, text);
+    const resp = panel.querySelector(".cmd-ai-response");
+    if (resp) resp.classList.remove("cmd-ai-streaming");
+    _cmdRenderAiResponse(q, accumulated);
   } catch (err) {
+    _aiConvHistory.pop(); // remove failed user turn
     _cmdRenderAiError(q, err);
   }
 }
 
 function _cmdRenderAiResponse(q, text) {
   const results = el("cmdResults");
+  const turns = _aiConvHistory.filter((m) => m.role === "user").length;
   results.innerHTML = `<div class="cmd-ai-panel">
+    ${turns > 1 ? `<div class="cmd-ai-history-badge">Conversation (${turns} turns) · <button class="cmd-ai-clear-btn" onclick="_aiResetConversation();el('cmdResults').innerHTML='';el('cmdInput').value='';el('cmdInput').focus()">Clear</button></div>` : ""}
     <div class="cmd-ai-response"></div>
+    <div class="cmd-ai-followup-row">
+      <input type="text" class="cmd-ai-followup-input" id="cmdAiFollowup" placeholder="Follow-up question…">
+      <button class="cmd-ai-action-btn" id="cmdAiFollowupBtn">Ask</button>
+    </div>
     <div class="cmd-ai-actions">
       <button class="cmd-ai-action-btn" data-ai-action="copy">Copy</button>
       <button class="cmd-ai-action-btn" data-ai-action="note">Save as Note</button>
       <button class="cmd-ai-action-btn" data-ai-action="task">Add as Task</button>
-      <button class="cmd-ai-action-btn" data-ai-action="again">Ask Another</button>
+      <button class="cmd-ai-action-btn" data-ai-action="new">New conversation</button>
     </div>
   </div>`;
   results.querySelector(".cmd-ai-response").textContent =
     text || "(empty response)";
+  const followupInput = el("cmdAiFollowup");
+  const followupBtn = el("cmdAiFollowupBtn");
+  if (followupInput && followupBtn) {
+    followupBtn.addEventListener("click", () => {
+      const fq = followupInput.value.trim();
+      if (fq) _cmdAskAI(fq);
+    });
+    followupInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); followupBtn.click(); }
+    });
+    setTimeout(() => followupInput.focus(), 50);
+  }
 
   results
     .querySelector('[data-ai-action="copy"]')
@@ -8123,14 +8574,14 @@ function _cmdRenderAiResponse(q, text) {
       showToast("Added as task", "success");
       closeCmdPalette();
     });
-  results
-    .querySelector('[data-ai-action="again"]')
-    .addEventListener("click", () => {
-      const inp = el("cmdInput");
-      inp.value = "";
-      inp.focus();
-      el("cmdResults").innerHTML = _cmdEmptyState();
-    });
+  const newConvBtn = results.querySelector('[data-ai-action="new"]');
+  if (newConvBtn) newConvBtn.addEventListener("click", () => {
+    _aiResetConversation();
+    const inp = el("cmdInput");
+    inp.value = "";
+    inp.focus();
+    el("cmdResults").innerHTML = _cmdEmptyState();
+  });
 }
 
 function _cmdRenderAiError(q, err) {
@@ -8169,6 +8620,42 @@ function _cmdSetActive(idx) {
     items[idx].scrollIntoView({ block: "nearest" });
   }
   _cmdActiveIdx = idx;
+}
+
+// ── Keyboard shortcut helpers ─────────────────────────────────────────────
+// key string format: "Alt+K", "Ctrl+Shift+T", or single char "/"
+function _kbMatch(e, keyStr) {
+  if (!keyStr) return false;
+  const parts = keyStr.split("+").map((s) => s.toLowerCase().trim());
+  const mainKey = parts.at(-1);
+  const needsAlt = parts.includes("alt");
+  const needsCtrl = parts.includes("ctrl");
+  const needsShift = parts.includes("shift");
+  return (
+    e.key.toLowerCase() === mainKey &&
+    !!e.altKey === needsAlt &&
+    !!e.ctrlKey === needsCtrl &&
+    !!e.shiftKey === needsShift
+  );
+}
+
+function saveShortcuts() {
+  const search = el("kbSearch")?.value.trim() || "/";
+  const timer = el("kbTimer")?.value.trim() || "";
+  const note = el("kbNote")?.value.trim() || "";
+  const task = el("kbTask")?.value.trim() || "";
+  if (!S.settings.shortcuts) S.settings.shortcuts = {};
+  S.settings.shortcuts = { search, timer, note, task };
+  save();
+  showToast("Keyboard shortcuts saved", "success");
+}
+
+function _loadShortcutsUI() {
+  const kb = S.settings.shortcuts || {};
+  if (el("kbSearch")) el("kbSearch").value = kb.search || "/";
+  if (el("kbTimer")) el("kbTimer").value = kb.timer || "";
+  if (el("kbNote")) el("kbNote").value = kb.note || "";
+  if (el("kbTask")) el("kbTask").value = kb.task || "";
 }
 
 function _cmdInitKeyboard() {
@@ -8539,6 +9026,27 @@ function setupEventListeners() {
   el("closeSettingsBtn").addEventListener("click", closeSettings);
   el("settingsOverlay").addEventListener("click", closeSettings);
   el("saveSettingsBtn").addEventListener("click", saveSettings);
+  el("saveShortcutsBtn")?.addEventListener("click", saveShortcuts);
+  el("pushCloudBtn")?.addEventListener("click", manualPushToDrive);
+  el("pullCloudBtn")?.addEventListener("click", manualPullFromDrive);
+
+  // World clock widget
+  el("addWorldClockBtn")?.addEventListener("click", () => {
+    _populateTimezoneSelect();
+    if (el("wcLabel")) el("wcLabel").value = "";
+    if (el("wcTimezone")) el("wcTimezone").value = "UTC";
+    openModal("worldClockModal");
+  });
+  el("saveWorldClockBtn")?.addEventListener("click", saveWorldClock);
+
+  // Countdown widget
+  el("addCountdownBtn")?.addEventListener("click", () => {
+    if (el("cdTitle")) el("cdTitle").value = "";
+    if (el("cdDate")) el("cdDate").value = "";
+    if (el("cdEmoji")) el("cdEmoji").value = "🎯";
+    openModal("countdownModal");
+  });
+  el("saveCountdownBtn")?.addEventListener("click", saveCountdown);
 
   // Settings theme grid (theme marketplace)
   el("themeGrid")?.addEventListener("click", (e) => {
@@ -8819,6 +9327,7 @@ function setupEventListeners() {
   el("addNoteBtn").addEventListener("click", openNoteNew);
   el("addNoteViewBtn").addEventListener("click", openNoteNew);
   el("saveNoteBtn").addEventListener("click", saveNote);
+  el("noteMdToggle")?.addEventListener("click", _toggleNoteMarkdown);
   el("deleteNoteBtn").addEventListener("click", deleteNote);
   el("notePinBtn").addEventListener("click", () => {
     _notePinned = !_notePinned;
@@ -8919,9 +9428,9 @@ function setupEventListeners() {
 
   // Timer
   el("timerPlayBtn").addEventListener("click", timerPlay);
-  el("timerResetBtn").addEventListener("click", () => resetTimer(25));
+  el("timerResetBtn").addEventListener("click", () => resetTimer(25, "focus"));
   document.querySelectorAll(".preset-btn").forEach((b) => {
-    b.addEventListener("click", () => resetTimer(parseInt(b.dataset.min)));
+    b.addEventListener("click", () => resetTimer(parseInt(b.dataset.min), b.dataset.type || "focus"));
   });
 
   // Focus mode
@@ -9796,14 +10305,133 @@ function deleteKanbanCard(col, id) {
   renderKanbanDash();
 }
 
-// ===== FEATURES 7 & 8 — Stopwatch & World Clock removed =================
-function renderStopwatchWidget() {}
-function renderWorldClocks() {}
-function toggleStopwatch() {}
-function lapStopwatch() {}
-function resetStopwatch() {}
-function removeWorldClock() {}
-function saveWorldClock() {}
+// ===== FEATURE 7: STOPWATCH =============================================
+function _swFmt(ms) {
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const t = Math.floor((ms % 1000) / 100);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${t}`;
+}
+
+function renderStopwatchWidget() {
+  const disp = el("swDisplay");
+  if (disp) disp.textContent = _swFmt(S.stopwatch.elapsed);
+  const laps = el("swLaps");
+  if (!laps) return;
+  if (!S.stopwatch.laps.length) { laps.innerHTML = ""; return; }
+  laps.innerHTML = S.stopwatch.laps
+    .map((ms, i) => `<div class="sw-lap"><span class="sw-lap-num">Lap ${i + 1}</span><span class="sw-lap-time">${_swFmt(ms)}</span></div>`)
+    .join("");
+}
+
+function toggleStopwatch() {
+  const btn = el("swPlayBtn");
+  if (S.stopwatch.running) {
+    S.stopwatch.elapsed += Date.now() - S.stopwatch.startTime;
+    S.stopwatch.startTime = null;
+    S.stopwatch.running = false;
+    clearInterval(S._swInterval);
+    S._swInterval = null;
+    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+    save();
+  } else {
+    S.stopwatch.startTime = Date.now();
+    S.stopwatch.running = true;
+    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+    S._swInterval = setInterval(() => {
+      const disp = el("swDisplay");
+      if (disp) disp.textContent = _swFmt(S.stopwatch.elapsed + (Date.now() - S.stopwatch.startTime));
+    }, 100);
+  }
+}
+
+function lapStopwatch() {
+  if (!S.stopwatch.running) return;
+  const current = S.stopwatch.elapsed + (Date.now() - S.stopwatch.startTime);
+  S.stopwatch.laps.push(current);
+  renderStopwatchWidget();
+  save();
+}
+
+function resetStopwatch() {
+  clearInterval(S._swInterval);
+  S._swInterval = null;
+  S.stopwatch = { running: false, startTime: null, elapsed: 0, laps: [] };
+  const btn = el("swPlayBtn");
+  if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+  renderStopwatchWidget();
+  save();
+}
+
+// ===== FEATURE 8: WORLD CLOCKS ==========================================
+const TIMEZONES = [
+  "UTC","America/New_York","America/Los_Angeles","America/Chicago","America/Denver",
+  "America/Toronto","America/Vancouver","America/Sao_Paulo","America/Buenos_Aires",
+  "America/Mexico_City","America/Bogota","America/Lima","America/Santiago",
+  "Europe/London","Europe/Paris","Europe/Berlin","Europe/Madrid","Europe/Rome",
+  "Europe/Amsterdam","Europe/Zurich","Europe/Stockholm","Europe/Oslo","Europe/Copenhagen",
+  "Europe/Helsinki","Europe/Warsaw","Europe/Prague","Europe/Budapest","Europe/Bucharest",
+  "Europe/Athens","Europe/Istanbul","Europe/Moscow","Europe/Kiev",
+  "Asia/Dubai","Asia/Riyadh","Asia/Tehran","Asia/Karachi","Asia/Kolkata",
+  "Asia/Kathmandu","Asia/Dhaka","Asia/Yangon","Asia/Bangkok","Asia/Ho_Chi_Minh",
+  "Asia/Jakarta","Asia/Singapore","Asia/Kuala_Lumpur","Asia/Manila","Asia/Hong_Kong",
+  "Asia/Shanghai","Asia/Taipei","Asia/Seoul","Asia/Tokyo","Asia/Osaka",
+  "Australia/Sydney","Australia/Melbourne","Australia/Brisbane","Australia/Perth",
+  "Pacific/Auckland","Pacific/Honolulu","Pacific/Fiji"
+];
+
+function renderWorldClocks() {
+  const list = el("wcList");
+  if (!list) return;
+  const clocks = S.settings.worldClocks || [];
+  if (!clocks.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:14px 0"><div class="empty-state-text">No clocks. Add a timezone above.</div></div>';
+    return;
+  }
+  list.innerHTML = clocks.map((c, i) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("en", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", hour12: true });
+    const dateStr = now.toLocaleDateString("en", { timeZone: c.tz, weekday: "short", month: "short", day: "numeric" });
+    return `<div class="wc-item">
+      <div class="wc-info"><span class="wc-label">${escH(c.label || c.tz.split("/").pop().replace(/_/g, " "))}</span><span class="wc-tz">${escH(c.tz)}</span></div>
+      <div class="wc-time-col"><span class="wc-time">${timeStr}</span><span class="wc-date">${dateStr}</span></div>
+      <button class="wc-remove" onclick="removeWorldClock(${i})" data-tip="Remove">✕</button>
+    </div>`;
+  }).join("");
+}
+
+function saveWorldClock() {
+  const tz = el("wcTimezone")?.value;
+  const label = el("wcLabel")?.value.trim() || "";
+  if (!tz) return;
+  if (!S.settings.worldClocks) S.settings.worldClocks = [];
+  if (S.settings.worldClocks.some((c) => c.tz === tz)) {
+    showToast("Clock already added", "error"); return;
+  }
+  S.settings.worldClocks.push({ tz, label });
+  save();
+  renderWorldClocks();
+  closeModal("worldClockModal");
+  if (el("wcLabel")) el("wcLabel").value = "";
+  showToast("World clock added!", "success");
+}
+
+function removeWorldClock(idx) {
+  S.settings.worldClocks.splice(idx, 1);
+  save();
+  renderWorldClocks();
+}
+
+function _populateTimezoneSelect() {
+  const sel = el("wcTimezone");
+  if (!sel || sel.options.length > 1) return;
+  TIMEZONES.forEach((tz) => {
+    const opt = document.createElement("option");
+    opt.value = tz;
+    opt.textContent = tz.replace(/_/g, " ");
+    sel.appendChild(opt);
+  });
+}
 
 // ===== FEATURE 9: MOOD TRACKER ==========================================
 function renderMoodView() {
@@ -9870,10 +10498,56 @@ function saveMood() {
   showToast("Mood saved! 🌟", "success");
 }
 
-// ===== FEATURE 10 — Countdown Timers removed ============================
-function renderCountdowns() {}
-function saveCountdown() {}
-function deleteCountdown() {}
+// ===== FEATURE 10: COUNTDOWN TIMERS =====================================
+function _cdDaysLeft(dateStr) {
+  const target = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.ceil((target - now) / 86400000);
+}
+
+function renderCountdowns() {
+  const list = el("cdList");
+  if (!list) return;
+  if (!S.countdowns || !S.countdowns.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:14px 0"><div class="empty-state-text">No countdowns. Add one above.</div></div>';
+    return;
+  }
+  list.innerHTML = S.countdowns.map((c, i) => {
+    const days = _cdDaysLeft(c.date);
+    const label = days < 0 ? `${Math.abs(days)}d ago` : days === 0 ? "Today!" : `${days}d left`;
+    const cls = days <= 0 ? "cd-item cd-past" : days <= 7 ? "cd-item cd-soon" : "cd-item";
+    return `<div class="${cls}">
+      <span class="cd-emoji">${escH(c.emoji || "⏳")}</span>
+      <div class="cd-info"><span class="cd-title">${escH(c.title)}</span><span class="cd-date">${escH(c.date)}</span></div>
+      <span class="cd-days">${label}</span>
+      <button class="wc-remove" onclick="deleteCountdown(${i})" data-tip="Delete">✕</button>
+    </div>`;
+  }).join("");
+}
+
+function saveCountdown() {
+  const title = el("cdTitle")?.value.trim();
+  const date = el("cdDate")?.value;
+  const emoji = el("cdEmoji")?.value.trim() || "⏳";
+  if (!title || !date) { showToast("Title and date required", "error"); return; }
+  if (!S.countdowns) S.countdowns = [];
+  S.countdowns.push({ id: Date.now(), title, date, emoji });
+  S.countdowns.sort((a, b) => a.date.localeCompare(b.date));
+  save();
+  renderCountdowns();
+  closeModal("countdownModal");
+  if (el("cdTitle")) el("cdTitle").value = "";
+  if (el("cdDate")) el("cdDate").value = "";
+  if (el("cdEmoji")) el("cdEmoji").value = "";
+  showToast("Countdown added!", "success");
+}
+
+function deleteCountdown(idx) {
+  S.countdowns.splice(idx, 1);
+  save();
+  renderCountdowns();
+}
 
 // ===== HERO WALLPAPER ===================================================
 const HERO_COLORS = [
