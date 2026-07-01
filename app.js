@@ -1417,6 +1417,7 @@ let S = {
   _kanbanTargetCol: null,
   calEvents: [], // { id, title, date, type, weekday, customDays }
   _calMonth: null, // { year, month } — currently viewed month
+  _qaDeleted: new Set(), // normalized URLs of explicitly-deleted QA items (tombstones)
 };
 
 // ===== BOOT =====
@@ -1498,6 +1499,7 @@ async function loadState() {
     "googleUser",
     "_focusSessions",
     "_focusMinutes",
+    "_qaDeleted",
   ]);
   // One-time migration: pull from sync storage if local is still empty
   if (!d.settings && IS_CHROME && chrome.storage) {
@@ -1586,6 +1588,13 @@ async function loadState() {
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
   S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
+  S._qaDeleted = new Set(Array.isArray(d._qaDeleted) ? d._qaDeleted : []);
+  // Filter any tombstoned URLs out of all workspace quickAccess arrays
+  Object.values(S.wsData).forEach((wd) => {
+    if (Array.isArray(wd.quickAccess) && S._qaDeleted.size) {
+      wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
+    }
+  });
   S._savedAt = d._savedAt || 0;
   S.stopwatch = { running: false, startTime: null, elapsed: 0, laps: [] };
   // Restore Google user so the signed-in state survives hard refresh
@@ -1634,6 +1643,7 @@ function save() {
     _savedAt: S._savedAt,
     _focusSessions: S._focusSessions || {},
     _focusMinutes: S._focusMinutes || {},
+    _qaDeleted: [...(S._qaDeleted || new Set())],
   });
   // Debounce cloud push — 4 s after last change
   if (S.googleUser) scheduleDriveSync();
@@ -2672,6 +2682,7 @@ function buildDrivePayload() {
     countdowns: S.countdowns,
     weatherLocation: S.weatherLocation,
     trash: S.trash,
+    _qaDeleted: [...(S._qaDeleted || new Set())],
   };
 }
 
@@ -2685,7 +2696,21 @@ function applyCloudData(cloud) {
   S.workspaces.forEach((ws) => {
     ws.id = Number(ws.id);
   });
-  S.wsData = cloud.wsData || S.wsData;
+  // Merge tombstones first so we can filter QA below
+  if (Array.isArray(cloud._qaDeleted)) {
+    S._qaDeleted = new Set([...S._qaDeleted, ...cloud._qaDeleted]);
+  }
+  // Apply cloud wsData but strip tombstoned Quick Access items
+  if (cloud.wsData) {
+    S.wsData = cloud.wsData;
+    if (S._qaDeleted.size) {
+      Object.values(S.wsData).forEach((wd) => {
+        if (Array.isArray(wd.quickAccess)) {
+          wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
+        }
+      });
+    }
+  }
   S.habits = Array.isArray(cloud.habits) ? cloud.habits : S.habits;
   S.readingQueue = Array.isArray(cloud.readingQueue)
     ? cloud.readingQueue
@@ -2829,6 +2854,12 @@ function mergeCloudWithLocal(cloud) {
   if (!cloud || cloud._version < 1) return local;
   const preferCloud = (cloud._savedAt || 0) > (local._savedAt || 0);
 
+  // Union tombstones from both sides — a deletion on either device is honored
+  const deletedUrls = new Set([
+    ...(Array.isArray(cloud._qaDeleted) ? cloud._qaDeleted : []),
+    ...(Array.isArray(local._qaDeleted) ? local._qaDeleted : []),
+  ]);
+
   const wsIds = new Set([
     ...Object.keys(cloud.wsData || {}),
     ...Object.keys(local.wsData || {}),
@@ -2838,7 +2869,8 @@ function mergeCloudWithLocal(cloud) {
     const c = (cloud.wsData || {})[wsId] || {};
     const l = (local.wsData || {})[wsId] || {};
     wsData[wsId] = {
-      quickAccess: _mergeByUrl(c.quickAccess, l.quickAccess, preferCloud),
+      quickAccess: _mergeByUrl(c.quickAccess, l.quickAccess, preferCloud)
+        .filter((q) => !deletedUrls.has(_normUrl(q.url))),
       notes: _mergeById(c.notes, l.notes, preferCloud),
       tasks: _mergeById(c.tasks, l.tasks, preferCloud),
       importedBookmarks: _mergeByUrl(c.importedBookmarks, l.importedBookmarks, preferCloud),
@@ -2897,6 +2929,7 @@ function mergeCloudWithLocal(cloud) {
       preferCloud && cloud.weatherLocation !== undefined
         ? cloud.weatherLocation
         : local.weatherLocation,
+    _qaDeleted: [...deletedUrls],
   };
 }
 
@@ -3532,6 +3565,8 @@ function removeSbGlobalLink(group, linkId) {
 function removeSbLink(wsId, linkId) {
   const data = S.wsData[wsId];
   if (!data) return;
+  const removed = (data.quickAccess || []).find((l) => l.id === linkId);
+  if (removed?.url) S._qaDeleted.add(_normUrl(removed.url));
   data.quickAccess = (data.quickAccess || []).filter((l) => l.id !== linkId);
   save();
   _renderSnavLinks(
@@ -3596,6 +3631,7 @@ function saveSbLink() {
     showToast("Link already in Quick Access", "error");
     return;
   }
+  S._qaDeleted.delete(normNew); // allow intentional re-add
   S.wsData[wsId].quickAccess.push({ id: Date.now(), name, url });
   save();
   closeModal("sbAddLinkModal");
@@ -5685,6 +5721,7 @@ function removeQA(e, id) {
   const item = data.quickAccess.find((q) => q.id === qaId);
   if (!item) return;
   data.quickAccess = data.quickAccess.filter((q) => q.id !== qaId);
+  if (item.url) S._qaDeleted.add(_normUrl(item.url));
   S.trash.push({
     ...item,
     _type: "quickAccess",
@@ -5729,6 +5766,7 @@ const QA_CATEGORY_MAP = {
 function addQA(name, url) {
   const data = wsData();
   const item = { id: Date.now(), name, url };
+  S._qaDeleted.delete(_normUrl(url)); // allow intentional re-add
   if (data.quickAccess.filter(q => !q.__section).length >= QA_MAX) {
     openQAReplaceModal(item);
     return;
@@ -5812,13 +5850,15 @@ function openQACtxMenu(btn, item) {
       () => {
         const data = wsData();
         const found = data.quickAccess.find((q) => q.id === item.id);
-        if (found)
+        if (found) {
+          if (found.url) S._qaDeleted.add(_normUrl(found.url));
           S.trash.push({
             ...found,
             _type: "quickAccess",
             _wsId: S.activeWsId,
             _deletedAt: Date.now(),
           });
+        }
         data.quickAccess = data.quickAccess.filter((q) => q.id !== item.id);
         save();
         renderQuickAccess();
@@ -6246,6 +6286,7 @@ function _mirrorLinkToHomeQA(link) {
   const home = S.wsData[1];
   if (!home?.quickAccess) return false;
   const key = _normUrl(link.url);
+  if (S._qaDeleted.has(key)) return false; // user deleted it — don't re-add
   if (home.quickAccess.some((q) => _normUrl(q.url) === key)) return false;
   home.quickAccess.push({
     id: Date.now() + Math.floor(Math.random() * 100000),
@@ -9755,6 +9796,7 @@ function setupEventListeners() {
   el("kanbanCardTitleInput")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") saveKanbanCard();
   });
+  el("kanbanAiParseBtn")?.addEventListener("click", _kanbanParseAI);
 
   // ── Mood Tracker ────────────────────────────────────────────────────────
   document.querySelectorAll(".mood-emoji-btn").forEach((btn) => {
@@ -10272,8 +10314,110 @@ function openKanbanCardModal(col) {
         : "Add Done Card";
   el("kanbanCardTitleInput").value = "";
   el("kanbanCardDescInput").value = "";
+  if (el("kanbanAiInput")) el("kanbanAiInput").value = "";
+  if (el("kanbanAiResult")) { el("kanbanAiResult").style.display = "none"; el("kanbanAiResult").innerHTML = ""; }
   openModal("kanbanCardModal");
-  setTimeout(() => el("kanbanCardTitleInput").focus(), 80);
+  // Show AI section only if AI is enabled
+  const aiSection = el("kanbanAiSection");
+  if (aiSection) aiSection.style.display = S.settings.ai?.enabled ? "" : "none";
+  setTimeout(() => (S.settings.ai?.enabled ? el("kanbanAiInput")?.focus() : el("kanbanCardTitleInput")?.focus()), 80);
+}
+
+async function _kanbanParseAI() {
+  const input = el("kanbanAiInput")?.value.trim();
+  if (!input) { showToast("Enter a task description first", "error"); return; }
+  if (!S.settings.ai?.enabled) { showToast("Enable AI in Settings first", "error"); return; }
+
+  const btn = el("kanbanAiParseBtn");
+  const result = el("kanbanAiResult");
+  btn.disabled = true;
+  btn.textContent = "Parsing…";
+  result.style.display = "";
+  result.innerHTML = '<div class="kanban-ai-loading">Analyzing tasks…</div>';
+
+  const systemPrompt = `You are a task extraction assistant. Extract discrete actionable tasks from the user's input.
+Return ONLY a JSON array. Each item must have: "title" (short, max 60 chars), "desc" (1-2 sentences of detail, or empty string).
+Return between 1 and 8 tasks. No markdown fences, no explanation. Just the JSON array.
+Example: [{"title":"Set up database schema","desc":"Create PostgreSQL tables for users and sessions."},{"title":"Build login page","desc":"Email/password form with validation and error states."}]`;
+
+  try {
+    const response = await aiComplete(input, {
+      system: systemPrompt,
+      maxTokens: 800,
+    });
+
+    let tasks;
+    try {
+      const jsonStr = response.replace(/```json?|```/g, "").trim();
+      tasks = JSON.parse(jsonStr);
+      if (!Array.isArray(tasks)) throw new Error("not an array");
+    } catch {
+      throw new Error("AI returned unexpected format. Try rephrasing.");
+    }
+
+    if (!tasks.length) {
+      result.innerHTML = '<div class="kanban-ai-empty">No tasks found. Try adding more detail.</div>';
+      return;
+    }
+
+    result.innerHTML = `
+      <div class="kanban-ai-tasks-header">
+        Found ${tasks.length} task${tasks.length > 1 ? "s" : ""} — click to add individual cards, or add all at once:
+      </div>
+      <div class="kanban-ai-tasks-list" id="kanbanAiTasksList">
+        ${tasks.map((t, i) => `
+          <div class="kanban-ai-task-item" data-idx="${i}">
+            <div class="kanban-ai-task-check">
+              <input type="checkbox" id="kait_${i}" checked>
+            </div>
+            <div class="kanban-ai-task-body">
+              <div class="kanban-ai-task-title">${escH(t.title)}</div>
+              ${t.desc ? `<div class="kanban-ai-task-desc">${escH(t.desc)}</div>` : ""}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="kanban-ai-actions">
+        <button class="kanban-ai-add-btn" id="kanbanAiAddSelectedBtn">Add Selected Cards</button>
+        <button class="kanban-ai-add-one-btn" id="kanbanAiAddFirstBtn">Fill Manual Form</button>
+      </div>
+    `;
+
+    // Store parsed tasks for use by buttons
+    result._parsedTasks = tasks;
+
+    el("kanbanAiAddSelectedBtn").addEventListener("click", () => {
+      const checks = result.querySelectorAll('input[type="checkbox"]:checked');
+      if (!checks.length) { showToast("Select at least one task", "error"); return; }
+      const kb = getKanban();
+      if (!kb[_kanbanTargetCol]) kb[_kanbanTargetCol] = [];
+      checks.forEach((cb) => {
+        const idx = parseInt(cb.id.replace("kait_", ""));
+        const t = tasks[idx];
+        if (t) kb[_kanbanTargetCol].push({ id: Date.now() + idx, title: t.title, desc: t.desc || "", createdAt: Date.now() });
+      });
+      save();
+      closeModal("kanbanCardModal");
+      renderKanban();
+      renderKanbanDash();
+      showToast(`Added ${checks.length} card${checks.length > 1 ? "s" : ""} to ${_kanbanTargetCol}`, "success");
+    });
+
+    el("kanbanAiAddFirstBtn").addEventListener("click", () => {
+      const first = tasks[0];
+      if (first) {
+        el("kanbanCardTitleInput").value = first.title;
+        el("kanbanCardDescInput").value = first.desc || "";
+        el("kanbanCardTitleInput").focus();
+      }
+    });
+
+  } catch (err) {
+    result.innerHTML = `<div class="kanban-ai-error">${escH(err.message || "AI parse failed. Check your API key in Settings.")}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Parse with AI';
+  }
 }
 
 function saveKanbanCard() {
