@@ -108,6 +108,56 @@ function init() {
     folderCombo.setItems(all.map(name => ({ value: name, label: name })));
   }
 
+  // ── Mini dashboard ────────────────────────────────────────────────────────
+  function _fmtTimer(secs) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  chrome.storage.local.get(['workspaces', 'wsData', 'habits', '_timerState'], (st) => {
+    const today = new Date().toISOString().slice(0, 10);
+    // Tasks
+    let totalTasks = 0, doneTasks = 0;
+    (st.workspaces || []).forEach(ws => {
+      ((st.wsData || {})[ws.id]?.tasks || []).forEach(t => {
+        totalTasks++;
+        if (t.done) doneTasks++;
+      });
+    });
+    const tasksEl = el('dashTasksVal');
+    const tasksSub = el('dashTasksSub');
+    if (tasksEl) tasksEl.textContent = `${doneTasks}/${totalTasks}`;
+    if (tasksSub) tasksSub.textContent = totalTasks ? `${Math.round(doneTasks/totalTasks*100)}% done` : 'no tasks';
+
+    // Habits
+    const habits = st.habits || [];
+    const habitDone = habits.filter(h => (h.days || {})[today]).length;
+    const habitsEl = el('dashHabitsVal');
+    const habitsSub = el('dashHabitsSub');
+    if (habitsEl) habitsEl.textContent = `${habitDone}/${habits.length}`;
+    if (habitsSub) habitsSub.textContent = habits.length ? (habitDone === habits.length ? '🎉 all done' : 'today') : 'no habits';
+
+    // Timer (stored separately by main page via storage)
+    const ts = st._timerState || {};
+    const timerEl = el('dashTimerVal');
+    const timerSub = el('dashTimerSub');
+    const timerCard = el('dashTimer');
+    if (timerEl) {
+      if (ts.running && ts.remaining != null) {
+        timerEl.textContent = _fmtTimer(ts.remaining);
+        if (timerSub) timerSub.textContent = 'running';
+        if (timerCard) timerCard.classList.add('mini-timer-running');
+      } else if (ts.remaining != null) {
+        timerEl.textContent = _fmtTimer(ts.remaining);
+        if (timerSub) timerSub.textContent = 'paused';
+      } else {
+        timerEl.textContent = '25:00';
+        if (timerSub) timerSub.textContent = 'idle';
+      }
+    }
+  });
+
   // ── Load tab + storage ────────────────────────────────────────────────────
   Promise.all([
     new Promise(res => chrome.tabs.query({ active: true, currentWindow: true }, res)),

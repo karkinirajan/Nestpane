@@ -199,9 +199,38 @@
   .toast.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.28);color:#fca5a5}
   .toast.show{display:block}
   .empty{text-align:center;padding:24px 16px;color:var(--text-muted);font-size:12px;line-height:1.8}
+  /* ── Mini dashboard ── */
+  .mini-dash{display:flex;gap:6px;padding:10px 14px 2px}
+  .mini-stat{
+    flex:1;background:var(--bg-card);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:8px 10px;text-align:center;
+  }
+  .mini-stat-val{font-size:16px;font-weight:800;color:var(--text);line-height:1.1}
+  .mini-stat-lbl{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:2px}
+  .mini-stat-sub{font-size:10px;color:var(--accent-light);margin-top:1px}
+  .mini-timer-running .mini-stat-val{color:#10b981}
 </style>
 </head>
 <body>
+
+<!-- Mini dashboard -->
+<div class="mini-dash" id="miniDash" aria-label="Today's snapshot">
+  <div class="mini-stat" id="dashTimer">
+    <div class="mini-stat-val" id="dashTimerVal">—</div>
+    <div class="mini-stat-lbl">Timer</div>
+    <div class="mini-stat-sub" id="dashTimerSub"></div>
+  </div>
+  <div class="mini-stat" id="dashTasks">
+    <div class="mini-stat-val" id="dashTasksVal">—</div>
+    <div class="mini-stat-lbl">Tasks</div>
+    <div class="mini-stat-sub" id="dashTasksSub">today</div>
+  </div>
+  <div class="mini-stat" id="dashHabits">
+    <div class="mini-stat-val" id="dashHabitsVal">—</div>
+    <div class="mini-stat-lbl">Habits</div>
+    <div class="mini-stat-sub" id="dashHabitsSub">today</div>
+  </div>
+</div>
 
 <header class="header" role="banner">
   <div class="header-logo"><img src="icons/favicon.png" alt="novatab logo" width="26" height="26"></div>

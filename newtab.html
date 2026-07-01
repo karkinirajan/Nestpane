@@ -256,6 +256,17 @@
         <div class="sb-sync-actions">
           <button class="sb-sync-btn" id="signInBtn">Sign in with Google</button>
           <button class="sb-sync-btn sb-sync-btn-sm" id="syncNowBtn" style="display:none">Sync now</button>
+          <div class="sb-sync-manual" id="sbSyncManual" style="display:none">
+            <button class="sb-sync-btn sb-sync-btn-sm sb-sync-push-btn" id="pushCloudBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Push to cloud
+            </button>
+            <button class="sb-sync-btn sb-sync-btn-sm sb-sync-pull-btn" id="pullCloudBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Pull from cloud
+            </button>
+          </div>
+          <span class="sb-sync-ts" id="sbSyncTs"></span>
         </div>
       </div>
       <!-- Trigger button -->
@@ -543,14 +554,17 @@
             <div class="widget-top-row">
               <span class="widget-label">Focus Timer</span>
               <div class="timer-presets">
-                <button class="preset-btn active" data-min="25">25m</button>
-                <button class="preset-btn" data-min="15">15m</button>
-                <button class="preset-btn" data-min="5">5m</button>
+                <button class="preset-btn active" data-min="25" data-type="focus">25m</button>
+                <button class="preset-btn" data-min="15" data-type="focus">15m</button>
+                <button class="preset-btn" data-min="5" data-type="focus">5m</button>
+                <button class="preset-btn timer-break-btn" data-min="5" data-type="short" title="Short break">☕</button>
+                <button class="preset-btn timer-break-btn" data-min="15" data-type="long" title="Long break">🌿</button>
                 <button class="timer-focus-btn" id="focusModeBtn" aria-label="Focus mode settings" data-tip="Block distracting sites while focused">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </button>
               </div>
             </div>
+            <div class="timer-mode-badge" id="timerModeBadge" style="display:none"></div>
             <div class="timer-body">
               <div class="timer-circle-wrap">
                 <svg class="timer-svg" viewBox="0 0 100 100">
@@ -570,6 +584,53 @@
                 </button>
               </div>
             </div>
+            <div class="timer-stats" id="timerStats">
+              <span class="timer-stat" id="timerSessionCount">0 sessions</span>
+              <span class="timer-stat-sep">·</span>
+              <span class="timer-stat" id="timerFocusTotal">0m today</span>
+            </div>
+          </div>
+
+          <!-- Stopwatch widget -->
+          <div class="widget stopwatch-widget" id="widget-stopwatch">
+            <div class="widget-top-row">
+              <span class="widget-label">Stopwatch</span>
+              <button class="widget-action-btn" id="swLapBtn" data-tip="Record lap" onclick="lapStopwatch()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </button>
+            </div>
+            <div class="sw-display" id="swDisplay">00:00.0</div>
+            <div class="timer-controls" style="margin-top:10px">
+              <button class="timer-btn timer-reset-btn" id="swResetBtn" onclick="resetStopwatch()" aria-label="Reset stopwatch">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+              </button>
+              <button class="timer-btn timer-play-btn" id="swPlayBtn" onclick="toggleStopwatch()" aria-label="Start/stop stopwatch">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </button>
+            </div>
+            <div class="sw-laps" id="swLaps"></div>
+          </div>
+
+          <!-- World Clocks widget -->
+          <div class="widget worldclock-widget" id="widget-worldclock">
+            <div class="widget-top-row">
+              <span class="widget-label">World Clocks</span>
+              <button class="widget-action-btn" id="addWorldClockBtn" data-tip="Add timezone" onclick="openModal('worldClockModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <div class="wc-list" id="wcList"></div>
+          </div>
+
+          <!-- Countdown Timers widget -->
+          <div class="widget countdown-widget" id="widget-countdown">
+            <div class="widget-top-row">
+              <span class="widget-label">Countdowns</span>
+              <button class="widget-action-btn" id="addCountdownBtn" data-tip="Add countdown" onclick="openModal('countdownModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <div class="cd-list" id="cdList"></div>
           </div>
 
         </div><!-- /widgets-row -->
@@ -1037,6 +1098,43 @@
         <div class="settings-label"><span>Focus Timer Widget</span></div>
         <label class="switch"><input type="checkbox" id="widgetTimerToggle" checked><span class="slider"></span></label>
       </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Stopwatch Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetStopwatchToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>World Clocks Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetWorldclockToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Countdown Timers Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetCountdownToggle" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Keyboard Shortcuts</div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Open Search</span><small>Default: /</small></div>
+        <input type="text" id="kbSearch" class="settings-input settings-input-sm" value="/" maxlength="20" placeholder="/">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Toggle Focus Timer</span><small>Default: Alt+T</small></div>
+        <input type="text" id="kbTimer" class="settings-input settings-input-sm" value="Alt+T" maxlength="20" placeholder="Alt+T">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>New Quick Note</span><small>Default: Alt+N</small></div>
+        <input type="text" id="kbNote" class="settings-input settings-input-sm" value="Alt+N" maxlength="20" placeholder="Alt+N">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>New Quick Task</span><small>Default: Alt+K</small></div>
+        <input type="text" id="kbTask" class="settings-input settings-input-sm" value="Alt+K" maxlength="20" placeholder="Alt+K">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Switch Workspace 1–9</span><small>Always: Alt+1 … Alt+9</small></div>
+        <span class="settings-label-note">Built-in</span>
+      </div>
+      <button class="settings-action-btn" id="saveShortcutsBtn">Save Shortcuts</button>
     </div>
 
     <div class="settings-section">
@@ -1258,8 +1356,15 @@
       </button>
     </div>
     <div class="note-editor-body">
-      <input type="text" id="noteTitle" placeholder="Untitled" class="note-editor-title-input" autocomplete="off">
-      <textarea id="noteContent" placeholder="Start writing…" class="note-editor-content"></textarea>
+      <div class="note-md-toolbar">
+        <input type="text" id="noteTitle" placeholder="Untitled" class="note-editor-title-input" autocomplete="off">
+        <button class="note-md-toggle" id="noteMdToggle" data-tip="Toggle markdown preview" aria-label="Toggle markdown preview" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          Preview
+        </button>
+      </div>
+      <textarea id="noteContent" placeholder="Start writing… (supports **bold**, *italic*, # heading, `code`, - lists, [link](url))" class="note-editor-content"></textarea>
+      <div id="noteMdPreview" class="note-md-preview" style="display:none"></div>
     </div>
     <div class="note-editor-footer">
       <div class="note-tags-row">
@@ -1745,7 +1850,57 @@
   </div>
 </div>
 
-<!-- world clock + countdown modals removed -->
+<!-- World Clock Modal -->
+<div class="modal-overlay" id="worldClockModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <h3>Add World Clock</h3>
+      <button class="modal-close" data-modal="worldClockModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="wcLabel">Label</label>
+      <input type="text" id="wcLabel" class="modal-input" placeholder="e.g. New York, London, Tokyo…" autocomplete="off">
+      <label style="margin-top:10px" for="wcTimezone">Timezone</label>
+      <select id="wcTimezone" class="modal-input modal-select"></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="worldClockModal">Cancel</button>
+      <button class="btn-primary" onclick="saveWorldClock()">Add Clock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown Modal -->
+<div class="modal-overlay" id="countdownModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <h3>Add Countdown</h3>
+      <button class="modal-close" data-modal="countdownModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="cdTitle">Title</label>
+      <input type="text" id="cdTitle" class="modal-input" placeholder="e.g. Project deadline" autocomplete="off">
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div style="flex:1">
+          <label for="cdDate">Target Date</label>
+          <input type="date" id="cdDate" class="modal-input">
+        </div>
+        <div style="width:70px">
+          <label for="cdEmoji">Emoji</label>
+          <input type="text" id="cdEmoji" class="modal-input" placeholder="🎯" maxlength="2">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="countdownModal">Cancel</button>
+      <button class="btn-primary" onclick="saveCountdown()">Add Countdown</button>
+    </div>
+  </div>
+</div>
 
 <!-- Calendar Event / Schedule Modal -->
 <div class="modal-overlay" id="calEventModal">
