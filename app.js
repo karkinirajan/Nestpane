@@ -1418,6 +1418,7 @@ let S = {
   calEvents: [], // { id, title, date, type, weekday, customDays }
   _calMonth: null, // { year, month } — currently viewed month
   _qaDeleted: new Set(), // normalized URLs of explicitly-deleted QA items (tombstones)
+  _cloudResetDone: false, // one-time cloud wipe+reupload has run on this install
 };
 
 // ===== BOOT =====
@@ -1441,9 +1442,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   _scheduleHabitNotifications();
   loadDownloads();
   checkGoogleIdentity();
+  _registerLiveStorageSync();
 
-  // Auto-push 60 s after last edit; pull on visibility regain and sign-in.
-  // No polling interval — sync is edit-triggered, not time-triggered.
+  // Auto-push ~2 s after last edit; pull on visibility regain and sign-in.
+  // Other open tabs on this device pick up any change instantly via
+  // chrome.storage.onChanged — no polling interval needed either way.
 
   // Pull when this tab regains focus (switching back from another device's session)
   document.addEventListener("visibilitychange", () => {
@@ -1500,6 +1503,7 @@ async function loadState() {
     "_focusSessions",
     "_focusMinutes",
     "_qaDeleted",
+    "_cloudResetDone",
   ]);
   // One-time migration: pull from sync storage if local is still empty
   if (!d.settings && IS_CHROME && chrome.storage) {
@@ -1595,6 +1599,7 @@ async function loadState() {
       wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
     }
   });
+  S._cloudResetDone = !!d._cloudResetDone;
   S._savedAt = d._savedAt || 0;
   S.stopwatch = { running: false, startTime: null, elapsed: 0, laps: [] };
   // Restore Google user so the signed-in state survives hard refresh
@@ -1645,7 +1650,7 @@ function save() {
     _focusMinutes: S._focusMinutes || {},
     _qaDeleted: [...(S._qaDeleted || new Set())],
   });
-  // Debounce cloud push — 4 s after last change
+  // Debounce cloud push — near-instant (2 s after last change)
   if (S.googleUser) scheduleDriveSync();
   return p;
 }
@@ -2756,56 +2761,6 @@ function applyCloudData(cloud) {
   });
 }
 
-// ── Merge helpers: combine a cloud collection with the local one without
-// dropping either side's entries (used by the connect-time backup+merge). ──
-// Generic union-by-key merge: for keys present on both sides, the "winning"
-// side's item is kept; cloud-order is preserved with local-only items
-// appended. Any pre-existing duplicate keys WITHIN a single side are also
-// collapsed to one entry as a side effect.
-function _mergeByKey(cloudArr, localArr, preferCloud, keyFn) {
-  cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
-  localArr = Array.isArray(localArr) ? localArr : [];
-  const byKey = new Map();
-  const base = preferCloud ? localArr : cloudArr;
-  const winner = preferCloud ? cloudArr : localArr;
-  base.forEach((item) => byKey.set(keyFn(item), item));
-  winner.forEach((item) => byKey.set(keyFn(item), item));
-  const order = [];
-  const seen = new Set();
-  cloudArr.concat(localArr).forEach((item) => {
-    const k = keyFn(item);
-    if (seen.has(k)) return;
-    seen.add(k);
-    order.push(byKey.get(k));
-  });
-  return order;
-}
-
-// `idKey` falls back to `_deletedAt`, then a structural key, for items (like
-// trash entries) that may not carry an `id`.
-function _mergeById(cloudArr, localArr, preferCloud, idKey = "id") {
-  return _mergeByKey(
-    cloudArr,
-    localArr,
-    preferCloud,
-    (item) => item?.[idKey] ?? item?._deletedAt ?? JSON.stringify(item),
-  );
-}
-
-// Merge link-like collections (Quick Access, sidebar links, imported
-// bookmarks) by normalized URL rather than `id`. Default link ids have been
-// renumbered across app versions, so the same link can carry different ids
-// on the cloud vs. local side — merging by `id` would treat those as two
-// different links and duplicate them. The URL is the link's true identity.
-function _mergeByUrl(cloudArr, localArr, preferCloud) {
-  return _mergeByKey(
-    cloudArr,
-    localArr,
-    preferCloud,
-    (item) => (item?.url ? _normUrl(item.url) : (item?.id ?? JSON.stringify(item))),
-  );
-}
-
 // Remove duplicate entries by normalized URL, keeping the first occurrence.
 // Self-heals any duplicates already sitting in local/cloud storage from
 // earlier id-based merges or renumbered defaults.
@@ -2818,119 +2773,6 @@ function _dedupeByUrl(arr) {
     seen.add(key);
     return true;
   });
-}
-
-// Merge name-only collections (e.g. workspace folders) by `name`.
-function _mergeByName(cloudArr, localArr) {
-  cloudArr = Array.isArray(cloudArr) ? cloudArr : [];
-  localArr = Array.isArray(localArr) ? localArr : [];
-  const seen = new Set(cloudArr.map((f) => f?.name));
-  const merged = cloudArr.slice();
-  localArr.forEach((f) => {
-    if (f && !seen.has(f.name)) {
-      seen.add(f.name);
-      merged.push(f);
-    }
-  });
-  return merged;
-}
-
-// Merge date/id-keyed maps (journal, mood) — the "winning" side's entries
-// take priority for shared keys, the other side's unique keys are kept.
-function _mergeKeyedObjects(cloudObj, localObj, preferCloud) {
-  cloudObj = cloudObj && typeof cloudObj === "object" ? cloudObj : {};
-  localObj = localObj && typeof localObj === "object" ? localObj : {};
-  return preferCloud ? { ...localObj, ...cloudObj } : { ...cloudObj, ...localObj };
-}
-
-// ── Merge a previously-backed-up cloud snapshot with the current local
-// state. Collections (Quick Access, notes, tasks, sidebar links, etc.) are
-// unioned by id so neither side's items — e.g. newly-introduced default Quick
-// Access links that only exist locally so far — get silently discarded. For
-// items present on both sides, whichever snapshot has the newer _savedAt
-// "wins" the conflict. ───────────────────────────────────────────────────
-function mergeCloudWithLocal(cloud) {
-  const local = buildDrivePayload();
-  if (!cloud || cloud._version < 1) return local;
-  const preferCloud = (cloud._savedAt || 0) > (local._savedAt || 0);
-
-  // Union tombstones from both sides — a deletion on either device is honored
-  const deletedUrls = new Set([
-    ...(Array.isArray(cloud._qaDeleted) ? cloud._qaDeleted : []),
-    ...(Array.isArray(local._qaDeleted) ? local._qaDeleted : []),
-  ]);
-
-  const wsIds = new Set([
-    ...Object.keys(cloud.wsData || {}),
-    ...Object.keys(local.wsData || {}),
-  ]);
-  const wsData = {};
-  wsIds.forEach((wsId) => {
-    const c = (cloud.wsData || {})[wsId] || {};
-    const l = (local.wsData || {})[wsId] || {};
-    wsData[wsId] = {
-      quickAccess: _mergeByUrl(c.quickAccess, l.quickAccess, preferCloud)
-        .filter((q) => !deletedUrls.has(_normUrl(q.url))),
-      notes: _mergeById(c.notes, l.notes, preferCloud),
-      tasks: _mergeById(c.tasks, l.tasks, preferCloud),
-      importedBookmarks: _mergeByUrl(c.importedBookmarks, l.importedBookmarks, preferCloud),
-      folders: _mergeByName(c.folders, l.folders),
-    };
-  });
-
-  const sbLinks = { ...local.settings.sbLinks, ...(cloud.settings?.sbLinks || {}) };
-  ["google", "projects", "others", "socials"].forEach((g) => {
-    sbLinks[g] = _mergeByUrl(cloud.settings?.sbLinks?.[g], local.settings?.sbLinks?.[g], preferCloud);
-  });
-
-  const kanbanIds = new Set([
-    ...Object.keys(cloud.kanban || {}),
-    ...Object.keys(local.kanban || {}),
-  ]);
-  const kanban = {};
-  kanbanIds.forEach((wsId) => {
-    const c = (cloud.kanban || {})[wsId] || {};
-    const l = (local.kanban || {})[wsId] || {};
-    kanban[wsId] = {
-      todo: _mergeById(c.todo, l.todo, preferCloud),
-      doing: _mergeById(c.doing, l.doing, preferCloud),
-      done: _mergeById(c.done, l.done, preferCloud),
-    };
-  });
-
-  return {
-    _version: 2,
-    _savedAt: Math.max(cloud._savedAt || 0, local._savedAt || 0),
-    user: preferCloud
-      ? { ...local.user, ...cloud.user }
-      : { ...cloud.user, ...local.user },
-    workspaces: _mergeById(cloud.workspaces, local.workspaces, preferCloud),
-    activeWsId:
-      preferCloud && cloud.activeWsId != null
-        ? Number(cloud.activeWsId)
-        : local.activeWsId,
-    wsData,
-    settings: {
-      ...local.settings,
-      ...(preferCloud ? cloud.settings : {}),
-      widgets: { ...local.settings.widgets, ...(cloud.settings?.widgets || {}) },
-      sbLinks,
-    },
-    habits: _mergeById(cloud.habits, local.habits, preferCloud),
-    readingQueue: _mergeById(cloud.readingQueue, local.readingQueue, preferCloud),
-    tabSessions: _mergeById(cloud.tabSessions, local.tabSessions, preferCloud),
-    journal: _mergeKeyedObjects(cloud.journal, local.journal, preferCloud),
-    kanban,
-    mood: _mergeKeyedObjects(cloud.mood, local.mood, preferCloud),
-    calEvents: _mergeById(cloud.calEvents, local.calEvents, preferCloud),
-    countdowns: _mergeById(cloud.countdowns, local.countdowns, preferCloud),
-    trash: _mergeById(cloud.trash, local.trash, preferCloud, "id"),
-    weatherLocation:
-      preferCloud && cloud.weatherLocation !== undefined
-        ? cloud.weatherLocation
-        : local.weatherLocation,
-    _qaDeleted: [...deletedUrls],
-  };
 }
 
 // Fetch the raw payload from Drive, trying each file newest-first and
@@ -2956,6 +2798,7 @@ async function _fetchCloudPayload(token, fileIds) {
 async function _persistLocalState() {
   await API.setLocal({
     user: S.user,
+    googleUser: S.googleUser,
     workspaces: S.workspaces,
     activeWsId: S.activeWsId,
     wsData: S.wsData,
@@ -2971,6 +2814,9 @@ async function _persistLocalState() {
     weatherLocation: S.weatherLocation,
     trash: S.trash,
     _savedAt: S._savedAt,
+    _focusSessions: S._focusSessions || {},
+    _focusMinutes: S._focusMinutes || {},
+    _qaDeleted: [...(S._qaDeleted || new Set())],
   });
 }
 
@@ -2983,6 +2829,69 @@ function _refreshAfterCloudApply() {
   updateAvatarDisplay();
   window._heroBgSessionCache = null;
   loadHeroBg();
+}
+
+// ── Instant cross-tab sync: every open new tab shares the same
+// chrome.storage.local, so a change saved in one tab can be reflected in
+// every other open tab immediately, with no cloud round-trip. `_savedAt` is
+// set to Date.now() in-memory *before* the write that triggers this event,
+// so a tab reacting to its own save always sees newValue === S._savedAt and
+// skips — only tabs that are actually behind pick up the change. ─────────
+function _registerLiveStorageSync() {
+  if (!IS_CHROME || !chrome.storage?.onChanged) return;
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !changes._savedAt) return;
+    const newSavedAt = changes._savedAt.newValue || 0;
+    if (newSavedAt <= S._savedAt) return;
+    _applyLiveStorageChange(changes);
+  });
+}
+
+function _applyLiveStorageChange(changes) {
+  if (changes.user) S.user = changes.user.newValue || S.user;
+  if (changes.googleUser) S.googleUser = changes.googleUser.newValue || null;
+  if (changes.workspaces) {
+    S.workspaces = changes.workspaces.newValue || S.workspaces;
+    S.workspaces.forEach((ws) => { ws.id = Number(ws.id); });
+  }
+  if (changes.activeWsId) S.activeWsId = Number(changes.activeWsId.newValue);
+  if (changes.trash) S.trash = changes.trash.newValue || [];
+  if (changes.settings) {
+    const ns = changes.settings.newValue || {};
+    S.settings = {
+      ...S.settings,
+      ...ns,
+      widgets: { ...S.settings.widgets, ...(ns.widgets || {}) },
+      sbLinks: { ...S.settings.sbLinks, ...(ns.sbLinks || {}) },
+    };
+  }
+  if (changes.weatherLocation) S.weatherLocation = changes.weatherLocation.newValue;
+  if (changes.wsData) S.wsData = changes.wsData.newValue || S.wsData;
+  if (changes.habits) S.habits = changes.habits.newValue || [];
+  if (changes.readingQueue) S.readingQueue = changes.readingQueue.newValue || [];
+  if (changes.tabSessions) S.tabSessions = changes.tabSessions.newValue || [];
+  if (changes.journal) S.journal = changes.journal.newValue || {};
+  if (changes.kanban) S.kanban = changes.kanban.newValue || {};
+  if (changes.mood) S.mood = changes.mood.newValue || {};
+  if (changes.countdowns) S.countdowns = changes.countdowns.newValue || [];
+  if (changes.calEvents) S.calEvents = changes.calEvents.newValue || [];
+  if (changes._focusSessions) S._focusSessions = changes._focusSessions.newValue || {};
+  if (changes._focusMinutes) S._focusMinutes = changes._focusMinutes.newValue || {};
+  if (changes._qaDeleted) S._qaDeleted = new Set(changes._qaDeleted.newValue || []);
+
+  // Ensure all workspace data slots exist, then re-strip tombstoned QA items.
+  S.workspaces.forEach((ws) => {
+    if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
+  });
+  if (S._qaDeleted.size) {
+    Object.values(S.wsData).forEach((wd) => {
+      if (Array.isArray(wd.quickAccess)) {
+        wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
+      }
+    });
+  }
+  S._savedAt = changes._savedAt.newValue || S._savedAt;
+  _refreshAfterCloudApply();
 }
 
 // ── Pull from Drive: called on sign-in and on new tab load ───────────────
@@ -3105,6 +3014,7 @@ async function _doPush(token) {
       S._savedAt = payload._savedAt;
       await API.setLocal({ _savedAt: S._savedAt });
       setSyncStatus("synced");
+      return true;
     } else {
       const err = await r.json().catch(() => ({}));
       if (r.status === 401) {
@@ -3114,7 +3024,7 @@ async function _doPush(token) {
         // PATCH failed — this file is from a previous OAuth client.
         // Clear the cached ID and POST a fresh file instead.
         Drive._fileId = null;
-        await _doPush(token); // retry immediately with POST
+        return await _doPush(token); // retry immediately with POST
       } else if (r.status === 403) {
         // POST failed 403 — access token lacks drive.appdata scope (pre-dates scope grant).
         // Keep session alive (user is signed in) but signal Drive needs re-auth.
@@ -3126,16 +3036,20 @@ async function _doPush(token) {
           err?.error?.message || `Drive error ${r.status}`,
         );
       }
+      return false;
     }
   } catch (e) {
     setSyncStatus(navigator.onLine ? "error" : "offline", e.message);
+    return false;
   }
 }
 
-// ── Debounce: push 60 s after the last edit (reset on every save()) ──────
+// ── Debounce: push 2 s after the last edit (reset on every save()) — short
+// enough to feel instant, long enough to collapse a burst of rapid edits
+// (e.g. dragging a kanban card, typing a title) into a single request. ────
 function scheduleDriveSync() {
   clearTimeout(Drive._syncTimer);
-  Drive._syncTimer = setTimeout(pushToDrive, 60000);
+  Drive._syncTimer = setTimeout(pushToDrive, 2000);
 }
 
 // ── Manual push/pull buttons ──────────────────────────────────────────────
@@ -3219,31 +3133,71 @@ async function checkGoogleIdentity() {
   setSyncStatus("synced");
 }
 
-// ── First contact with Drive for this account: back up the current local
-// state (including any freshly-initialized defaults) BEFORE pulling, then
-// merge it with whatever was already in the cloud so neither side's items —
-// e.g. new default Quick Access links that only exist locally so far, or
-// older items that only exist in the cloud — get silently dropped. The
-// merged "old + recent" result is applied locally and pushed back up as the
-// new backup. ───────────────────────────────────────────────────────────
+// Delete every existing cloud backup file for this app and replace it with a
+// fresh upload of the current local state. No merge — local simply becomes
+// the new source of truth in the cloud.
+async function _wipeAndReuploadCloud(token) {
+  const fileIds = await findDriveFiles(token);
+  for (const fileId of fileIds) {
+    try {
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {}
+  }
+  Drive._fileId = null; // force the next push to POST a brand-new file
+  return await _doPush(token);
+}
+
+// ── First contact with Drive for this install: wipe whatever's already up
+// there and replace it with the current local state instead of merging —
+// this runs exactly once, gated by S._cloudResetDone, so a stale/duplicate
+// snapshot from a previous install or account can never come back. Every
+// later connect just compares _savedAt and takes whichever side is newest,
+// which is deterministic (unlike a union-merge, which is what let deleted/
+// stale items resurface). ─────────────────────────────────────────────────
 async function syncWithDriveOnConnect(token) {
+  if (!S._cloudResetDone) {
+    const ok = await _wipeAndReuploadCloud(token);
+    if (ok) {
+      // Only latch the flag on success — if this failed (e.g. offline), the
+      // cloud may still hold stale data, so retry the reset on next connect.
+      S._cloudResetDone = true;
+      await API.setLocal({ _cloudResetDone: true });
+    }
+    return;
+  }
+
   const fileIds = await findDriveFiles(token);
   if (!fileIds.length) {
-    // No cloud backup yet — push current (including any default/initial) data first.
+    // No cloud backup yet (e.g. deleted externally) — push current data.
     await pushToDrive();
     return;
   }
 
   const cloud = await _fetchCloudPayload(token, fileIds);
-  if (cloud) {
-    const merged = mergeCloudWithLocal(cloud);
-    applyCloudData(merged);
-    await _persistLocalState();
-    _refreshAfterCloudApply();
+  if (!cloud) return;
+
+  let decoded = cloud;
+  if (cloud._e2e === 1) {
+    const pass = await _e2eLoadPassphrase();
+    if (!pass) return;
+    try {
+      decoded = await _e2eDecryptPayload(cloud, pass);
+    } catch {
+      return;
+    }
   }
 
-  // Push the merged (old + recent) result back to Drive as the new backup.
-  await pushToDrive();
+  if ((decoded._savedAt || 0) > S._savedAt) {
+    applyCloudData(decoded);
+    await _persistLocalState();
+    _refreshAfterCloudApply();
+  } else if ((decoded._savedAt || 0) < S._savedAt) {
+    // Local is newest — make sure the cloud reflects it.
+    await pushToDrive();
+  }
 }
 
 // ── Sign in: interactive token request ──────────────────────────────────
