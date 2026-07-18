@@ -123,139 +123,6 @@
   --chart-6-bg:  rgba(66,123,88,.12);
 }
 
-/* ── 1b. THEME MARKETPLACE — additional curated themes ───── */
-[data-theme="nord"] {
-  --bg:          #2e3440;
-  --surface:     #3b4252;
-  --surface-2:   #434c5e;
-  --surface-3:   #4c566a;
-  --border:      #434c5e;
-  --border-2:    #4c566a;
-  --text:        #eceff4;
-  --text-2:      #d8dee9;
-  --text-3:      #8d99ae;
-  --accent:      #88c0d0;
-  --accent-2:    #b48ead;
-  --accent-bg:   rgba(136,192,208,.15);
-  --accent-glow: rgba(136,192,208,.32);
-  --success:     #a3be8c;
-  --error:       #bf616a;
-  --warning:     #ebcb8b;
-  --success-bg:  rgba(163,190,140,.12);
-  --error-bg:    rgba(191,97,106,.12);
-  --chart-1:     #88c0d0;
-  --chart-2:     #a3be8c;
-  --chart-3:     #ebcb8b;
-  --chart-4:     #d08770;
-  --chart-5:     #b48ead;
-  --chart-6:     #5e81ac;
-  --chart-1-bg:  rgba(136,192,208,.15);
-  --chart-2-bg:  rgba(163,190,140,.15);
-  --chart-3-bg:  rgba(235,203,139,.15);
-  --chart-4-bg:  rgba(208,135,112,.15);
-  --chart-5-bg:  rgba(180,142,173,.15);
-  --chart-6-bg:  rgba(94,129,172,.15);
-}
-
-[data-theme="dracula"] {
-  --bg:          #282a36;
-  --surface:     #2f3242;
-  --surface-2:   #383b4d;
-  --surface-3:   #44475a;
-  --border:      #44475a;
-  --border-2:    #6272a4;
-  --text:        #f8f8f2;
-  --text-2:      #d6d6e0;
-  --text-3:      #9aa0c4;
-  --accent:      #bd93f9;
-  --accent-2:    #ff79c6;
-  --accent-bg:   rgba(189,147,249,.15);
-  --accent-glow: rgba(189,147,249,.32);
-  --success:     #50fa7b;
-  --error:       #ff5555;
-  --warning:     #f1fa8c;
-  --success-bg:  rgba(80,250,123,.12);
-  --error-bg:    rgba(255,85,85,.12);
-  --chart-1:     #bd93f9;
-  --chart-2:     #ff79c6;
-  --chart-3:     #8be9fd;
-  --chart-4:     #50fa7b;
-  --chart-5:     #ffb86c;
-  --chart-6:     #f1fa8c;
-  --chart-1-bg:  rgba(189,147,249,.15);
-  --chart-2-bg:  rgba(255,121,198,.15);
-  --chart-3-bg:  rgba(139,233,253,.15);
-  --chart-4-bg:  rgba(80,250,123,.15);
-  --chart-5-bg:  rgba(255,184,108,.15);
-  --chart-6-bg:  rgba(241,250,140,.15);
-}
-
-[data-theme="catppuccin"] {
-  --bg:          #1e1e2e;
-  --surface:     #232333;
-  --surface-2:   #313244;
-  --surface-3:   #45475a;
-  --border:      #313244;
-  --border-2:    #45475a;
-  --text:        #cdd6f4;
-  --text-2:      #bac2de;
-  --text-3:      #8189b0;
-  --accent:      #cba6f7;
-  --accent-2:    #f5c2e7;
-  --accent-bg:   rgba(203,166,247,.15);
-  --accent-glow: rgba(203,166,247,.32);
-  --success:     #a6e3a1;
-  --error:       #f38ba8;
-  --warning:     #f9e2af;
-  --success-bg:  rgba(166,227,161,.12);
-  --error-bg:    rgba(243,139,168,.12);
-  --chart-1:     #cba6f7;
-  --chart-2:     #f5c2e7;
-  --chart-3:     #89dceb;
-  --chart-4:     #a6e3a1;
-  --chart-5:     #fab387;
-  --chart-6:     #89b4fa;
-  --chart-1-bg:  rgba(203,166,247,.15);
-  --chart-2-bg:  rgba(245,194,231,.15);
-  --chart-3-bg:  rgba(137,220,235,.15);
-  --chart-4-bg:  rgba(166,227,161,.15);
-  --chart-5-bg:  rgba(250,179,135,.15);
-  --chart-6-bg:  rgba(137,180,250,.15);
-}
-
-[data-theme="solarized"] {
-  --bg:          #002b36;
-  --surface:     #073642;
-  --surface-2:   #0a3a47;
-  --surface-3:   #0e4756;
-  --border:      #0a3a47;
-  --border-2:    #586e75;
-  --text:        #93a1a1;
-  --text-2:      #839496;
-  --text-3:      #657b83;
-  --accent:      #268bd2;
-  --accent-2:    #2aa198;
-  --accent-bg:   rgba(38,139,210,.15);
-  --accent-glow: rgba(38,139,210,.32);
-  --success:     #859900;
-  --error:       #dc322f;
-  --warning:     #b58900;
-  --success-bg:  rgba(133,153,0,.12);
-  --error-bg:    rgba(220,50,47,.12);
-  --chart-1:     #268bd2;
-  --chart-2:     #2aa198;
-  --chart-3:     #b58900;
-  --chart-4:     #cb4b16;
-  --chart-5:     #d33682;
-  --chart-6:     #859900;
-  --chart-1-bg:  rgba(38,139,210,.15);
-  --chart-2-bg:  rgba(42,161,152,.15);
-  --chart-3-bg:  rgba(181,137,0,.15);
-  --chart-4-bg:  rgba(203,75,22,.15);
-  --chart-5-bg:  rgba(211,54,130,.15);
-  --chart-6-bg:  rgba(133,153,0,.15);
-}
-
 /* ── 2. RESET ────────────────────────────────────────────── */
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 html { height:100%; }
@@ -457,6 +324,23 @@ svg { flex-shrink: 0; }
 }
 .sidebar-collapsed .sb-item-label { opacity:0; max-width:0; pointer-events:none; }
 .sb-action-item { background:none; }
+
+/* Standalone top-level nav item (e.g. Kanban Board) — styled like a group
+   header but navigates directly on click, no expand/collapse step. */
+.sb-main-item {
+  padding: 7px 10px 7px 12px;
+  font-size: var(--ty-caption); font-weight: var(--fw-bold);
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.sb-main-item svg { width:16px; height:16px; flex-shrink:0; }
+.sb-main-item.active {
+  background: var(--surface-2); color: var(--text);
+}
+.sb-main-item.active::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 3px; background: var(--accent);
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+}
 
 .sb-link-item { padding-left:28px; cursor:default; }
 .sb-link-item .sb-fav { width:14px; height:14px; border-radius:3px; object-fit:contain; flex-shrink:0; }
@@ -879,9 +763,6 @@ svg { flex-shrink: 0; }
 .qa-mode-btn.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent-2); }
 .qa-mode-btn:hover:not(.active) { border-color:var(--border-2); color:var(--text-2); }
 
-/* Edit mode toggle active state */
-.edit-btn.edit-active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent-2); }
-
 /* Grid layout — changes per mode */
 .quick-access-grid { display:grid; gap:10px; justify-content:center; }
 .quick-access-grid[data-qa-mode="icon"] { grid-template-columns:repeat(auto-fill,minmax(64px,64px)); }
@@ -916,7 +797,7 @@ svg { flex-shrink: 0; }
 .qa-add-card:hover { border-color:var(--accent); color:var(--accent); }
 .qa-add-icon { font-size:22px; }
 
-/* ... menu button — hidden by default, shown in edit mode only */
+/* ... menu button — hidden by default, revealed on card hover for instant edit access */
 .qa-menu-btn {
   position:absolute; top:4px; right:4px;
   width:20px; height:20px; display:none;
@@ -926,13 +807,7 @@ svg { flex-shrink: 0; }
   z-index:2;
 }
 .qa-menu-btn:hover { background:var(--surface-3); color:var(--text); }
-.quick-access-grid.qa-edit-mode .qa-menu-btn { display:flex; }
-.quick-access-grid.qa-edit-mode .qa-card { cursor:default; }
-.quick-access-grid.qa-edit-mode .qa-card:not(.qa-add-card) { border-color:var(--border-2); }
-
-.grid-view-mode .quick-access-grid[data-qa-mode="icon"] { grid-template-columns:repeat(auto-fill,minmax(48px,1fr)); gap:7px; }
-.grid-view-mode .qa-favicon { width:24px; height:24px; }
-.grid-view-mode .qa-favicon img { width:18px; height:18px; }
+.qa-card:hover .qa-menu-btn { display:flex; }
 
 /* ── 13. WORKSPACE BOOKMARKS ─────────────────────────────── */
 .folder-card {
@@ -1012,15 +887,6 @@ svg { flex-shrink: 0; }
 .tasks-progress-chip { display:none; font-size:11px; font-weight:600; background:var(--accent-bg); color:var(--accent-2); border-radius:var(--radius-pill); padding:2px 7px; }
 .tasks-progress-chip.visible { display:inline-block; }
 .tasks-progress-chip.all-done { background:var(--success-bg); color:var(--success); }
-
-.quote-widget { min-height:140px; }
-.quote-header { display:flex; align-items:center; justify-content:space-between; }
-.quote-mark { font-size:36px; font-weight:900; color:var(--accent); line-height:1; opacity:.6; }
-.quote-refresh-icon { display:flex; align-items:center; justify-content:center; padding:5px; border-radius:var(--radius-xs); color:var(--text-3); transition:background .1s,color .1s,transform .3s; }
-.quote-refresh-icon:hover { background:var(--surface-2); color:var(--text-2); transform:rotate(180deg); }
-.quote-text { font-size:13px; color:var(--text); line-height:1.6; font-style:italic; flex:1; }
-.quote-author-row { margin-top:auto; }
-.quote-author { font-size:11.5px; color:var(--text-3); font-weight:500; }
 
 .timer-body { display:flex; align-items:center; gap:16px; }
 .timer-circle-wrap { position:relative; width:90px; height:90px; flex-shrink:0; }
@@ -1382,9 +1248,6 @@ svg { flex-shrink: 0; }
 .settings-input::placeholder { color:var(--text-3); }
 .settings-row-block { display:flex; flex-direction:column; gap:6px; padding:7px 0; }
 .settings-sub-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); margin-top:4px; }
-.settings-chrome-import-btn { display:flex; align-items:flex-start; gap:10px; width:100%; padding:12px 14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-size:13px; font-weight:500; text-align:left; transition:border-color .12s,background .12s; }
-.settings-chrome-import-btn:hover { border-color:var(--border-2); background:var(--surface-3); }
-.settings-chrome-import-sub { display:block; font-size:11px; color:var(--text-3); font-weight:400; margin-top:2px; }
 .settings-action-btn { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-xs); font-size:12.5px; color:var(--text-2); transition:all .12s; }
 .settings-action-btn:hover { background:var(--surface-3); border-color:var(--border-2); color:var(--text); }
 .settings-action-btn.danger-soft { color:var(--error); border-color:rgba(239,68,68,.2); background:var(--error-bg); }
@@ -1958,88 +1821,7 @@ svg { flex-shrink: 0; }
 .kanban-drop-zone { min-height:8px; border-radius:var(--radius-xs); transition:background .12s; }
 .kanban-drop-zone.over { background:var(--accent-bg); }
 
-/* ── 31. STOPWATCH WIDGET ────────────────────────────────── */
-.stopwatch-display { font-size:30px; font-weight:700; color:var(--text); letter-spacing:-1px; text-align:center; font-variant-numeric:tabular-nums; }
-.stopwatch-sub { font-size:12px; color:var(--text-3); text-align:center; margin-top:2px; }
-.stopwatch-controls { display:flex; justify-content:center; gap:8px; margin-top:4px; }
-.stopwatch-laps { max-height:90px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; }
-.stopwatch-laps::-webkit-scrollbar { width:3px; }
-.stopwatch-laps::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-.stopwatch-lap { display:flex; align-items:center; justify-content:space-between; font-size:11.5px; color:var(--text-2); padding:3px 4px; border-bottom:1px solid var(--border); }
-.stopwatch-lap:last-child { border-bottom:none; }
-.stopwatch-lap-num { color:var(--text-3); font-weight:600; }
-
-/* ── 32. WORLD CLOCK WIDGET ──────────────────────────────── */
-.world-clocks-list { display:flex; flex-direction:column; gap:4px; }
-.world-clock-item { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); }
-.world-clock-item:last-child { border-bottom:none; }
-.world-clock-left { display:flex; flex-direction:column; }
-.world-clock-city { font-size:13px; font-weight:600; color:var(--text); }
-.world-clock-tz { font-size:11px; color:var(--text-3); }
-.world-clock-time { font-size:18px; font-weight:700; color:var(--text); letter-spacing:-0.5px; font-variant-numeric:tabular-nums; }
-.world-clock-ampm { font-size:11px; color:var(--text-3); margin-left:3px; }
-.world-clock-add { display:flex; align-items:center; gap:6px; padding:7px; border:1.5px dashed var(--border-2); border-radius:var(--radius-xs); color:var(--text-3); font-size:12px; cursor:pointer; margin-top:4px; transition:all .12s; justify-content:center; }
-.world-clock-add:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
-
-/* ── 33. MOOD TRACKER ────────────────────────────────────── */
-.mood-view { padding:0 22px 32px; display:flex; flex-direction:column; gap:20px; }
-.mood-today-card {
-  display:flex; flex-direction:column; align-items:center; gap:16px;
-  padding:28px 22px; background:var(--surface); border:1.5px solid var(--border);
-  border-radius:var(--radius); text-align:center;
-}
-.mood-today-label { font-size:16px; font-weight:700; color:var(--text); }
-.mood-today-sub { font-size:12.5px; color:var(--text-3); }
-.mood-emojis { display:flex; gap:14px; }
-.mood-emoji-btn {
-  width:54px; height:54px; font-size:30px; border-radius:50%;
-  border:2.5px solid var(--border-2); display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition:all .15s; background:var(--surface-2);
-}
-.mood-emoji-btn:hover { border-color:var(--accent); transform:scale(1.1); background:var(--accent-bg); }
-.mood-emoji-btn.selected { border-color:var(--accent); background:var(--accent-bg); transform:scale(1.12); }
-.mood-note-input {
-  width:100%; max-width:400px; background:var(--surface-2); border:1.5px solid var(--border);
-  border-radius:var(--radius-xs); padding:9px 12px; font-size:13px; color:var(--text);
-  outline:none; transition:border-color .15s; font-family:var(--font);
-}
-.mood-note-input:focus { border-color:var(--accent); }
-.mood-history-section { display:flex; flex-direction:column; gap:8px; }
-.mood-history-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-3); margin-bottom:4px; }
-.mood-history-item {
-  display:flex; align-items:center; gap:12px; padding:9px 12px;
-  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xs);
-}
-.mood-history-date { font-size:12px; color:var(--text-3); flex-shrink:0; min-width:90px; }
-.mood-history-emoji { font-size:22px; }
-.mood-history-label { font-size:13px; color:var(--text-2); flex:1; }
-.mood-history-note { font-size:12px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
-
-/* ── 34. COUNTDOWN TIMERS WIDGET ─────────────────────────── */
-.countdowns-list { display:flex; flex-direction:column; gap:7px; }
-.countdown-item {
-  display:flex; align-items:center; gap:12px; padding:10px 12px;
-  background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm);
-}
-.countdown-info { flex:1; min-width:0; }
-.countdown-name { font-size:13.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.countdown-target { font-size:11px; color:var(--text-3); margin-top:2px; }
-.countdown-time { font-size:15px; font-weight:700; color:var(--accent-2); letter-spacing:-0.5px; flex-shrink:0; font-variant-numeric:tabular-nums; }
-.countdown-del {
-  width:22px; height:22px; display:flex; align-items:center; justify-content:center;
-  border-radius:var(--radius-xs); color:var(--text-3); opacity:0;
-  transition:opacity .12s,background .1s,color .1s; flex-shrink:0;
-}
-.countdown-item:hover .countdown-del { opacity:1; }
-.countdown-del:hover { background:var(--error-bg); color:var(--error); }
-.countdown-add {
-  display:flex; align-items:center; gap:7px; padding:8px 12px;
-  border:1.5px dashed var(--border-2); border-radius:var(--radius-sm);
-  color:var(--text-3); font-size:13px; cursor:pointer; transition:all .12s;
-}
-.countdown-add:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
-
-/* ── 35. HERO BACKGROUND PRESETS ─────────────────────────── */
+/* ── 31. HERO BACKGROUND PRESETS ─────────────────────────── */
 .hero-bg-presets { display:flex; flex-wrap:wrap; gap:8px; }
 .hero-bg-preset {
   width:52px; height:36px; border-radius:var(--radius-xs); cursor:pointer;
