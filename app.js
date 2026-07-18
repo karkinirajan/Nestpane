@@ -1310,18 +1310,11 @@ let S = {
     widgets: {
       notes: true,
       tasks: true,
-      quote: true,
       timer: true,
-      stopwatch: true,
-      worldclock: true,
-      countdown: true,
     },
-    gridView: false,
     sidebarCollapsed: false,
-    worldClocks: [],
     heroBg: null,
     qaMode: "icon",
-    qaEditMode: false,
     heroQuote: null,
     e2e: { enabled: false },
     focus: { enabled: false, blockedSites: [] },
@@ -1405,12 +1398,6 @@ let S = {
   tabSessions: [],
   journal: {},
   kanban: {},
-  mood: {},
-  countdowns: [],
-  stopwatch: { running: false, startTime: null, elapsed: 0, laps: [] },
-  _swInterval: null,
-  _cdInterval: null,
-  _wcInterval: null,
   _kanbanDragCard: null,
   _kanbanDragCol: null,
   _sbAddLinkGroup: null,
@@ -1495,8 +1482,6 @@ async function loadState() {
     "tabSessions",
     "journal",
     "kanban",
-    "mood",
-    "countdowns",
     "calEvents",
     "_savedAt",
     "googleUser",
@@ -1587,8 +1572,6 @@ async function loadState() {
   S.tabSessions = Array.isArray(d.tabSessions) ? d.tabSessions : [];
   S.journal = d.journal && typeof d.journal === "object" ? d.journal : {};
   S.kanban = d.kanban && typeof d.kanban === "object" ? d.kanban : {};
-  S.mood = d.mood && typeof d.mood === "object" ? d.mood : {};
-  S.countdowns = Array.isArray(d.countdowns) ? d.countdowns : [];
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
   S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
@@ -1601,20 +1584,15 @@ async function loadState() {
   });
   S._cloudResetDone = !!d._cloudResetDone;
   S._savedAt = d._savedAt || 0;
-  S.stopwatch = { running: false, startTime: null, elapsed: 0, laps: [] };
   // Restore Google user so the signed-in state survives hard refresh
   if (d.googleUser?.email) S.googleUser = d.googleUser;
   // Drive._fileId intentionally NOT restored from storage — push always POSTs fresh each session
   // each session to avoid 403s when the OAuth client changes.
-  // Ensure settings sub-objects exist
-  if (!S.settings.worldClocks) S.settings.worldClocks = [];
   applyAccent(S.settings.accentColor);
   applyTheme(S.settings.theme);
   applyCardGlow(S.settings.cardGlow || "glow");
   _syncFocusModeUI();
   _syncAiUI();
-  document.body.classList.toggle("grid-view-mode", !!S.settings.gridView);
-  el("gridViewBtn")?.classList.toggle("active", !!S.settings.gridView);
   document.body.classList.toggle(
     "sidebar-collapsed",
     !!S.settings.sidebarCollapsed,
@@ -1642,8 +1620,6 @@ function save() {
     tabSessions: S.tabSessions,
     journal: S.journal,
     kanban: S.kanban,
-    mood: S.mood,
-    countdowns: S.countdowns,
     calEvents: S.calEvents,
     _savedAt: S._savedAt,
     _focusSessions: S._focusSessions || {},
@@ -2682,9 +2658,7 @@ function buildDrivePayload() {
     tabSessions: S.tabSessions,
     journal: S.journal,
     kanban: S.kanban,
-    mood: S.mood,
     calEvents: S.calEvents,
-    countdowns: S.countdowns,
     weatherLocation: S.weatherLocation,
     trash: S.trash,
     _qaDeleted: [...(S._qaDeleted || new Set())],
@@ -2729,11 +2703,7 @@ function applyCloudData(cloud) {
       : S.journal;
   S.kanban =
     cloud.kanban && typeof cloud.kanban === "object" ? cloud.kanban : S.kanban;
-  S.mood = cloud.mood && typeof cloud.mood === "object" ? cloud.mood : S.mood;
   S.calEvents = Array.isArray(cloud.calEvents) ? cloud.calEvents : S.calEvents;
-  S.countdowns = Array.isArray(cloud.countdowns)
-    ? cloud.countdowns
-    : S.countdowns;
   S.trash = Array.isArray(cloud.trash) ? cloud.trash : S.trash;
   if (cloud.weatherLocation !== undefined)
     S.weatherLocation = cloud.weatherLocation;
@@ -2808,9 +2778,7 @@ async function _persistLocalState() {
     tabSessions: S.tabSessions,
     journal: S.journal,
     kanban: S.kanban,
-    mood: S.mood,
     calEvents: S.calEvents,
-    countdowns: S.countdowns,
     weatherLocation: S.weatherLocation,
     trash: S.trash,
     _savedAt: S._savedAt,
@@ -2872,8 +2840,6 @@ function _applyLiveStorageChange(changes) {
   if (changes.tabSessions) S.tabSessions = changes.tabSessions.newValue || [];
   if (changes.journal) S.journal = changes.journal.newValue || {};
   if (changes.kanban) S.kanban = changes.kanban.newValue || {};
-  if (changes.mood) S.mood = changes.mood.newValue || {};
-  if (changes.countdowns) S.countdowns = changes.countdowns.newValue || [];
   if (changes.calEvents) S.calEvents = changes.calEvents.newValue || [];
   if (changes._focusSessions) S._focusSessions = changes._focusSessions.newValue || {};
   if (changes._focusMinutes) S._focusMinutes = changes._focusMinutes.newValue || {};
@@ -3327,9 +3293,6 @@ function renderAll() {
   renderNotesView();
   renderTrash();
   renderCalendarWidget();
-  renderStopwatchWidget();
-  renderWorldClocks();
-  renderCountdowns();
   renderTimerStats();
   updateSidebarTabActive();
 }
@@ -3619,13 +3582,11 @@ function updateSidebarTabActive() {
     downloads: "home",
     reading: "home",
     sessions: "home",
+    trash: "home",
     notes: "personal",
     analytics: "personal",
-    trash: "personal",
     journal: "personal",
     habits: "personal",
-    mood: "personal",
-    kanban: "work",
   };
   // Update .sb-item active states (dashboard is never highlighted — it's always visible)
   document.querySelectorAll(".sb-item[data-view]").forEach((item) => {
@@ -5262,53 +5223,6 @@ async function removeWsFolder(folderName) {
   showToast("Folder deleted", "success");
 }
 
-async function importAllChromeBookmarks() {
-  if (!IS_CHROME) {
-    showToast("Requires Chrome extension", "error");
-    return;
-  }
-  if (!S.allBookmarks.length) {
-    showToast("No Chrome bookmarks found", "error");
-    return;
-  }
-  // Flatten all bookmarks across all folders
-  const allItems = [];
-  S.allBookmarks.forEach((folder) => {
-    (folder.items || []).forEach((it) => {
-      allItems.push({
-        id: it.id,
-        title: it.title || it.url,
-        url: it.url,
-        folderName: folder.title,
-      });
-    });
-  });
-  if (!allItems.length) {
-    showToast("No bookmarks to import", "error");
-    return;
-  }
-  // Create a dedicated workspace
-  const ws = { id: Date.now(), name: "Chrome Bookmarks", icon: "🔖" };
-  S.workspaces.push(ws);
-  S.wsData[ws.id] = {
-    quickAccess: [],
-    notes: [],
-    tasks: [],
-    importedBookmarks: allItems,
-    folders: [],
-  };
-  S.activeWsId = ws.id;
-  await save();
-  el("importChromeBookmarksBtn").closest(".settings-section").style.display =
-    "none";
-  closeSettings();
-  renderAll();
-  showToast(
-    `Imported ${allItems.length} bookmarks into new workspace`,
-    "success",
-  );
-}
-
 // ===== DRAG REORDER =====
 function initDragReorder(container, itemSelector, onDrop) {
   let dragSrc = null;
@@ -5610,25 +5524,18 @@ function renderQuickAccess() {
   if (!grid) return;
   const items = wsQA();
   const mode = S.settings.qaMode || "icon";
-  const editMode = !!S.settings.qaEditMode;
 
   grid.dataset.qaMode = mode;
-  grid.classList.toggle("qa-edit-mode", editMode);
   // Sync mode buttons
   document
     .querySelectorAll("#qaModeBtns .qa-mode-btn")
     .forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
-  // Sync edit button label
-  const editBtn = el("editQuickAccessBtn");
-  const editLabel = el("editQuickAccessLabel");
-  editBtn?.classList.toggle("edit-active", editMode);
-  if (editLabel) editLabel.textContent = editMode ? "Done" : "Edit";
 
   grid.innerHTML =
     items
       .map((item) => {
         const domain = getDomain(item.url);
-        return `<a href="${escH(item.url)}" class="qa-card" data-qaid="${item.id}" draggable="true" ${editMode ? 'onclick="return false"' : ""}>
+        return `<a href="${escH(item.url)}" class="qa-card" data-qaid="${item.id}" draggable="true">
       <button class="qa-menu-btn" data-qaid="${item.id}" title="Options">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
       </button>
@@ -6360,10 +6267,6 @@ function addTask(text) {
   renderTasksWidget();
   showToast("Task added!", "success");
 }
-
-// ===== QUOTE — removed from widget, lives in hero =====
-function renderQuote() {}
-function refreshQuote() {}
 
 function loadHeroQuote() {
   // If user saved a custom quote, always show it
@@ -7832,11 +7735,6 @@ function initTooltips() {
 
 // ===== FIX #4 — SETTINGS PANEL =====
 async function openSettings() {
-  const alreadyImported = S.workspaces.some(
-    (w) => w.name === "Chrome Bookmarks",
-  );
-  el("importChromeBookmarksBtn").closest(".settings-section").style.display =
-    alreadyImported ? "none" : "";
   // Populate current values
   el("settingsName").value = S.user.name;
   _syncThemeGridUI();
@@ -7850,11 +7748,7 @@ async function openSettings() {
   el("showSecondsToggle").checked = !!S.settings.showSeconds;
   el("widgetNotesToggle").checked = S.settings.widgets.notes !== false;
   el("widgetTasksToggle").checked = S.settings.widgets.tasks !== false;
-  el("widgetQuoteToggle").checked = S.settings.widgets.quote !== false;
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
-  el("widgetStopwatchToggle") && (el("widgetStopwatchToggle").checked = S.settings.widgets.stopwatch !== false);
-  el("widgetWorldclockToggle") && (el("widgetWorldclockToggle").checked = S.settings.widgets.worldclock !== false);
-  el("widgetCountdownToggle") && (el("widgetCountdownToggle").checked = S.settings.widgets.countdown !== false);
   // Highlight active card glow
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
     b.classList.toggle(
@@ -7883,11 +7777,7 @@ async function saveSettings() {
   S.user.name = name;
   S.settings.widgets.notes = el("widgetNotesToggle").checked;
   S.settings.widgets.tasks = el("widgetTasksToggle").checked;
-  S.settings.widgets.quote = el("widgetQuoteToggle").checked;
   S.settings.widgets.timer = el("widgetTimerToggle").checked;
-  if (el("widgetStopwatchToggle")) S.settings.widgets.stopwatch = el("widgetStopwatchToggle").checked;
-  if (el("widgetWorldclockToggle")) S.settings.widgets.worldclock = el("widgetWorldclockToggle").checked;
-  if (el("widgetCountdownToggle")) S.settings.widgets.countdown = el("widgetCountdownToggle").checked;
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
@@ -7934,10 +7824,6 @@ function applyTheme(theme) {
 const THEME_PRESETS = [
   { id: "dark", label: "Dark" },
   { id: "light", label: "Light" },
-  { id: "nord", label: "Nord" },
-  { id: "dracula", label: "Dracula" },
-  { id: "catppuccin", label: "Catppuccin" },
-  { id: "solarized", label: "Solarized" },
 ];
 
 function _syncThemeGridUI() {
@@ -7988,9 +7874,6 @@ function applyWidgetVisibility() {
   show("widget-notes", w.notes);
   show("widget-tasks", w.tasks);
   show("widget-timer", w.timer);
-  show("widget-stopwatch", w.stopwatch !== false);
-  show("widget-worldclock", w.worldclock !== false);
-  show("widget-countdown", w.countdown !== false);
 }
 
 // Export / Import
@@ -8752,7 +8635,6 @@ function _navigateLoad(view) {
   if (view === "reading") renderReadingQueue();
   if (view === "sessions") renderSessions();
   if (view === "journal") initJournalView();
-  if (view === "mood") renderMoodView();
   if (view === "kanban") renderKanban();
 }
 
@@ -8787,7 +8669,7 @@ function renderBmForActiveWorkspace() {
     el("allBookmarksList").innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">🔖</div>
-        <div class="empty-state-text">No bookmarks in this workspace.<br>Import Chrome bookmarks from Settings.</div>
+        <div class="empty-state-text">No bookmarks in this workspace.<br>Click + to add one.</div>
       </div>`;
     return;
   }
@@ -8969,14 +8851,6 @@ function setupEventListeners() {
   document
     .querySelectorAll(".view-back-btn")
     .forEach((btn) => btn.addEventListener("click", () => navigateTo("home")));
-  el("gridViewBtn").addEventListener("click", () => {
-    S.settings.gridView = !S.settings.gridView;
-    document.body.classList.toggle("grid-view-mode", S.settings.gridView);
-    el("gridViewBtn").classList.toggle("active", S.settings.gridView);
-    save();
-    renderQuickAccess();
-    renderWorkspaceBookmarks();
-  });
   el("sidebarToggleBtn").addEventListener("click", () => {
     S.settings.sidebarCollapsed = !S.settings.sidebarCollapsed;
     document.body.classList.toggle(
@@ -9024,24 +8898,6 @@ function setupEventListeners() {
   el("saveShortcutsBtn")?.addEventListener("click", saveShortcuts);
   el("pushCloudBtn")?.addEventListener("click", manualPushToDrive);
   el("pullCloudBtn")?.addEventListener("click", manualPullFromDrive);
-
-  // World clock widget
-  el("addWorldClockBtn")?.addEventListener("click", () => {
-    _populateTimezoneSelect();
-    if (el("wcLabel")) el("wcLabel").value = "";
-    if (el("wcTimezone")) el("wcTimezone").value = "UTC";
-    openModal("worldClockModal");
-  });
-  el("saveWorldClockBtn")?.addEventListener("click", saveWorldClock);
-
-  // Countdown widget
-  el("addCountdownBtn")?.addEventListener("click", () => {
-    if (el("cdTitle")) el("cdTitle").value = "";
-    if (el("cdDate")) el("cdDate").value = "";
-    if (el("cdEmoji")) el("cdEmoji").value = "🎯";
-    openModal("countdownModal");
-  });
-  el("saveCountdownBtn")?.addEventListener("click", saveCountdown);
 
   // Settings theme grid (theme marketplace)
   el("themeGrid")?.addEventListener("click", (e) => {
@@ -9114,7 +8970,7 @@ function setupEventListeners() {
   });
 
   // Widget toggles (live preview)
-  ["Notes", "Tasks", "Quote", "Timer"].forEach((w) => {
+  ["Notes", "Tasks", "Timer"].forEach((w) => {
     el(`widget${w}Toggle`).addEventListener("change", () => {
       S.settings.widgets[w.toLowerCase()] = el(`widget${w}Toggle`).checked;
       applyWidgetVisibility();
@@ -9234,24 +9090,16 @@ function setupEventListeners() {
           widgets: {
             notes: true,
             tasks: true,
-            quote: true,
             timer: true,
-            stopwatch: true,
-            worldclock: true,
-            countdown: true,
           },
-          worldClocks: [],
           heroBg: null,
           qaMode: "icon",
-          qaEditMode: false,
         };
         S.habits = [];
         S.readingQueue = [];
         S.tabSessions = [];
         S.journal = {};
         S.kanban = {};
-        S.mood = {};
-        S.countdowns = [];
         save();
         renderAll();
         applyTheme("dark");
@@ -9369,15 +9217,6 @@ function setupEventListeners() {
   });
 
   // Quick Access
-  // QA edit mode toggle
-  el("editQuickAccessBtn")?.addEventListener("click", () => {
-    S.settings.qaEditMode = !S.settings.qaEditMode;
-    const btn = el("editQuickAccessBtn");
-    const label = el("editQuickAccessLabel");
-    btn?.classList.toggle("edit-active", S.settings.qaEditMode);
-    if (label) label.textContent = S.settings.qaEditMode ? "Done" : "Edit";
-    renderQuickAccess();
-  });
   // QA display mode buttons
   el("qaModeBtns")
     ?.querySelectorAll(".qa-mode-btn")
@@ -9545,12 +9384,6 @@ function setupEventListeners() {
   // Bookmark / folder add buttons in bookmarks view header
   el("addBookmarkBtn").addEventListener("click", () => openAddBookmarkModal());
   el("addFolderBtn").addEventListener("click", () => openAddFolderModal());
-
-  // Import Chrome Bookmarks (settings sidebar)
-  el("importChromeBookmarksBtn").addEventListener(
-    "click",
-    importAllChromeBookmarks,
-  );
 
   // Workspace bookmark chooser
   el("addWsBmBtn").addEventListener("click", openWsBmChooser);
@@ -9751,17 +9584,6 @@ function setupEventListeners() {
     if (e.key === "Enter") saveKanbanCard();
   });
   el("kanbanAiParseBtn")?.addEventListener("click", _kanbanParseAI);
-
-  // ── Mood Tracker ────────────────────────────────────────────────────────
-  document.querySelectorAll(".mood-emoji-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".mood-emoji-btn")
-        .forEach((b) => b.classList.remove("selected"));
-      btn.classList.add("selected");
-    });
-  });
-  el("saveMoodBtn")?.addEventListener("click", saveMood);
 
   // ── Calendar Widget ─────────────────────────────────────────────────────
   el("calPrevBtn")?.addEventListener("click", () => {
@@ -10403,250 +10225,6 @@ function deleteKanbanCard(col, id) {
   renderKanbanDash();
 }
 
-// ===== FEATURE 7: STOPWATCH =============================================
-function _swFmt(ms) {
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  const t = Math.floor((ms % 1000) / 100);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${t}`;
-}
-
-function renderStopwatchWidget() {
-  const disp = el("swDisplay");
-  if (disp) disp.textContent = _swFmt(S.stopwatch.elapsed);
-  const laps = el("swLaps");
-  if (!laps) return;
-  if (!S.stopwatch.laps.length) { laps.innerHTML = ""; return; }
-  laps.innerHTML = S.stopwatch.laps
-    .map((ms, i) => `<div class="sw-lap"><span class="sw-lap-num">Lap ${i + 1}</span><span class="sw-lap-time">${_swFmt(ms)}</span></div>`)
-    .join("");
-}
-
-function toggleStopwatch() {
-  const btn = el("swPlayBtn");
-  if (S.stopwatch.running) {
-    S.stopwatch.elapsed += Date.now() - S.stopwatch.startTime;
-    S.stopwatch.startTime = null;
-    S.stopwatch.running = false;
-    clearInterval(S._swInterval);
-    S._swInterval = null;
-    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
-    save();
-  } else {
-    S.stopwatch.startTime = Date.now();
-    S.stopwatch.running = true;
-    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
-    S._swInterval = setInterval(() => {
-      const disp = el("swDisplay");
-      if (disp) disp.textContent = _swFmt(S.stopwatch.elapsed + (Date.now() - S.stopwatch.startTime));
-    }, 100);
-  }
-}
-
-function lapStopwatch() {
-  if (!S.stopwatch.running) return;
-  const current = S.stopwatch.elapsed + (Date.now() - S.stopwatch.startTime);
-  S.stopwatch.laps.push(current);
-  renderStopwatchWidget();
-  save();
-}
-
-function resetStopwatch() {
-  clearInterval(S._swInterval);
-  S._swInterval = null;
-  S.stopwatch = { running: false, startTime: null, elapsed: 0, laps: [] };
-  const btn = el("swPlayBtn");
-  if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
-  renderStopwatchWidget();
-  save();
-}
-
-// ===== FEATURE 8: WORLD CLOCKS ==========================================
-const TIMEZONES = [
-  "UTC","America/New_York","America/Los_Angeles","America/Chicago","America/Denver",
-  "America/Toronto","America/Vancouver","America/Sao_Paulo","America/Buenos_Aires",
-  "America/Mexico_City","America/Bogota","America/Lima","America/Santiago",
-  "Europe/London","Europe/Paris","Europe/Berlin","Europe/Madrid","Europe/Rome",
-  "Europe/Amsterdam","Europe/Zurich","Europe/Stockholm","Europe/Oslo","Europe/Copenhagen",
-  "Europe/Helsinki","Europe/Warsaw","Europe/Prague","Europe/Budapest","Europe/Bucharest",
-  "Europe/Athens","Europe/Istanbul","Europe/Moscow","Europe/Kiev",
-  "Asia/Dubai","Asia/Riyadh","Asia/Tehran","Asia/Karachi","Asia/Kolkata",
-  "Asia/Kathmandu","Asia/Dhaka","Asia/Yangon","Asia/Bangkok","Asia/Ho_Chi_Minh",
-  "Asia/Jakarta","Asia/Singapore","Asia/Kuala_Lumpur","Asia/Manila","Asia/Hong_Kong",
-  "Asia/Shanghai","Asia/Taipei","Asia/Seoul","Asia/Tokyo","Asia/Osaka",
-  "Australia/Sydney","Australia/Melbourne","Australia/Brisbane","Australia/Perth",
-  "Pacific/Auckland","Pacific/Honolulu","Pacific/Fiji"
-];
-
-function renderWorldClocks() {
-  const list = el("wcList");
-  if (!list) return;
-  const clocks = S.settings.worldClocks || [];
-  if (!clocks.length) {
-    list.innerHTML = '<div class="empty-state" style="padding:14px 0"><div class="empty-state-text">No clocks. Add a timezone above.</div></div>';
-    return;
-  }
-  list.innerHTML = clocks.map((c, i) => {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString("en", { timeZone: c.tz, hour: "2-digit", minute: "2-digit", hour12: true });
-    const dateStr = now.toLocaleDateString("en", { timeZone: c.tz, weekday: "short", month: "short", day: "numeric" });
-    return `<div class="wc-item">
-      <div class="wc-info"><span class="wc-label">${escH(c.label || c.tz.split("/").pop().replace(/_/g, " "))}</span><span class="wc-tz">${escH(c.tz)}</span></div>
-      <div class="wc-time-col"><span class="wc-time">${timeStr}</span><span class="wc-date">${dateStr}</span></div>
-      <button class="wc-remove" onclick="removeWorldClock(${i})" data-tip="Remove">✕</button>
-    </div>`;
-  }).join("");
-}
-
-function saveWorldClock() {
-  const tz = el("wcTimezone")?.value;
-  const label = el("wcLabel")?.value.trim() || "";
-  if (!tz) return;
-  if (!S.settings.worldClocks) S.settings.worldClocks = [];
-  if (S.settings.worldClocks.some((c) => c.tz === tz)) {
-    showToast("Clock already added", "error"); return;
-  }
-  S.settings.worldClocks.push({ tz, label });
-  save();
-  renderWorldClocks();
-  closeModal("worldClockModal");
-  if (el("wcLabel")) el("wcLabel").value = "";
-  showToast("World clock added!", "success");
-}
-
-function removeWorldClock(idx) {
-  S.settings.worldClocks.splice(idx, 1);
-  save();
-  renderWorldClocks();
-}
-
-function _populateTimezoneSelect() {
-  const sel = el("wcTimezone");
-  if (!sel || sel.options.length > 1) return;
-  TIMEZONES.forEach((tz) => {
-    const opt = document.createElement("option");
-    opt.value = tz;
-    opt.textContent = tz.replace(/_/g, " ");
-    sel.appendChild(opt);
-  });
-}
-
-// ===== FEATURE 9: MOOD TRACKER ==========================================
-function renderMoodView() {
-  const today = _todayKey();
-  const todayMood = S.mood[today];
-  document.querySelectorAll(".mood-emoji-btn").forEach((btn) => {
-    btn.classList.toggle(
-      "selected",
-      todayMood && btn.dataset.mood === todayMood.emoji,
-    );
-  });
-  el("moodNoteInput").value = todayMood?.note || "";
-  renderMoodHistory();
-}
-
-function renderMoodHistory() {
-  const hist = el("moodHistory");
-  if (!hist) return;
-  const entries = Object.entries(S.mood)
-    .sort((a, b) => b[0].localeCompare(a[0]))
-    .slice(0, 14);
-  if (!entries.length) {
-    hist.innerHTML =
-      '<div class="empty-state" style="padding:20px"><div class="empty-state-text">No mood entries yet.</div></div>';
-    return;
-  }
-  const labels = {
-    "😄": "Great",
-    "🙂": "Good",
-    "😐": "Neutral",
-    "😞": "Low",
-    "😢": "Rough",
-  };
-  hist.innerHTML = entries
-    .map(([key, val]) => {
-      const d = new Date(key + "T00:00:00");
-      const dateStr = d.toLocaleDateString("en", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
-      return `<div class="mood-history-item">
-      <span class="mood-history-date">${dateStr}</span>
-      <span class="mood-history-emoji">${val.emoji || "😐"}</span>
-      <span class="mood-history-label">${labels[val.emoji] || ""}</span>
-      ${val.note ? `<span class="mood-history-note">${escH(val.note)}</span>` : ""}
-    </div>`;
-    })
-    .join("");
-}
-
-function saveMood() {
-  const selected = document.querySelector(".mood-emoji-btn.selected");
-  if (!selected) {
-    showToast("Select a mood first", "error");
-    return;
-  }
-  const emoji = selected.dataset.mood;
-  const note = el("moodNoteInput").value.trim();
-  const label = selected.dataset.label || "";
-  S.mood[_todayKey()] = { emoji, label, note, savedAt: Date.now() };
-  save();
-  renderMoodHistory();
-  showToast("Mood saved! 🌟", "success");
-}
-
-// ===== FEATURE 10: COUNTDOWN TIMERS =====================================
-function _cdDaysLeft(dateStr) {
-  const target = new Date(dateStr + "T00:00:00");
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return Math.ceil((target - now) / 86400000);
-}
-
-function renderCountdowns() {
-  const list = el("cdList");
-  if (!list) return;
-  if (!S.countdowns || !S.countdowns.length) {
-    list.innerHTML = '<div class="empty-state" style="padding:14px 0"><div class="empty-state-text">No countdowns. Add one above.</div></div>';
-    return;
-  }
-  list.innerHTML = S.countdowns.map((c, i) => {
-    const days = _cdDaysLeft(c.date);
-    const label = days < 0 ? `${Math.abs(days)}d ago` : days === 0 ? "Today!" : `${days}d left`;
-    const cls = days <= 0 ? "cd-item cd-past" : days <= 7 ? "cd-item cd-soon" : "cd-item";
-    return `<div class="${cls}">
-      <span class="cd-emoji">${escH(c.emoji || "⏳")}</span>
-      <div class="cd-info"><span class="cd-title">${escH(c.title)}</span><span class="cd-date">${escH(c.date)}</span></div>
-      <span class="cd-days">${label}</span>
-      <button class="wc-remove" onclick="deleteCountdown(${i})" data-tip="Delete">✕</button>
-    </div>`;
-  }).join("");
-}
-
-function saveCountdown() {
-  const title = el("cdTitle")?.value.trim();
-  const date = el("cdDate")?.value;
-  const emoji = el("cdEmoji")?.value.trim() || "⏳";
-  if (!title || !date) { showToast("Title and date required", "error"); return; }
-  if (!S.countdowns) S.countdowns = [];
-  S.countdowns.push({ id: Date.now(), title, date, emoji });
-  S.countdowns.sort((a, b) => a.date.localeCompare(b.date));
-  save();
-  renderCountdowns();
-  closeModal("countdownModal");
-  if (el("cdTitle")) el("cdTitle").value = "";
-  if (el("cdDate")) el("cdDate").value = "";
-  if (el("cdEmoji")) el("cdEmoji").value = "";
-  showToast("Countdown added!", "success");
-}
-
-function deleteCountdown(idx) {
-  S.countdowns.splice(idx, 1);
-  save();
-  renderCountdowns();
-}
-
 // ===== HERO WALLPAPER ===================================================
 const HERO_COLORS = [
   // Reds
@@ -11057,8 +10635,6 @@ window.restoreSession = restoreSession;
 window.deleteSession = deleteSession;
 window.selectJournalDay = selectJournalDay;
 window.deleteKanbanCard = deleteKanbanCard;
-window.removeWorldClock = removeWorldClock;
-window.deleteCountdown = deleteCountdown;
 window.refreshWallpaper = refreshWallpaper;
 window.uploadWallpaper = uploadWallpaper;
 window.resetWallpaper = resetWallpaper;
