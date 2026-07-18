@@ -1309,7 +1309,6 @@ let S = {
     cardGlow: "glow",
     widgets: {
       notes: true,
-      tasks: true,
       timer: true,
     },
     sidebarCollapsed: false,
@@ -3588,12 +3587,9 @@ function updateSidebarTabActive() {
     journal: "personal",
     habits: "personal",
   };
-  // Update .sb-item active states (dashboard is never highlighted — it's always visible)
+  // Update .sb-item active states
   document.querySelectorAll(".sb-item[data-view]").forEach((item) => {
-    item.classList.toggle(
-      "active",
-      item.dataset.view === activeView && activeView !== "home",
-    );
+    item.classList.toggle("active", item.dataset.view === activeView);
   });
   // Update group tab-active
   const activeTab = viewToTab[activeView] || "";
@@ -7747,7 +7743,6 @@ async function openSettings() {
   el("clock24Btn").classList.toggle("active", S.settings.clockFormat === "24");
   el("showSecondsToggle").checked = !!S.settings.showSeconds;
   el("widgetNotesToggle").checked = S.settings.widgets.notes !== false;
-  el("widgetTasksToggle").checked = S.settings.widgets.tasks !== false;
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
   // Highlight active card glow
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
@@ -7776,7 +7771,6 @@ async function saveSettings() {
   const name = el("settingsName").value.trim() || S.user.name;
   S.user.name = name;
   S.settings.widgets.notes = el("widgetNotesToggle").checked;
-  S.settings.widgets.tasks = el("widgetTasksToggle").checked;
   S.settings.widgets.timer = el("widgetTimerToggle").checked;
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
@@ -7872,7 +7866,6 @@ function applyWidgetVisibility() {
     if (el2) el2.style.display = visible === false ? "none" : "";
   };
   show("widget-notes", w.notes);
-  show("widget-tasks", w.tasks);
   show("widget-timer", w.timer);
 }
 
@@ -8970,7 +8963,7 @@ function setupEventListeners() {
   });
 
   // Widget toggles (live preview)
-  ["Notes", "Tasks", "Timer"].forEach((w) => {
+  ["Notes", "Timer"].forEach((w) => {
     el(`widget${w}Toggle`).addEventListener("change", () => {
       S.settings.widgets[w.toLowerCase()] = el(`widget${w}Toggle`).checked;
       applyWidgetVisibility();
@@ -9089,7 +9082,6 @@ function setupEventListeners() {
           cardGlow: "glow",
           widgets: {
             notes: true,
-            tasks: true,
             timer: true,
           },
           heroBg: null,
@@ -9485,13 +9477,7 @@ function setupEventListeners() {
   el("resetWallpaperBtn")?.addEventListener("click", resetWallpaper);
   el("heroBgColorBtn")?.addEventListener("click", (e) => {
     e.stopPropagation();
-    const p = el("heroColorPalette");
-    p.style.display = p.style.display === "none" ? "flex" : "none";
-  });
-  document.addEventListener("click", (e) => {
-    const p = el("heroColorPalette");
-    if (p && !el("heroWpControls")?.contains(e.target))
-      p.style.display = "none";
+    openModal("heroColorModal");
   });
   el("heroBgUploadInput")?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
@@ -9665,8 +9651,9 @@ function setupEventListeners() {
   });
 
   // ── Custom hero color input ──────────────────────────────────────────────
+  // Live-preview while dragging (no save/close); commit on final change.
   el("heroColorCustomInput")?.addEventListener("input", (e) => {
-    applyHeroColor(e.target.value);
+    _applyHeroColor(e.target.value, true);
   });
   el("heroColorCustomInput")?.addEventListener("change", (e) => {
     applyHeroColor(e.target.value);
@@ -10295,7 +10282,7 @@ function applyHeroColor(hex) {
   S.settings.heroBg = "color:" + hex;
   save();
   _applyHeroColor(hex, true);
-  el("heroColorPalette").style.display = "none";
+  closeModal("heroColorModal");
   _buildColorPalette();
   syncWallpaperNow();
 }
