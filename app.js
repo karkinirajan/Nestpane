@@ -1519,6 +1519,9 @@ async function loadState() {
     ? savedWsId
     : S.workspaces[0].id;
   S.trash = Array.isArray(d.trash) ? d.trash : [];
+  // Restore deletion tombstones before merging settings/sbLinks below, since
+  // _topUpSbGroup needs S._qaDeleted to avoid re-adding removed links.
+  S._qaDeleted = new Set(Array.isArray(d._qaDeleted) ? d._qaDeleted : []);
   S.settings = d.settings
     ? {
         ...S.settings,
@@ -1574,7 +1577,6 @@ async function loadState() {
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
   S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
-  S._qaDeleted = new Set(Array.isArray(d._qaDeleted) ? d._qaDeleted : []);
   // Filter any tombstoned URLs out of all workspace quickAccess arrays
   Object.values(S.wsData).forEach((wd) => {
     if (Array.isArray(wd.quickAccess) && S._qaDeleted.size) {
@@ -3464,6 +3466,8 @@ function _renderSnavGlobalLinks(containerId, group) {
 
 function removeSbGlobalLink(group, linkId) {
   const links = _getSbGlobalLinks(group);
+  const removed = links.find((l) => l.id === linkId);
+  if (removed?.url) S._qaDeleted.add(_normUrl(removed.url));
   S.settings.sbLinks[group] = links.filter((l) => l.id !== linkId);
   save();
   _renderSnavGlobalLinks(
@@ -3519,6 +3523,7 @@ function saveSbLink() {
   const group = S._sbAddLinkGroup;
   // Global groups (not workspace-based)
   if (group === "google" || group === "socials" || group === "projects" || group === "others") {
+    S._qaDeleted.delete(_normUrl(url)); // allow intentional re-add
     _getSbGlobalLinks(group).push({ id: Date.now(), name, url });
     _mirrorLinkToHomeQA({ name, url });
     save();
@@ -6097,7 +6102,7 @@ function migrateAddSocials() {
     { id: 141, name: "Reddit", url: "https://reddit.com" },
     { id: 142, name: "Discord", url: "https://discord.com/app" },
     { id: 143, name: "YouTube", url: "https://youtube.com" },
-  ].filter(item => !existing.has(item.url));
+  ].filter(item => !existing.has(item.url) && !S._qaDeleted.has(_normUrl(item.url)));
   if (!toAdd.length) return;
   // Insert before first Google item if present, otherwise append
   const googleIdx = data.quickAccess.findIndex(q =>
@@ -6129,10 +6134,9 @@ function _topUpSbGroup(saved, defaults, min = 10) {
   for (const item of defaults || []) {
     if (arr.length >= min) break;
     const key = _normUrl(item.url);
-    if (!existing.has(key)) {
-      arr.push(item);
-      existing.add(key);
-    }
+    if (S._qaDeleted.has(key) || existing.has(key)) continue;
+    arr.push(item);
+    existing.add(key);
   }
   return arr;
 }
