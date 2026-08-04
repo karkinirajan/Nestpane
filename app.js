@@ -3409,7 +3409,7 @@ function _renderSnavLinks(containerId, wsId) {
       (link) => `
     <div class="sb-item sb-link-item" data-tip="${escH(link.name)}">
       <a href="${escH(link.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(link.url)}" alt="" onerror="this.style.display='none'">
+        <img class="sb-fav" src="${favSrc(link.url)}" alt="">
         <span class="sb-item-label">${escH(link.name)}</span>
       </a>
       <div class="sb-link-actions">
@@ -3466,7 +3466,7 @@ function _renderSnavGlobalLinks(containerId, group) {
       (link) => `
     <div class="sb-item sb-link-item" data-tip="${escH(link.name)}">
       <a href="${escH(link.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(link.url)}" alt="" onerror="this.style.display='none'">
+        <img class="sb-fav" src="${favSrc(link.url)}" alt="">
         <span class="sb-item-label">${escH(link.name)}</span>
       </a>
       <div class="sb-link-actions">
@@ -4179,7 +4179,7 @@ function renderAllBookmarks(folders) {
             .map(
               (it) => `
             <a href="${escH(it.url)}" class="bm-item" target="_self">
-              <img src="${favSrc(it.url)}" onerror="this.style.display='none'" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
+              <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(it.title || it.url)}</span>
               <span class="bm-item-url">${escH(getDomain(it.url))}</span>
               ${IS_CHROME ? `<span class="bm-item-actions">
@@ -4475,7 +4475,7 @@ function renderWorkspaceBookmarks() {
         const favs = prev
           .map(
             (bm) =>
-              `<img class="favicon-img" src="${favSrc(bm.url)}" onerror="this.style.display='none'" alt="">`,
+              `<img class="favicon-img" src="${favSrc(bm.url)}" alt="">`,
           )
           .join("");
         return `
@@ -5034,7 +5034,7 @@ function openWsBmFolderModal(folderName, items) {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
         </button>
         <div class="bm-card-icon" data-letter="${escH(letter)}">
-          <img src="${favSrc(bm.url)}" onerror="this.style.display='none';this.parentNode.classList.add('bm-icon-fallback')" alt="">
+          <img src="${favSrc(bm.url)}" data-img-fallback="bm-icon" alt="">
         </div>
         <div class="bm-card-name">${escH(bm.title || getDomain(bm.url))}</div>
         <div class="bm-card-domain">${escH(getDomain(bm.url))}</div>
@@ -5409,7 +5409,7 @@ async function loadHistory(q) {
             );
             return `<div class="history-item-wrap">
             <a href="${escH(it.url)}" class="history-item" target="_blank">
-              <img src="${favSrc(it.url)}" onerror="this.style.display='none'" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
+              <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="history-item-title">${escH(it.title || getDomain(it.url) || it.url)}</span>
               <span class="history-item-url">${escH(getDomain(it.url))}</span>
               <span class="history-item-time">${fmtTimeAgo(it.lastVisitTime)}</span>
@@ -5558,7 +5558,7 @@ function renderQuickAccess() {
       <button class="qa-menu-btn" data-qaid="${item.id}" title="Options">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
       </button>
-      <div class="qa-favicon"><img src="${favSrc(item.url)}" onerror="this.style.display='none'" alt=""></div>
+      <div class="qa-favicon"><img src="${favSrc(item.url)}" alt=""></div>
       <span class="qa-name">${escH(item.name)}</span>
       <span class="qa-desc">${escH(domain)}</span>
     </a>`;
@@ -5665,7 +5665,7 @@ function openQAReplaceModal(newItem) {
     .map(
       (q) => `
     <button class="qa-replace-row" data-qaid="${q.id}">
-      <img src="${favSrc(q.url)}" width="16" height="16" style="border-radius:3px;flex-shrink:0" onerror="this.style.display='none'">
+      <img src="${favSrc(q.url)}" width="16" height="16" style="border-radius:3px;flex-shrink:0">
       <span class="qa-replace-name">${escH(q.name)}</span>
       <span class="qa-replace-url">${escH(getDomain(q.url))}</span>
       <span class="qa-replace-tag">Replace</span>
@@ -6598,7 +6598,7 @@ function _renderOrganizeResults() {
           const r = _organizeResults[i];
           return `<label class="organize-item">
             <input type="checkbox" checked data-organize-idx="${i}">
-            <img src="${favSrc(r.url)}" onerror="this.style.opacity=0" alt="">
+            <img src="${favSrc(r.url)}" data-img-fallback="fade" alt="">
             <span class="organize-item-title">${escH(r.title)}</span>
             <span class="organize-item-domain">${escH(getDomain(r.url))}</span>
           </label>`;
@@ -7395,7 +7395,7 @@ async function renderAnalytics() {
             ? `<div class="ins-account-row" style="margin-bottom:12px">
           ${
             pic
-              ? `<img src="${escH(pic)}" class="ins-avatar-img" onerror="this.style.display='none'">`
+              ? `<img src="${escH(pic)}" class="ins-avatar-img">`
               : `<div class="ins-avatar-letter">${(gName[0] || "G").toUpperCase()}</div>`
           }
           <div style="min-width:0">
@@ -7532,7 +7532,7 @@ async function renderAnalytics() {
             (s) => `
           <div class="ins-row">
             <div class="ins-row-left">
-              <img src="${favSrc(s.url)}" style="width:16px;height:16px;border-radius:3px;flex-shrink:0" onerror="this.style.display='none'">
+              <img src="${favSrc(s.url)}" style="width:16px;height:16px;border-radius:3px;flex-shrink:0">
               <span class="ins-row-label">${escH(s.title || getDomain(s.url))}</span>
             </div>
             <span class="ins-row-sub">${escH(getDomain(s.url))}</span>
@@ -7582,7 +7582,7 @@ async function renderAnalytics() {
               ([d, c]) => `
           <div class="ins-bar-row">
             <div class="ins-bar-label" style="display:flex;align-items:center;gap:5px;width:120px">
-              <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=16" style="width:13px;height:13px;border-radius:2px;flex-shrink:0" onerror="this.style.display='none'">
+              <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=16" style="width:13px;height:13px;border-radius:2px;flex-shrink:0">
               <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(d)}</span>
             </div>
             <div class="ins-bar-track"><div class="ins-bar-fill" style="width:${Math.round((c / maxV) * 100)}%"></div></div>
@@ -8106,7 +8106,7 @@ function _renderCmdResults(q) {
       .map(
         (bm) => `
       <a href="${escH(bm.url)}" class="cmd-result-item" target="_self" data-cmd-item>
-        <div class="cmd-favicon-wrap"><img src="${favSrc(bm.url)}" onerror="this.style.opacity=0" alt=""></div>
+        <div class="cmd-favicon-wrap"><img src="${favSrc(bm.url)}" data-img-fallback="fade" alt=""></div>
         <div class="cmd-item-body">
           <div class="cmd-item-title">${escH(bm.title || bm.url)}</div>
         </div>
@@ -8315,7 +8315,7 @@ async function _cmdSearchAsync(q) {
       .map(
         (t) => `
       <div class="cmd-result-item" data-cmd-item data-tab-id="${t.id}" data-tab-winid="${t.windowId}">
-        <div class="cmd-favicon-wrap"><img src="${favSrc(t.url)}" onerror="this.style.opacity=0" alt=""></div>
+        <div class="cmd-favicon-wrap"><img src="${favSrc(t.url)}" data-img-fallback="fade" alt=""></div>
         <div class="cmd-item-body">
           <div class="cmd-item-title">${escH(t.title || t.url)}</div>
         </div>
@@ -8330,7 +8330,7 @@ async function _cmdSearchAsync(q) {
       .map(
         (h) => `
       <a href="${escH(h.url)}" class="cmd-result-item" target="_blank" data-cmd-item>
-        <div class="cmd-favicon-wrap"><img src="${favSrc(h.url)}" onerror="this.style.opacity=0" alt=""></div>
+        <div class="cmd-favicon-wrap"><img src="${favSrc(h.url)}" data-img-fallback="fade" alt=""></div>
         <div class="cmd-item-body">
           <div class="cmd-item-title">${escH(h.title || h.url)}</div>
         </div>
@@ -8375,7 +8375,7 @@ async function _cmdAskAI(q) {
   const isFollowUp = _aiConvHistory.length > 0;
   const historyLen = _aiConvHistory.length;
   results.innerHTML = `<div class="cmd-ai-panel">
-    ${isFollowUp ? `<div class="cmd-ai-history-badge">Conversation (${historyLen / 2 | 0} turns) · <button class="cmd-ai-clear-btn" onclick="_aiResetConversation();el('cmdResults').innerHTML='';el('cmdInput').value='';el('cmdInput').focus()">Clear</button></div>` : ""}
+    ${isFollowUp ? `<div class="cmd-ai-history-badge">Conversation (${historyLen / 2 | 0} turns) · <button class="cmd-ai-clear-btn" data-action="ai-clear-conv">Clear</button></div>` : ""}
     <div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>${isFollowUp ? "Continuing…" : "Asking AI…"}</div>
   </div>`;
   _cmdActiveIdx = -1;
@@ -8408,7 +8408,7 @@ function _cmdRenderAiResponse(q, text) {
   const results = el("cmdResults");
   const turns = _aiConvHistory.filter((m) => m.role === "user").length;
   results.innerHTML = `<div class="cmd-ai-panel">
-    ${turns > 1 ? `<div class="cmd-ai-history-badge">Conversation (${turns} turns) · <button class="cmd-ai-clear-btn" onclick="_aiResetConversation();el('cmdResults').innerHTML='';el('cmdInput').value='';el('cmdInput').focus()">Clear</button></div>` : ""}
+    ${turns > 1 ? `<div class="cmd-ai-history-badge">Conversation (${turns} turns) · <button class="cmd-ai-clear-btn" data-action="ai-clear-conv">Clear</button></div>` : ""}
     <div class="cmd-ai-response"></div>
     <div class="cmd-ai-followup-row">
       <input type="text" class="cmd-ai-followup-input" id="cmdAiFollowup" placeholder="Follow-up question…">
@@ -8759,7 +8759,7 @@ function renderBmForActiveWorkspace() {
             .map(
               (bm) => `
             <a href="${escH(bm.url)}" class="bm-item" target="_self">
-              <img src="${favSrc(bm.url)}" onerror="this.style.display='none'" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
+              <img src="${favSrc(bm.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(bm.title || bm.url)}</span>
               <span class="bm-item-url">${escH(getDomain(bm.url))}</span>
               <span class="bm-item-actions">
@@ -8897,6 +8897,77 @@ function setupEventListeners() {
       removeSbGlobalLink(rmGroup, Number(rmId));
     }
   });
+
+  // Global [data-action] dispatch — CSP-safe replacement for inline onclick=
+  // in dynamically-rendered HTML (MV3's extension_pages CSP forbids inline
+  // script/event-handler attributes; only 'self' script sources are allowed).
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-action]");
+    if (!t) return;
+    const d = t.dataset;
+    switch (d.action) {
+      case "ai-clear-conv":
+        _aiResetConversation();
+        el("cmdResults").innerHTML = "";
+        el("cmdInput").value = "";
+        el("cmdInput").focus();
+        break;
+      case "toggle-habit-day":
+        toggleHabitDay(Number(d.habitId), d.day);
+        break;
+      case "delete-habit":
+        deleteHabit(Number(d.habitId));
+        break;
+      case "open-reading-url":
+        window.open(d.url, "_blank");
+        break;
+      case "toggle-reading-done":
+        toggleReadingDone(Number(d.id));
+        break;
+      case "delete-reading":
+        deleteReading(Number(d.id));
+        break;
+      case "restore-session":
+        restoreSession(Number(d.id));
+        break;
+      case "delete-session":
+        deleteSession(Number(d.id));
+        break;
+      case "select-journal-day":
+        selectJournalDay(d.day);
+        break;
+      case "delete-kanban-card":
+        deleteKanbanCard(d.col, Number(d.id));
+        break;
+      case "apply-hero-color":
+        applyHeroColor(d.hex);
+        break;
+      case "delete-cal-event":
+        deleteCalEvent(Number(d.id));
+        break;
+    }
+  });
+
+  // Global broken-favicon/avatar fallback — CSP-safe replacement for inline
+  // onerror= on dynamically-rendered <img> tags. 'error' doesn't bubble, so
+  // this must be registered on the capture phase.
+  document.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      const mode = img.dataset.imgFallback;
+      if (mode === "fade") {
+        img.style.opacity = "0";
+      } else if (mode === "bm-icon") {
+        img.style.display = "none";
+        img.parentNode?.classList.add("bm-icon-fallback");
+      } else {
+        img.style.display = "none";
+      }
+    },
+    true,
+  );
 
   // Theme
   el("themeBtn").addEventListener("click", () => {
@@ -9307,7 +9378,7 @@ function setupEventListeners() {
       const pic = S.user.googlePicture || gUser.picture;
       const name = S.user.googleName || gUser.email || "";
       const avatarHtml = pic
-        ? `<img src="${escH(pic)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+        ? `<img src="${escH(pic)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`
         : `<div style="width:40px;height:40px;border-radius:50%;background:${S.user.avatarColor || "#7c3aed"};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">${(name[0] || "U").toUpperCase()}</div>`;
       const syncInfo = Drive._lastSyncAt
         ? `<div style="font-size:10.5px;color:var(--success);margin-top:2px">☁ Synced ${_timeAgo(Drive._lastSyncAt)}</div>`
@@ -9707,7 +9778,7 @@ function renderHabits() {
           const label = new Date(day + "T00:00:00").toLocaleDateString("en", {
             weekday: "narrow",
           });
-          return `<div class="habit-day ${done ? "done" : ""}" title="${day}" onclick="toggleHabitDay(${h.id},'${day}')">${label}</div>`;
+          return `<div class="habit-day ${done ? "done" : ""}" title="${day}" data-action="toggle-habit-day" data-habit-id="${h.id}" data-day="${day}">${label}</div>`;
         })
         .join("");
       return `<div class="habit-row">
@@ -9715,7 +9786,7 @@ function renderHabits() {
       <span class="habit-name">${escH(h.name)}</span>
       <span class="habit-streak" title="Current streak">${streak}🔥</span>
       <div class="habit-days">${dayBtns}</div>
-      <button class="habit-del" onclick="deleteHabit(${h.id})" title="Delete habit">
+      <button class="habit-del" data-action="delete-habit" data-habit-id="${h.id}" title="Delete habit">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
     </div>`;
@@ -9786,16 +9857,16 @@ function renderReadingQueue() {
       (item) => `
     <div class="reading-item ${item.done ? "done-item" : ""}">
       <div class="reading-favicon">
-        <img src="${favSrc(item.url)}" alt="" onerror="this.style.display='none'">
+        <img src="${favSrc(item.url)}" alt="">
       </div>
       <div class="reading-info">
-        <div class="reading-title" onclick="window.open('${escH(item.url)}','_blank')">${escH(item.title)}</div>
+        <div class="reading-title" data-action="open-reading-url" data-url="${escH(item.url)}">${escH(item.title)}</div>
         <div class="reading-url">${escH(getDomain(item.url))}</div>
       </div>
-      <button class="reading-done-btn ${item.done ? "done" : ""}" onclick="toggleReadingDone(${item.id})" title="Mark as read">
+      <button class="reading-done-btn ${item.done ? "done" : ""}" data-action="toggle-reading-done" data-id="${item.id}" title="Mark as read">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
       </button>
-      <button class="reading-del" onclick="deleteReading(${item.id})" title="Remove">
+      <button class="reading-del" data-action="delete-reading" data-id="${item.id}" title="Remove">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>`,
@@ -9854,8 +9925,8 @@ function renderSessions() {
       <div class="session-header">
         <span class="session-name">${escH(s.name)}</span>
         <span class="session-meta">${s.tabs.length} tabs · ${fmtTimeAgo(s.savedAt)}</span>
-        <button class="session-restore-btn" onclick="restoreSession(${s.id})">Open All</button>
-        <button class="session-del" onclick="deleteSession(${s.id})" title="Delete session">
+        <button class="session-restore-btn" data-action="restore-session" data-id="${s.id}">Open All</button>
+        <button class="session-del" data-action="delete-session" data-id="${s.id}" title="Delete session">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -9865,7 +9936,7 @@ function renderSessions() {
           .map(
             (t) => `
           <a href="${escH(t.url)}" class="session-tab" target="_blank" rel="noopener">
-            <img src="${t.favicon || ""}" alt="" onerror="this.style.display='none'" width="14" height="14">
+            <img src="${t.favicon || ""}" alt="" width="14" height="14">
             <span class="session-tab-title">${escH(t.title)}</span>
             <span class="session-tab-url">${escH(t.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</span>
           </a>`,
@@ -9965,7 +10036,7 @@ function renderJournalCal() {
     ]
       .filter(Boolean)
       .join(" ");
-    html += `<div class="${cls}" onclick="selectJournalDay('${key}')">${d}</div>`;
+    html += `<div class="${cls}" data-action="select-journal-day" data-day="${key}">${d}</div>`;
   }
   calGrid.innerHTML = html;
 }
@@ -10045,7 +10116,7 @@ function renderKanban() {
         (card) => `
       <div class="kanban-card" draggable="true" data-col="${col}" data-id="${card.id}">
         <div class="kanban-card-title">${escH(card.title)}</div>
-        ${card.desc ? `<div class="kanban-card-meta"><span>${escH(card.desc)}</span><button class="kanban-card-del" onclick="deleteKanbanCard('${col}',${card.id})" title="Delete">✕</button></div>` : `<div class="kanban-card-meta"><span></span><button class="kanban-card-del" onclick="deleteKanbanCard('${col}',${card.id})" title="Delete">✕</button></div>`}
+        ${card.desc ? `<div class="kanban-card-meta"><span>${escH(card.desc)}</span><button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">✕</button></div>` : `<div class="kanban-card-meta"><span></span><button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">✕</button></div>`}
       </div>`,
       )
       .join("");
@@ -10289,7 +10360,7 @@ function _buildColorPalette() {
     <div class="hero-color-swatch ${c.hex === current ? "active" : ""}"
          style="background:${c.hex}"
          title="${c.name}"
-         onclick="applyHeroColor('${c.hex}')"></div>`,
+         data-action="apply-hero-color" data-hex="${c.hex}"></div>`,
   ).join("");
   if (customRow) palette.appendChild(customRow);
   // Update custom input value to current color if applicable
@@ -10520,7 +10591,7 @@ function renderCalEventsList(year, month) {
       <div class="cal-event-dot"></div>
       <span class="cal-event-text">${escH(ev.title)}</span>
       <span style="font-size:10px;color:var(--text-3);flex-shrink:0">${date.getDate()}/${date.getMonth() + 1}</span>
-      <button class="cal-event-del" onclick="deleteCalEvent(${ev.id})">✕</button>
+      <button class="cal-event-del" data-action="delete-cal-event" data-id="${ev.id}">✕</button>
     </div>`,
     )
     .join("");
