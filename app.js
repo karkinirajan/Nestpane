@@ -12,6 +12,24 @@ const GOOGLE_CLIENT_SECRET = "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";
 // ===== CHROME API WRAPPER =====
 const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
 
+// The extension ID is pinned by manifest.json's "key" field (enforced at
+// build time by build.js) so it never drifts across machines/browsers or a
+// CWS re-submit — chrome.identity's OAuth redirect URI is always built from
+// the LIVE chrome.runtime.id (see _launchPKCEFlow), never hardcoded, since
+// that self-corrects to whatever ID Chrome actually assigned this running
+// copy. This check only flags drift for visibility; it never blocks login.
+// Update this value if manifest.json's "key" is ever intentionally changed
+// (build.js prints the new computed ID on every build).
+const EXPECTED_EXTENSION_ID = "eaekjmeamipddpijmcaijmipbdicceco";
+if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
+  console.warn(
+    `[novatab] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
+      "Google sign-in will fail with redirect_uri_mismatch unless https://" +
+      chrome.runtime.id +
+      ".chromiumapp.org/ is also authorized in Google Cloud Console, or manifest.json's \"key\" is corrected.",
+  );
+}
+
 const API = {
   get: (keys) =>
     new Promise((res) => {
