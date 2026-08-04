@@ -6,10 +6,12 @@
   "scripts": {
     "build": "node build.js",
     "dev": "node build.js --watch",
-    "lint": "npx eslint app.js --no-eslintrc --rule '{\"no-unused-vars\":\"warn\",\"no-undef\":\"warn\"}'",
+    "lint": "eslint app.js popup.js fouc.js build.js",
     "zip": "node build.js && cd dist && zip -r ../novatab-v$(node -p \"require('../package.json').version\")-chrome.zip ."
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "eslint": "^10.8.0",
+    "globals": "^15.15.0"
   }
 }

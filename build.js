@@ -3,6 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const ROOT = __dirname;
 const DIST = path.join(ROOT, "dist");
@@ -32,7 +33,25 @@ const REQUIRED_PERMISSIONS = [
   "storage",
   "history",
   "downloads",
+  "identity",
+  "identity.email",
+  "declarativeNetRequest",
 ];
+
+// Chrome extension ID derivation: SHA-256 of the DER public key, first 16
+// bytes, each nibble mapped through 0-15 -> 'a'-'p'. Lets us print the ID a
+// given manifest "key" will produce so it can be diff'd against the live
+// Chrome Web Store listing before packaging.
+function extensionIdFromKey(base64Key) {
+  const der = Buffer.from(base64Key, "base64");
+  const digest = crypto.createHash("sha256").update(der).digest();
+  const map = "abcdefghijklmnop";
+  let id = "";
+  for (const byte of digest.subarray(0, 16)) {
+    id += map[byte >> 4] + map[byte & 0x0f];
+  }
+  return id;
+}
 
 function validate() {
   let ok = true;
@@ -53,6 +72,25 @@ function validate() {
     ok = false;
   } else {
     console.log("\n✓ Manifest permissions OK (" + manifestPermissions.join(", ") + ")");
+  }
+  // The "key" field pins the extension ID so it stays constant across every
+  // machine/browser this is loaded unpacked on, and across CWS re-uploads.
+  // Losing it silently breaks Google OAuth (the redirect URI is derived from
+  // chrome.runtime.id) and risks an ID mismatch on Web Store re-submission.
+  if (typeof manifest.key !== "string" || !manifest.key.trim()) {
+    console.error("\n✗ manifest.json is missing the \"key\" field.");
+    console.error("  This will make the extension ID unstable across reloads/browsers and");
+    console.error("  can cause a CWS re-upload ID mismatch. Restore the key before building.");
+    ok = false;
+  } else {
+    try {
+      const id = extensionIdFromKey(manifest.key);
+      console.log(`\n✓ manifest key present — computed extension ID: ${id}`);
+      console.log("  Verify this matches your Chrome Web Store dashboard listing ID.");
+    } catch (e) {
+      console.error("\n✗ manifest.json \"key\" is not valid base64:", e.message);
+      ok = false;
+    }
   }
   console.log("  Name:", manifest.name, "v" + VERSION);
   return ok;
