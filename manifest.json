@@ -28,7 +28,9 @@
     "storage",
     "topSites",
     "identity",
+    "identity.email",
     "geolocation",
+    "declarativeNetRequest",
     "notifications"
   ],
   "host_permissions": [
