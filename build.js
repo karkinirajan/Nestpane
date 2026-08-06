@@ -36,6 +36,7 @@ const REQUIRED_PERMISSIONS = [
   "identity",
   "identity.email",
   "declarativeNetRequest",
+  "search",
 ];
 
 // Chrome extension ID derivation: SHA-256 of the DER public key, first 16

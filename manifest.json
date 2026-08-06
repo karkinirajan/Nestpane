@@ -31,7 +31,8 @@
     "identity.email",
     "geolocation",
     "declarativeNetRequest",
-    "notifications"
+    "notifications",
+    "search"
   ],
   "host_permissions": [
     "https://wttr.in/*",
