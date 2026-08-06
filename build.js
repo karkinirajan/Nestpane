@@ -39,6 +39,14 @@ const REQUIRED_PERMISSIONS = [
   "search",
 ];
 
+// The real, CWS-assigned ID for this item (confirmed from a rejection email's
+// "Item ID" field — do not trust a manifest "key" over this without checking
+// the Developer Dashboard first: a prior "key" in this repo computed to a
+// DIFFERENT id and caused an upload rejection, "key field value in the
+// manifest doesn't match the current item"). Keep this in sync with
+// app.js's EXPECTED_EXTENSION_ID.
+const PUBLISHED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
+
 // Chrome extension ID derivation: SHA-256 of the DER public key, first 16
 // bytes, each nibble mapped through 0-15 -> 'a'-'p'. Lets us print the ID a
 // given manifest "key" will produce so it can be diff'd against the live
@@ -74,20 +82,33 @@ function validate() {
   } else {
     console.log("\n✓ Manifest permissions OK (" + manifestPermissions.join(", ") + ")");
   }
-  // The "key" field pins the extension ID so it stays constant across every
-  // machine/browser this is loaded unpacked on, and across CWS re-uploads.
-  // Losing it silently breaks Google OAuth (the redirect URI is derived from
-  // chrome.runtime.id) and risks an ID mismatch on Web Store re-submission.
+  // The "key" field is OPTIONAL on CWS updates to an already-published item
+  // — the store keeps using its own assigned ID regardless of what's here,
+  // and only rejects the upload if a key IS present and computes to a
+  // DIFFERENT id than the live listing. So the dangerous state is a WRONG
+  // key, not a missing one: fail loudly only on a mismatch, since that's
+  // what actually breaks an upload (confirmed by a real CWS rejection).
+  // A present+missing key still affects unpacked/local-dev testing, where
+  // the ID is what Google OAuth's redirect URI is built from — that's a
+  // dev-convenience concern, not a packaging blocker, so it's a warning.
   if (typeof manifest.key !== "string" || !manifest.key.trim()) {
-    console.error("\n✗ manifest.json is missing the \"key\" field.");
-    console.error("  This will make the extension ID unstable across reloads/browsers and");
-    console.error("  can cause a CWS re-upload ID mismatch. Restore the key before building.");
-    ok = false;
+    console.warn("\n⚠ manifest.json has no \"key\" field.");
+    console.warn(`  CWS will still publish this update under its existing id (${PUBLISHED_EXTENSION_ID}).`);
+    console.warn("  Unpacked/local dev loads will get a different, machine-dependent id instead —");
+    console.warn("  fine for CWS uploads, but Google OAuth redirect testing won't match until the");
+    console.warn("  real public key (Dashboard → Package tab) is added back here.");
   } else {
     try {
       const id = extensionIdFromKey(manifest.key);
-      console.log(`\n✓ manifest key present — computed extension ID: ${id}`);
-      console.log("  Verify this matches your Chrome Web Store dashboard listing ID.");
+      if (id !== PUBLISHED_EXTENSION_ID) {
+        console.error(`\n✗ manifest "key" computes to "${id}", but the published item is "${PUBLISHED_EXTENSION_ID}".`);
+        console.error("  Uploading this will be rejected by CWS: \"key field value in the manifest");
+        console.error("  doesn't match the current item.\" Remove the key, or replace it with the");
+        console.error("  real public key from Developer Dashboard → your item → Package tab.");
+        ok = false;
+      } else {
+        console.log(`\n✓ manifest key present — computed extension ID matches published item: ${id}`);
+      }
     } catch (e) {
       console.error("\n✗ manifest.json \"key\" is not valid base64:", e.message);
       ok = false;

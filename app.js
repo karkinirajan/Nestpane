@@ -12,15 +12,15 @@ const GOOGLE_CLIENT_SECRET = "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";
 // ===== CHROME API WRAPPER =====
 const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
 
-// The extension ID is pinned by manifest.json's "key" field (enforced at
-// build time by build.js) so it never drifts across machines/browsers or a
-// CWS re-submit — chrome.identity's OAuth redirect URI is always built from
-// the LIVE chrome.runtime.id (see _launchPKCEFlow), never hardcoded, since
-// that self-corrects to whatever ID Chrome actually assigned this running
-// copy. This check only flags drift for visibility; it never blocks login.
-// Update this value if manifest.json's "key" is ever intentionally changed
-// (build.js prints the new computed ID on every build).
-const EXPECTED_EXTENSION_ID = "eaekjmeamipddpijmcaijmipbdicceco";
+// The real, CWS-assigned ID for this item — confirmed from a rejection
+// email's "Item ID" field, not derived from manifest.json's "key" (a prior
+// key in this repo computed to a DIFFERENT id and got the upload rejected:
+// "key field value in the manifest doesn't match the current item"). Keep
+// this in sync with build.js's PUBLISHED_EXTENSION_ID. chrome.identity's
+// OAuth redirect URI is always built from the LIVE chrome.runtime.id (see
+// _launchPKCEFlow), never hardcoded — this check only flags drift for
+// visibility, it never blocks login.
+const EXPECTED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
   console.warn(
     `[novatab] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
