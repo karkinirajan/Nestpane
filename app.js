@@ -7948,6 +7948,24 @@ function setupSearch() {
 let _cmdActiveIdx = -1;
 let _cmdRecentSearches = [];
 
+// Falls through to the user's own default search engine via the Chrome
+// Search API (requires the "search" permission) instead of a hardcoded
+// provider — hardcoding one is a Chrome Web Store single-purpose violation
+// ("must respect the user's selected [search] settings").
+function searchTheWeb(q) {
+  if (!q) return;
+  if (IS_CHROME && chrome.search && chrome.search.query) {
+    chrome.search.query({ text: q, disposition: "NEW_TAB" });
+  } else {
+    // Non-extension context (e.g. local dev preview) — chrome.search is
+    // unavailable there, so fall back to a plain web search.
+    window.open(
+      `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+      "_blank",
+    );
+  }
+}
+
 // Lightweight fuzzy match: returns a score (higher = better) or -1 if no match.
 // Consecutive-character bonus makes "yt" rank YouTube above unrelated hits.
 function _fuzzyScore(haystack, needle) {
@@ -8208,10 +8226,10 @@ function _renderCmdResults(q) {
     html += `<div class="cmd-empty"><div class="cmd-empty-icon" style="font-size:20px">∅</div>No results for "<em style="color:var(--accent-2)">${escH(q)}</em>"</div>`;
   }
 
-  html += `<a href="https://www.google.com/search?q=${encodeURIComponent(q)}" class="cmd-result-item cmd-google-item" target="_blank" data-cmd-item>
-    <div class="cmd-google-icon">G</div>
-    <div class="cmd-google-label">Search Google for <em>"${escH(q)}"</em></div>
-  </a>`;
+  html += `<div class="cmd-result-item cmd-google-item" data-cmd-item data-action="search-web" data-q="${escH(q)}">
+    <div class="cmd-google-icon">🔎</div>
+    <div class="cmd-google-label">Search the web for <em>"${escH(q)}"</em></div>
+  </div>`;
 
   el("cmdResults").innerHTML = html;
   _cmdActiveIdx = -1;
@@ -8584,10 +8602,7 @@ function _cmdInitKeyboard() {
           closeCmdPalette();
         } else active.click();
       } else if (q) {
-        window.open(
-          `https://www.google.com/search?q=${encodeURIComponent(q)}`,
-          "_blank",
-        );
+        searchTheWeb(q);
         closeCmdPalette();
       }
     } else if (e.key === "Escape") {
@@ -8944,6 +8959,10 @@ function setupEventListeners() {
         break;
       case "delete-cal-event":
         deleteCalEvent(Number(d.id));
+        break;
+      case "search-web":
+        searchTheWeb(d.q);
+        closeCmdPalette();
         break;
     }
   });
