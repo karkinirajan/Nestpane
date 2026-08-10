@@ -1,6 +1,6 @@
 # Chrome Web Store Submission Checklist — Privacy & Data Disclosure
 
-A worksheet for the CWS Developer Dashboard's **Privacy practices** tab and the Google OAuth consent screen, based on the policy in [`privacy.html`](../privacy.html). Fill these in when submitting novatab (and reuse for Edge/Opera add-on stores later — their privacy forms ask nearly identical questions).
+A worksheet for the CWS Developer Dashboard's **Privacy practices** tab and the Google OAuth consent screen, based on the policy in [`privacy.html`](../privacy.html). Fill these in when submitting llmaotab (and reuse for Edge/Opera add-on stores later — their privacy forms ask nearly identical questions).
 
 ---
 
@@ -14,7 +14,7 @@ Host `privacy.html` somewhere public and paste that URL into:
 Easiest option: enable **GitHub Pages** (repo Settings → Pages → Deploy from branch → `main` → `/ (root)`). That gives you:
 
 ```
-https://<your-github-username>.github.io/novatab/privacy.html
+https://<your-github-username>.github.io/llmaotab/privacy.html
 ```
 
 (Note: GitHub Pages for a *private* repo requires GitHub Pro/Team. If the repo stays private, host `privacy.html` on any static host instead — Netlify/Vercel/Cloudflare Pages all work with a single HTML file.)
@@ -23,7 +23,7 @@ https://<your-github-username>.github.io/novatab/privacy.html
 
 ## 2. Single purpose description
 
-> novatab is a new-tab dashboard that replaces Chrome's default new tab page with a personal productivity hub — bookmarks, notes, tasks, calendar, focus timer, and an optional AI assistant — all stored locally on the user's device.
+> llmaotab replaces Chrome's default new tab page with a single productivity dashboard — bookmarks, notes, tasks, calendar, focus timer, and an optional AI assistant. All data is stored on the user's own device via chrome.storage.local; the only off-device transfers are ones the user turns on themselves (Google Drive backup to their private appdata folder, or AI features using their own API key).
 
 ---
 
@@ -43,6 +43,8 @@ Paste into the **Permissions** tab, one box per permission:
 | `identity.email` | Used to display the email address of the user's signed-in Chrome profile as a label in the sync card. |
 | `geolocation` | Used to auto-detect the user's city for the Weather widget; the user can enter a city manually instead. |
 | `declarativeNetRequest` | Used to block sites the user has chosen while a Focus Mode session is active — evaluated entirely on-device. |
+| `notifications` | Used to notify the user when a Focus timer session completes and when habits remain untracked for the day. |
+| `search` | Used to submit a query the user types in the command bar to their own default search engine via chrome.search.query, so no search engine is hardcoded. |
 
 ### Host permission justifications
 
@@ -76,19 +78,19 @@ For each checked category, the dashboard asks four follow-up questions — answe
 3. "...transferred for purposes unrelated to the item's core functionality?" → **No**
 4. "...used to determine creditworthiness or for lending?" → **No**
 
-These answers are accurate for novatab as built — no ads, no analytics, no data sale.
+These answers are accurate for llmaotab as built — no ads, no analytics, no data sale.
 
 ---
 
 ## 5. Certification
 
-The Privacy practices tab ends with a certification that you comply with the Developer Program Policies (no deceptive behavior, accurate disclosures, etc.). This is true for novatab as documented — check it.
+The Privacy practices tab ends with a certification that you comply with the Developer Program Policies (no deceptive behavior, accurate disclosures, etc.). This is true for llmaotab as documented — check it.
 
 ---
 
 ## 6. Google OAuth consent screen verification
 
-novatab requests `userinfo.email`, `userinfo.profile`, and `drive.appdata` via an "External" OAuth client. Once real users sign in, Google generally requires **OAuth app verification**:
+llmaotab requests `userinfo.email`, `userinfo.profile`, and `drive.appdata` via an "External" OAuth client. Once real users sign in, Google generally requires **OAuth app verification**:
 
 1. In Google Cloud Console → OAuth consent screen, add the privacy policy URL from §1 and a homepage URL (your CWS listing page works).
 2. `drive.appdata` is a **non-sensitive** scope (restricted to the app's own hidden folder) — this does **not** require Google's CASA security assessment, only the standard "basic" review (typically a few days).

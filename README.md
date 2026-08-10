@@ -1,16 +1,16 @@
-# novatab
+# llmaotab
 
-A productivity-focused new tab page for Chrome and Chromium-based browsers.
+A Manifest V3 extension that replaces the new tab page with a local-first productivity dashboard, for Chrome and Chromium-based browsers.
 
 ---
 
 ## What this is and why it was built
 
-novatab replaces Chrome's default new tab with a fully-featured dashboard built on the same browser APIs that extensions already have access to — no server, no subscription, no data leaving your device unless you opt into Drive sync.
+llmaotab overrides `chrome_url_overrides.newtab` with a single-page dashboard built entirely on browser extension APIs — no backend, no account, no subscription, and no data leaving the device unless Drive sync is explicitly enabled.
 
-The problem it solves is fragmentation: bookmarks live in the browser, tasks live in a separate app, notes live somewhere else. novatab puts all of it in one place that opens every time you open a tab, so the friction of switching contexts disappears.
+The problem it solves is fragmentation: bookmarks live in the browser, tasks live in a separate app, notes live somewhere else. llmaotab consolidates them onto the surface you already open dozens of times a day, so the context switch disappears.
 
-It is a single-user, offline-first extension. All data lives in `chrome.storage.local`. Google Drive sync is optional and uses only the private `appdata` scope — your data goes into a hidden folder that only this extension can read.
+It is single-user and offline-first. All state lives in `chrome.storage.local`. Google Drive sync is optional and scoped to `drive.appdata` alone — backups are written to a per-extension folder that is hidden from the Drive UI and unreadable by any other application.
 
 ---
 
@@ -65,22 +65,22 @@ It is a single-user, offline-first extension. All data lives in `chrome.storage.
 | Quotes | motivational-spark-api.vercel.app | No API key required |
 | Fonts | Inter + Playfair Display via Google Fonts | Loaded via `<link>` with preconnect |
 | Icons | Inline SVG | No icon library dependency |
-| Build | Custom Node.js copy + validation script (`build.js`) | Validates files, copies to `dist/` |
+| Build | Node.js script (`build.js`) + esbuild | Validates sources and manifest, copies static files to `dist/`, minifies JS/CSS |
 
 ---
 
 ## Project Structure
 
 ```
-novatab/
-├── manifest.json     Chrome Extension Manifest V3 — permissions, icons, OAuth client ID
-├── newtab.html       New tab page — full dashboard UI (~1800 lines)
-├── app.js            All application logic (~10300 lines)
-├── style.css         Design system and all component styles (~2300 lines)
-├── fouc.js           Inline script — applies theme and accent color before CSS loads
+llmaotab/
+├── manifest.json     Manifest V3 — name, version, permissions, host permissions, icons
+├── newtab.html       New tab page — full dashboard markup (~1800 lines)
+├── app.js            All application logic, including the OAuth client ID (~10800 lines)
+├── style.css         Design system and all component styles (~2150 lines)
+├── fouc.js           Runs before CSS loads — applies theme and accent color to avoid a flash
 ├── popup.html        Extension popup — save current page as a bookmark to a workspace
 ├── popup.js          Popup logic
-├── build.js          Validation and dist copy script (Node.js, no dependencies)
+├── build.js          Validates sources, copies static files, minifies JS/CSS via esbuild
 ├── icons/            Brand & extension icons
 │   ├── favicon.svg   Source brand icon (32×32 SVG)
 │   ├── favicon.png   128×128 extension icon (generated from SVG)
@@ -95,7 +95,7 @@ novatab/
 ## Prerequisites
 
 - Chrome, Chromium, Edge, Brave, or Arc (any Chromium-based browser)
-- Node.js ≥ 18 — only needed to run `build.js`; not needed for local development
+- Node.js ≥ 18 plus `npm install` — needed only to run `build.js` and `eslint`; local development loads the unpacked sources directly and needs neither
 - `rsvg-convert` (librsvg) or ImageMagick `convert` — only needed to regenerate PNG icons from `icons/favicon.svg`
 
 ---
@@ -108,19 +108,19 @@ No build step is required for local development. Edit source files and reload th
 
 ```bash
 git clone <your-repo-url>
-cd novatab
+cd llmaotab
 ```
 
 **2. Load as an unpacked extension**
 
 1. Open Chrome → `chrome://extensions`
 2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked** → select the project root folder (`novatab/`)
+3. Click **Load unpacked** → select the project root folder (`llmaotab/`)
 4. Open a new tab — the dashboard loads immediately
 
 **3. Make changes**
 
-Edit `app.js`, `style.css`, `newtab.html`, or `popup.js` directly. After saving, go to `chrome://extensions` and click the reload icon (↻) under novatab, then open a new tab.
+Edit `app.js`, `style.css`, `newtab.html`, or `popup.js` directly. After saving, go to `chrome://extensions` and click the reload icon (↻) under llmaotab, then open a new tab.
 
 **4. (Optional) Regenerate PNG icons after editing `icons/favicon.svg`**
 
@@ -146,9 +146,9 @@ This project has no server and no environment variables. All configuration is em
 
 | Config | File | Key | Notes |
 |---|---|---|---|
-| Google OAuth Client ID | `manifest.json` | `oauth2.client_id` | Public identifier, safe to commit |
-| Google OAuth Client ID | `app.js` | `GOOGLE_CLIENT_ID` (line ~8) | Must match `manifest.json` |
-| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
+| Google OAuth Client ID | `app.js` | `GOOGLE_CLIENT_ID` (line ~8) | Public identifier, safe to commit. There is no `oauth2` block in `manifest.json` — auth runs through `chrome.identity.launchWebAuthFlow`, so the client ID lives in source only |
+| OAuth Scopes | `app.js` | `OAUTH_SCOPES` (line ~2085) | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
+| Expected extension ID | `app.js` / `build.js` | `EXPECTED_EXTENSION_ID` / `PUBLISHED_EXTENSION_ID` | The CWS-assigned item ID; a mismatch only logs a warning, it never blocks sign-in |
 | Weather endpoint | `app.js` | wttr.in URL | No key required |
 | Quotes endpoint | `app.js` | motivational-spark-api.vercel.app | No key required |
 | Anthropic API key | Settings → AI Assistant (`aiApiKey`) | User-supplied, optional | Entered by each user at runtime, stored only in `chrome.storage.local` on their device — never embedded in source or synced |
@@ -187,9 +187,7 @@ If you fork this project, you must create your own Google OAuth client. The clie
    https://<YOUR_EXTENSION_ID>.chromiumapp.org/
    ```
 
-7. Copy the Client ID (not the secret) into:
-   - `manifest.json` → `oauth2.client_id`
-   - `app.js` → `GOOGLE_CLIENT_ID` constant (line ~8)
+7. Copy the Client ID into `app.js` → `GOOGLE_CLIENT_ID` constant (line ~8). This is the only place it is declared; `manifest.json` has no `oauth2` block.
 
 ### Finding your Extension ID
 
@@ -207,16 +205,17 @@ This script:
 
 1. Validates all required source files exist in the project root.
 2. Validates that required manifest permissions are declared.
-3. Copies production files to `dist/`.
+3. Warns if `manifest.json` no longer matches the published CWS extension ID.
+4. Copies static files (manifest, HTML, icons) to `dist/`.
+5. Minifies `app.js`, `fouc.js`, `popup.js`, and `style.css` into `dist/` with esbuild.
 
 **Package for Chrome Web Store:**
 
 ```bash
-node build.js
-cd dist && zip -r ../novatab-v1.2.0-chrome.zip . && cd ..
+npm run zip
 ```
 
-The ZIP must contain the **contents** of `dist/` at its root — not the `dist/` folder itself.
+This builds and writes `llmaotab-v<version>-chrome.zip` to the project root, reading `<version>` from `package.json` so it always matches the current release. The ZIP contains the **contents** of `dist/` at its root — not the `dist/` folder itself.
 
 ---
 
@@ -232,24 +231,18 @@ rsvg-convert -w 16  -h 16  favicon.svg -o icon-16.png
 cd ..
 ```
 
-**Step 2 — Build**
+**Step 2 — Build and package**
 
 ```bash
-node build.js
+npm run zip
 ```
 
-Verify no errors are reported.
+Verify no errors are reported. This produces `llmaotab-v<version>-chrome.zip` in the project root.
 
-**Step 3 — Package**
-
-```bash
-cd dist && zip -r ../novatab-v1.2.0-chrome.zip . && cd ..
-```
-
-**Step 4 — Submit**
+**Step 3 — Submit**
 
 1. Go to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
-2. Click **New Item** → upload `novatab-v1.2.0-chrome.zip`.
+2. Click **New Item** → upload `llmaotab-v<version>-chrome.zip`.
 3. Fill in the listing:
    - **Category**: Productivity
    - **Screenshots**: 1280×800 or 640×400 px (at least one required)
@@ -257,9 +250,9 @@ cd dist && zip -r ../novatab-v1.2.0-chrome.zip . && cd ..
 4. Complete the **Privacy practices** tab using [docs/CWS_SUBMISSION.md](docs/CWS_SUBMISSION.md) — it has copy-paste permission justifications and data-usage answers for every permission this extension requests.
 5. Submit for review.
 
-**Step 5 — Update an existing listing**
+**Step 4 — Update an existing listing**
 
-Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP via the **Package** tab in the CWS dashboard.
+Bump `version` in both `manifest.json` and `package.json` (they must match — the ZIP filename comes from `package.json`, the published version from `manifest.json`), run `npm run zip`, and upload the new ZIP via the **Package** tab in the CWS dashboard.
 
 ---
 
@@ -277,6 +270,8 @@ Bump `version` in `manifest.json`, rebuild, re-package, and upload the new ZIP v
 | `identity.email` | Read signed-in Chrome account email for the sync card |
 | `geolocation` | Auto-detect city for weather widget |
 | `declarativeNetRequest` | Focus Mode — blocks chosen sites while a focus session is active |
+| `notifications` | Focus-session-complete and habit-reminder desktop notifications |
+| `search` | Runs a plain search query through the user's own default search engine via `chrome.search.query` |
 
 | Host | Why |
 |---|---|

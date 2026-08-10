@@ -1,6 +1,6 @@
 "use strict";
 // =============================================
-//  novatab — app.js
+//  llmaotab — app.js
 //  Author: kneeraazon.com
 // =============================================
 
@@ -23,7 +23,7 @@ const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
 const EXPECTED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
   console.warn(
-    `[novatab] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
+    `[llmaotab] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
       "Google sign-in will fail with redirect_uri_mismatch unless https://" +
       chrome.runtime.id +
       ".chromiumapp.org/ is also authorized in Google Cloud Console, or manifest.json's \"key\" is corrected.",
@@ -1427,6 +1427,12 @@ let S = {
 
 // ===== BOOT =====
 document.addEventListener("DOMContentLoaded", async () => {
+  // Source the About panel's version from the manifest so it can't drift out of
+  // sync with the shipped build the way the hardcoded string previously did.
+  const _verEl = document.getElementById("aboutVersion");
+  if (_verEl && IS_CHROME && chrome.runtime?.getManifest) {
+    _verEl.textContent = "Version " + chrome.runtime.getManifest().version;
+  }
   await loadState();
   migrateAddSocials();
   migrateSyncSbLinksToQA();
@@ -2087,7 +2093,12 @@ const OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/drive.appdata",
 ];
-const DRIVE_FILE_NAME = "novatab-sync.json";
+const DRIVE_FILE_NAME = "llmaotab-sync.json";
+// Pre-rename filename. Backups written by the "novatab"-era build still carry
+// it, so pull must look for both or existing users silently lose their cloud
+// data. Push always writes DRIVE_FILE_NAME, which renames the file in place on
+// the first successful sync after upgrading.
+const DRIVE_FILE_NAME_LEGACY = "novatab-sync.json";
 const DRIVE_SPACES = "appDataFolder";
 const _TK_ACCESS_KEY = "_ntAccess"; // { token, expiry }
 const _TK_REFRESH_KEY = "_ntRefresh"; // refresh token string
@@ -2213,7 +2224,7 @@ async function _launchPKCEFlow() {
       (url) => {
         if (chrome.runtime.lastError) {
           console.warn(
-            "[novatab] Auth flow closed or cancelled.",
+            "[llmaotab] Auth flow closed or cancelled.",
             chrome.runtime.lastError.message,
           );
         }
@@ -2245,7 +2256,7 @@ async function _launchPKCEFlow() {
     });
     if (!r.ok) {
       const errBody = await r.text().catch(() => "(unreadable)");
-      console.warn("[novatab] Token exchange failed:", r.status, errBody);
+      console.warn("[llmaotab] Token exchange failed:", r.status, errBody);
       return null;
     }
     const d = await r.json();
@@ -2255,7 +2266,7 @@ async function _launchPKCEFlow() {
       return d.access_token;
     }
   } catch {
-    console.warn("[novatab] Auth request failed — network error.");
+    console.warn("[llmaotab] Auth request failed — network error.");
   }
   return null;
 }
@@ -2421,7 +2432,7 @@ function _timeAgo(ts) {
 async function findDriveFiles(token) {
   try {
     const r = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_SPACES}&q=name%3D'${DRIVE_FILE_NAME}'&fields=files(id%2CmodifiedTime)&orderBy=modifiedTime%20desc`,
+      `https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_SPACES}&q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' or name='${DRIVE_FILE_NAME_LEGACY}'`)}&fields=files(id%2CmodifiedTime)&orderBy=modifiedTime%20desc`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!r.ok) return [];
@@ -2951,7 +2962,7 @@ async function _doPush(token) {
   } else {
     body = JSON.stringify(payload);
   }
-  const boundary = "novatab_boundary_" + Date.now();
+  const boundary = "llmaotab_boundary_" + Date.now();
   // Only PATCH if Drive._fileId was set by a successful POST *in this session*.
   // Never search for existing files on push — avoids 403s from files created by
   // a previous OAuth client that pass GET-metadata checks but fail on PATCH.
@@ -3844,7 +3855,7 @@ function exportWorkspace() {
   if (!ws) return;
   const data = S.wsData[ws.id] || {};
   const payload = {
-    __novatabWorkspace: true,
+    __llmaotabWorkspace: true,
     version: 1,
     exportedAt: new Date().toISOString(),
     workspace: { name: ws.name, icon: ws.icon },
@@ -3861,7 +3872,7 @@ function exportWorkspace() {
   });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `novatab-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
+  a.download = `llmaotab-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
   a.click();
   showToast(`Exported "${ws.name}"`, "success");
 }
@@ -3871,7 +3882,9 @@ function importWorkspaceFile(file) {
   reader.onload = (e) => {
     try {
       const d = JSON.parse(e.target.result);
-      if (!d.__novatabWorkspace || !d.workspace || !d.data) {
+      // __novatabWorkspace is the pre-rename marker — files exported by older
+      // builds must still import.
+      if ((!d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
         showToast("Not a valid workspace file", "error");
         return;
       }
@@ -6812,7 +6825,7 @@ function timerPlay() {
       applyFocusBlockRules(false);
       _timerAudioDing();
       showToast("⏰ Focus session complete! Great job!", "success");
-      _notifyUser("novatab Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
+      _notifyUser("llmaotab Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
       if (T._mode === "focus") {
         const today = _todayKey();
         S._focusSessions = S._focusSessions || {};
@@ -6865,7 +6878,7 @@ function resetTimer(mins, mode) {
 // ── Chrome notification helper ───────────────────────────────────────────
 function _notifyUser(title, opts = {}) {
   if (!IS_CHROME || !chrome.notifications) return;
-  chrome.notifications.create("novatab-" + Date.now(), {
+  chrome.notifications.create("llmaotab-" + Date.now(), {
     type: "basic",
     iconUrl: opts.icon || "icons/favicon.png",
     title,
@@ -6887,7 +6900,7 @@ function _scheduleHabitNotifications() {
     const today = _todayKey();
     const unchecked = habits.filter((h) => !h.days?.[today]);
     if (unchecked.length) {
-      _notifyUser("novatab Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
+      _notifyUser("llmaotab Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
     }
   }, delay);
 }
@@ -7407,7 +7420,7 @@ async function renderAnalytics() {
         }
         <div class="ins-row"><span class="ins-row-label">Display name</span><span class="ins-row-sub">${escH(S.user.name || "—")}</span></div>
         ${chromeVer ? `<div class="ins-row"><span class="ins-row-label">Chrome</span><span class="ins-row-sub">v${chromeVer}</span></div>` : ""}
-        <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">novatab 1.x</span></div>
+        <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">llmaotab 1.x</span></div>
       </div>
 
     </div>
@@ -7912,7 +7925,7 @@ function exportData() {
   );
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `novatab-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `llmaotab-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   showToast("Data exported!", "success");
 }
