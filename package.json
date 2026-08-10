@@ -1,6 +1,6 @@
 {
   "name": "llmaotab",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Chrome MV3 extension replacing the new tab page with a local-first productivity dashboard",
   "private": true,
   "scripts": {
