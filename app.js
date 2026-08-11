@@ -3371,7 +3371,7 @@ function updateAvatarDisplay() {
 
 // ===== RENDER ALL =====
 function renderAll() {
-  renderSidebarWorkspaces();
+  renderTopbarWorkspaces();
   renderSnavAI();
   renderSnavDev();
   renderSnavHome();
@@ -3379,7 +3379,6 @@ function renderAll() {
   renderSnavProjects();
   renderSnavOthers();
   renderSnavSocials();
-  renderTabsWorkspaces();
   renderSidebarFolders();
   applyWidgetVisibility();
   renderQuickAccess();
@@ -3400,10 +3399,9 @@ function setActiveWorkspace(wsId) {
   if (id === S.activeWsId) return;
   S.activeWsId = id;
   save();
-  renderSidebarWorkspaces();
+  renderTopbarWorkspaces();
   renderSnavAI();
   renderSnavDev();
-  renderTabsWorkspaces();
   renderSidebarFolders();
 
   const content = document.querySelector(".home-content");
@@ -3433,42 +3431,27 @@ function setActiveWorkspace(wsId) {
   }
 }
 
-// ===== WORKSPACES SIDEBAR =====
-function renderSidebarWorkspaces() {
-  const list = el("sidebarWorkspacesList");
+// ===== TOPBAR WORKSPACE SWITCHER =====
+// Replaces the old sidebar-only workspace renderer (which showed just the
+// custom workspaces, id > 3) and the dead tabs renderer (which rendered into
+// a display:none container). This shows every workspace, including the 3
+// built-in ones, since they previously had no click-to-switch UI at all —
+// only Alt+1-9 reached them.
+function renderTopbarWorkspaces() {
+  const list = el("topbarWorkspacesList");
   if (!list) return;
-  const custom = S.workspaces.filter((ws) => ws.id > 3);
-  if (!custom.length) {
-    list.innerHTML = '<div class="sb-empty-state">No custom workspaces</div>';
-    return;
-  }
-  list.innerHTML = custom
+  list.innerHTML = S.workspaces
     .map(
       (ws) => `
-    <div class="workspace-sidebar-item ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}">
-      <div class="ws-icon">${ws.icon}</div>
-      <span style="flex:1">${escH(ws.name)}</span>
-    </div>`,
+    <button class="topbar-ws-pill ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}" data-tip="${escH(ws.name)}">
+      <span class="topbar-ws-icon">${ws.icon}</span>
+      <span class="topbar-ws-name">${escH(ws.name)}</span>
+    </button>`,
     )
     .join("");
-  list.querySelectorAll(".workspace-sidebar-item").forEach((item) => {
-    item.addEventListener("click", () => setActiveWorkspace(item.dataset.wsid));
+  list.querySelectorAll(".topbar-ws-pill").forEach((btn) => {
+    btn.addEventListener("click", () => setActiveWorkspace(btn.dataset.wsid));
   });
-  _addDragDrop(list, ".workspace-sidebar-item");
-  // Scroll overflow indicator (same as folders)
-  const wrap = el("sidebarWorkspacesWrap");
-  if (wrap) {
-    const update = () => {
-      const overflows = list.scrollHeight > list.clientHeight;
-      const atBottom =
-        list.scrollTop + list.clientHeight >= list.scrollHeight - 2;
-      wrap.classList.toggle("no-overflow", !overflows || atBottom);
-    };
-    update();
-    list.removeEventListener("scroll", list._wsScrollIndicator);
-    list._wsScrollIndicator = update;
-    list.addEventListener("scroll", update);
-  }
 }
 
 // ===== NEW SIDEBAR: AI / DEV DYNAMIC RENDERS =====
@@ -3767,8 +3750,7 @@ function reorderWorkspaces(fromId, toId) {
   const [item] = S.workspaces.splice(from, 1);
   S.workspaces.splice(to, 0, item);
   save();
-  renderSidebarWorkspaces();
-  renderTabsWorkspaces();
+  renderTopbarWorkspaces();
   renderManageWorkspacesList();
 }
 
@@ -3805,23 +3787,6 @@ function _addDragDrop(container, itemSelector) {
         reorderWorkspaces(dragId, item.dataset.wsid);
     });
   });
-}
-
-function renderTabsWorkspaces() {
-  const tabs = el("workspaceTabs");
-  tabs.innerHTML = S.workspaces
-    .map(
-      (ws) => `
-    <div class="ws-tab ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}">
-      <span class="ws-tab-icon">${ws.icon}</span>
-      <span>${escH(ws.name)}</span>
-    </div>`,
-    )
-    .join("");
-  tabs.querySelectorAll(".ws-tab").forEach((tab) => {
-    tab.addEventListener("click", () => setActiveWorkspace(tab.dataset.wsid));
-  });
-  _addDragDrop(tabs, ".ws-tab");
 }
 
 function renderManageWorkspacesList() {
@@ -3935,8 +3900,7 @@ function addWorkspace(name, icon) {
     importedBookmarks: [],
   };
   save();
-  renderSidebarWorkspaces();
-  renderTabsWorkspaces();
+  renderTopbarWorkspaces();
   showToast(`Workspace "${name}" created!`, "success");
 }
 
@@ -9408,7 +9372,7 @@ function setupEventListeners() {
     reDetectWeather();
   });
 
-  // Workspaces (buttons now live inside sidebar Work tab)
+  // Workspaces (buttons now live in the topbar)
   el("addWorkspaceBtn")?.addEventListener("click", openNewWorkspaceModal);
   el("newWorkspaceTabBtn")?.addEventListener("click", openNewWorkspaceModal);
   el("manageWorkspacesBtn")?.addEventListener("click", () => {
@@ -9443,8 +9407,7 @@ function setupEventListeners() {
         ws.icon = icon;
       }
       save();
-      renderSidebarWorkspaces();
-      renderTabsWorkspaces();
+      renderTopbarWorkspaces();
       showToast("Workspace updated!", "success");
     } else {
       addWorkspace(name, icon);
