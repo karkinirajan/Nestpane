@@ -120,10 +120,11 @@ Today, collapsing the sidebar sets `.sb-group-items { max-height: 0 !important }
 **Files:**
 - Modify: `style.css` (add flyout styles near the existing `.sidebar-collapsed` rules, after line 301)
 - Modify: `app.js:3595` (`initSidebarTabs`)
+- Modify: `app.js:8907-8913` (the `.sb-item[data-view]` navigation listener — must become delegated; see Step 2's note)
 
 **Interfaces:**
 - Consumes: `S.settings.sidebarCollapsed` (existing boolean), the `.sb-group` / `.sb-group-btn` / `.sb-group-items` DOM structure (existing today, unchanged by this task).
-- Produces: no new state. Existing `initSidebarTabs()` behavior for the expanded case is preserved exactly.
+- Produces: `initSidebarFlyout()` — new, called once at boot, creates the flyout element and its `document`-level listeners. `initSidebarTabs()` keeps its existing name/signature but is now safe to call repeatedly (Task 8 calls it again after every `renderSidebar()`) — it only (re)attaches per-button listeners, it does not create the flyout element itself.
 
 - [ ] **Step 1: Add flyout CSS**
 
@@ -157,45 +158,72 @@ In `style.css`, after the block ending `.sidebar-collapsed .sb-group-items { max
 }
 ```
 
-- [ ] **Step 2: Build the flyout in `initSidebarTabs()`**
+- [ ] **Step 2: Split flyout setup (once) from button-listener attachment (every render)**
 
-In `app.js`, replace the whole `initSidebarTabs` function (currently lines 3595–3606):
+`renderSidebar()` (Task 8) replaces the sidebar's DOM via `innerHTML =` and calls `initSidebarTabs()` again after every render/CRUD action to reattach listeners to the freshly-created `.sb-group-btn` elements. If `initSidebarTabs()` also creates the flyout `<div>` and its `document`-level click/scroll listeners inline, every re-render would append another flyout element and another pair of global listeners, accumulating duplicates. Split it: a one-time `initSidebarFlyout()` (creates the element + global listeners, boot only) and a repeatable `initSidebarTabs()` (attaches per-button listeners, safe to call every render).
+
+In `app.js`, replace the whole `initSidebarTabs` function (currently lines 3595–3606) with:
 
 ```js
+// Module-level flyout state — the element and its document-level listeners
+// are created once (initSidebarFlyout, called at boot); initSidebarTabs is
+// called again after every renderSidebar() and only touches per-button
+// listeners, so it never creates a second flyout or a second global listener.
+let _sbFlyoutEl = null;
+let _sbFlyoutGroup = null;
+
+function _sbCloseFlyout() {
+  if (_sbFlyoutEl) _sbFlyoutEl.classList.remove("open");
+  _sbFlyoutGroup = null;
+}
+
+function _sbOpenFlyout(group, btn) {
+  const itemsEl = group.querySelector(".sb-group-items");
+  if (!itemsEl || !_sbFlyoutEl) return;
+  _sbFlyoutEl.innerHTML =
+    `<div class="sb-flyout-title">${escH(btn.dataset.tip || "")}</div>` +
+    itemsEl.innerHTML;
+  const rect = btn.getBoundingClientRect();
+  _sbFlyoutEl.style.left = rect.right + 8 + "px";
+  _sbFlyoutEl.style.top = Math.min(
+    rect.top,
+    window.innerHeight - _sbFlyoutEl.offsetHeight - 12,
+  ) + "px";
+  _sbFlyoutEl.classList.add("open");
+  _sbFlyoutGroup = group;
+}
+
+// Called ONCE at boot (from setupEventListeners). Idempotent guard included
+// defensively, but callers must still only call this once.
+function initSidebarFlyout() {
+  if (_sbFlyoutEl) return;
+  _sbFlyoutEl = document.createElement("div");
+  _sbFlyoutEl.className = "sb-flyout";
+  _sbFlyoutEl.id = "sbFlyout";
+  document.body.appendChild(_sbFlyoutEl);
+  document.addEventListener("click", (e) => {
+    if (
+      _sbFlyoutGroup &&
+      !_sbFlyoutEl.contains(e.target) &&
+      !e.target.closest(".sb-group-btn")
+    ) {
+      _sbCloseFlyout();
+    }
+  });
+  document.addEventListener("scroll", _sbCloseFlyout, true);
+}
+
+// Called at boot AND after every renderSidebar() — (re)attaches per-element
+// click listeners to whatever .sb-group-btn elements currently exist. Safe
+// to call repeatedly: old elements (and their listeners) are gone once
+// renderSidebar() replaces the DOM, so there is nothing to double-attach to.
 function initSidebarTabs() {
-  const flyout = document.createElement("div");
-  flyout.className = "sb-flyout";
-  flyout.id = "sbFlyout";
-  document.body.appendChild(flyout);
-  let flyoutGroup = null;
-
-  function closeFlyout() {
-    flyout.classList.remove("open");
-    flyoutGroup = null;
-  }
-
-  function openFlyout(group, btn) {
-    const itemsEl = group.querySelector(".sb-group-items");
-    if (!itemsEl) return;
-    flyout.innerHTML =
-      `<div class="sb-flyout-title">${escH(btn.dataset.tip || "")}</div>` +
-      itemsEl.innerHTML;
-    const rect = btn.getBoundingClientRect();
-    flyout.style.left = rect.right + 8 + "px";
-    flyout.style.top = Math.min(
-      rect.top,
-      window.innerHeight - flyout.offsetHeight - 12,
-    ) + "px";
-    flyout.classList.add("open");
-    flyoutGroup = group;
-  }
-
   document.querySelectorAll(".sb-group-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const group = btn.closest(".sb-group");
       if (S.settings.sidebarCollapsed) {
-        if (flyoutGroup === group) closeFlyout();
-        else openFlyout(group, btn);
+        if (_sbFlyoutGroup === group) _sbCloseFlyout();
+        else _sbOpenFlyout(group, btn);
         return;
       }
       const isOpen = group.classList.contains("open");
@@ -205,23 +233,49 @@ function initSidebarTabs() {
       if (!isOpen) group.classList.add("open");
     });
   });
-
-  document.addEventListener("click", (e) => {
-    if (flyoutGroup && !flyout.contains(e.target) && !e.target.closest(".sb-group-btn")) {
-      closeFlyout();
-    }
-  });
-  document.addEventListener("scroll", closeFlyout, true);
 }
 ```
 
-Note: the flyout clones `itemsEl.innerHTML`, so clicks on `<a data-view>` / `.sb-link-main` links inside it work exactly as they do in the expanded accordion (same elements, same delegated listeners on `document`) — nothing else needs to change for links to remain clickable. The one thing that won't carry over automatically is item-level CRUD hover buttons added in Task 10 unless they're delegated at the `document` level too; Task 10 uses delegated listeners for exactly this reason (see its Interfaces note).
+Find where `initSidebarTabs()` is currently called during boot (search for `initSidebarTabs()` in `setupEventListeners()`, around `app.js:8889`) and add a call to `initSidebarFlyout()` right before it:
 
-- [ ] **Step 3: Manual verification**
+```js
+  initSidebarFlyout();
+  initSidebarTabs();
+```
 
-Build and load unpacked, collapse the sidebar, click the "Personal" group icon. Expected: a floating panel appears to the right of the icon listing Notes/Journal/etc., clicking an item navigates correctly, clicking elsewhere closes the flyout. Click a *different* group icon while one flyout is open — expected: the old one closes, the new one opens (not both stacked).
+- [ ] **Step 3: Delegate the `data-view` navigation click listener**
 
-- [ ] **Step 4: Commit**
+The flyout clones `itemsEl.innerHTML`, so the `<a data-view>` elements inside it are new DOM nodes distinct from the originals — and the *existing* navigation listener (`app.js:8907-8913`) attaches directly to whatever `.sb-item[data-view]` elements exist at the moment `setupEventListeners()` runs once at boot, which is before any flyout ever opens. Clicking a `data-view` link inside the flyout would silently do nothing without this fix. (This also matters for Task 8's dynamic re-renders, but the flyout makes it visible immediately in this task.)
+
+In `app.js`, find:
+```js
+  // Nav — sidebar items with data-view
+  document.querySelectorAll(".sb-item[data-view]").forEach((n) => {
+    n.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigateTo(n.dataset.view);
+    });
+  });
+```
+Replace with a delegated version:
+```js
+  // Nav — sidebar items with data-view (delegated: the sidebar and the
+  // collapsed-mode flyout both regenerate these elements dynamically, so a
+  // per-element listener attached once at boot would miss every one of
+  // them created afterward)
+  document.addEventListener("click", (e) => {
+    const n = e.target.closest(".sb-item[data-view]");
+    if (!n) return;
+    e.preventDefault();
+    navigateTo(n.dataset.view);
+  });
+```
+
+- [ ] **Step 4: Manual verification**
+
+Build and load unpacked, collapse the sidebar, click the "Personal" group icon. Expected: a floating panel appears to the right of the icon listing Notes/Journal/etc., clicking an item navigates correctly (verifies Step 3's delegation fix), clicking elsewhere closes the flyout. Click a *different* group icon while one flyout is open — expected: the old one closes, the new one opens (not both stacked). Expand the sidebar back and confirm the normal accordion click-to-expand still works exactly as before (verifies Step 2 didn't regress the non-collapsed path). In devtools, run `document.querySelectorAll("#sbFlyout").length` after toggling collapse/expand a few times — expected: always `1`, never more (verifies the idempotency fix).
+
+- [ ] **Step 5: Commit**
 
 ```bash
 git add app.js style.css
@@ -741,7 +795,12 @@ Find the existing sidebar "add link" button listener (search for `data-addlink` 
 
 Delete these now-dead functions entirely: `renderSnavAI`, `renderSnavDev`, `renderSnavGoogle`, `renderSnavProjects`, `renderSnavOthers`, `renderSnavSocials`, `_renderSnavLinks`, `_renderSnavGlobalLinks`, `_getSbGlobalLinks`, `removeSbGlobalLink`, `removeSbLink` (all superseded by Task 9/10's item CRUD writing directly to `S.settings.sidebar`).
 
-Run `grep -n "renderSnavAI\|renderSnavDev\|renderSnavGoogle\|renderSnavProjects\|renderSnavOthers\|renderSnavSocials" app.js` and replace every remaining call site with `renderSidebar()`. Also add a `renderSidebar()` call in the main boot sequence right after `migrateSidebarToDataModel()` (Task 6, `app.js:1436-1439` area) and inside `renderAll()` (search for `function renderAll` — add it alongside the existing `renderSidebarWorkspaces()`-turned-`renderTopbarWorkspaces()`/`renderSidebarFolders()` calls there).
+Deleting `removeSbGlobalLink`/`removeSbLink` leaves three dangling call sites that must be removed in the same step, or they reference undefined functions:
+1. The delegated click listener at `app.js:8915-8927` (comment: `// Sidebar remove buttons — event delegation...`) — its body calls both functions directly. Delete the whole `el("sbNav")?.addEventListener("click", ...)` block; it has no replacement, since Task 10's item deletion goes through the edit-mode ✕ button instead of a per-item remove icon.
+2. `window.removeSbLink = removeSbLink;` (`app.js:10740`).
+3. `window.removeSbGlobalLink = removeSbGlobalLink;` (`app.js:10754`).
+
+Run `grep -n "renderSnavAI\|renderSnavDev\|renderSnavGoogle\|renderSnavProjects\|renderSnavOthers\|renderSnavSocials\|removeSbGlobalLink\|removeSbLink" app.js` afterward — expect zero matches. Replace every remaining `renderSnav*` call site with `renderSidebar()`. Also add a `renderSidebar()` call in the main boot sequence right after `migrateSidebarToDataModel()` (Task 6, `app.js:1436-1439` area) and inside `renderAll()` (search for `function renderAll` — add it alongside the existing `renderSidebarWorkspaces()`-turned-`renderTopbarWorkspaces()`/`renderSidebarFolders()` calls there).
 
 - [ ] **Step 5: Delete now-orphaned CSS for removed groups**
 
@@ -763,15 +822,15 @@ git commit -m "feat: render sidebar from S.settings.sidebar, remove hardcoded gr
 ## Task 9: Group CRUD — add, rename, delete, reorder
 
 **Files:**
-- Modify: `newtab.html` — add an "Edit sidebar" toggle button in `.sb-brand` (next to the collapse toggle) and a small rename-prompt / add-group modal.
-- Modify: `app.js` — group CRUD functions.
+- Modify: `newtab.html` — add an "Edit sidebar" toggle button in `.sb-brand` (next to the collapse toggle) and a small reusable rename/add prompt modal (styled to match the app's existing modals — this app has zero uses of the browser's native `prompt()`/`confirm()` anywhere else, so introducing one here would look visibly out of place).
+- Modify: `app.js` — group CRUD functions, `sbPrompt()` helper.
 - Modify: `style.css` — edit-mode affordance styles.
 
 **Interfaces:**
-- Consumes: `S.settings.sidebar` (Task 5), `confirm2(title, msg, onOk)` (existing, `app.js:8843`), `showToast` (existing), `renderSidebar()` (Task 8).
-- Produces: `S.settings.sidebarEditMode` (boolean, new, transient UI state — not persisted, so it's set directly on `S`, not `S.settings`), `addSidebarGroup()`, `renameSidebarGroup(id, newLabel)`, `deleteSidebarGroup(id)`, `moveSidebarGroup(id, direction)`.
+- Consumes: `S.settings.sidebar` (Task 5), `confirm2(title, msg, onOk)` (existing, `app.js:8843`), `showToast`/`openModal`/`closeModal` (existing), `renderSidebar()` (Task 8).
+- Produces: `S.settings.sidebarEditMode` (boolean, new, transient UI state — not persisted, so it's set directly on `S`, not `S.settings`), `sbPrompt(title, initialValue, onSave)` (new generic single-field modal helper, reused by Task 10), `addSidebarGroup()`, `renameSidebarGroup(id, newLabel)`, `deleteSidebarGroup(id)`, `moveSidebarGroup(id, direction)`.
 
-- [ ] **Step 1: Add the edit-mode toggle button**
+- [ ] **Step 1: Add the edit-mode toggle button and a reusable rename/add prompt modal**
 
 In `newtab.html`, inside `.sb-brand` (line 23-30), add a new button right before the existing `#sidebarToggleBtn`:
 
@@ -779,6 +838,61 @@ In `newtab.html`, inside `.sb-brand` (line 23-30), add a new button right before
     <button class="sb-edit-btn" id="sbEditModeBtn" data-tip="Edit sidebar" aria-label="Edit sidebar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </button>
+```
+
+Then, near the existing `confirmModal` (search for `id="confirmModal"`), add a new generic single-field prompt modal — reused by `addSidebarGroup`, `renameSidebarGroup` (this task) and `renameSidebarItem` (Task 10), so nothing here is added, rather than three near-duplicate ones. Its markup mirrors `confirmModal`'s exactly (`modal-overlay` > `modal` > `modal-header`/`modal-body`/`modal-footer`, `modal-close`/`modal-input`/`btn-secondary`/`btn-primary` — all existing classes already styled elsewhere in `style.css`, e.g. the near-identical `sbAddLinkModal`):
+
+```html
+<!-- Generic single-field rename/add prompt — replaces window.prompt() so
+     these flows match the rest of the app's custom modal styling. -->
+<div class="modal-overlay" id="sbPromptModal" role="dialog" aria-modal="true" aria-labelledby="sbPromptTitle">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <h3 id="sbPromptTitle">Rename</h3>
+      <button class="modal-close" data-modal="sbPromptModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="sbPromptInput" class="modal-input" maxlength="40">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="sbPromptModal">Cancel</button>
+      <button class="btn-primary" id="sbPromptSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+```
+
+In `app.js`, add the helper near `confirm2` (`app.js:8843`):
+
+```js
+// Generic single-field text prompt modal — replaces window.prompt() so
+// renames/adds match the rest of the app's custom modal styling. Reused by
+// addSidebarGroup, renameSidebarGroup (this task) and renameSidebarItem
+// (Task 10).
+function sbPrompt(title, initialValue, onSave) {
+  el("sbPromptTitle").textContent = title;
+  const input = el("sbPromptInput");
+  input.value = initialValue || "";
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") el("sbPromptSaveBtn").click();
+  };
+  el("sbPromptSaveBtn").onclick = () => {
+    const value = input.value.trim();
+    if (!value) {
+      showToast("Enter a name", "error");
+      return;
+    }
+    closeModal("sbPromptModal");
+    onSave(value);
+  };
+  openModal("sbPromptModal");
+  setTimeout(() => {
+    input.focus();
+    input.select();
+  }, 80);
+}
 ```
 
 - [ ] **Step 2: Add group-level edit controls to `renderSidebar()`**
@@ -847,22 +961,22 @@ function toggleSidebarEditMode() {
 }
 
 function addSidebarGroup() {
-  const label = prompt("Group name?");
-  if (!label || !label.trim()) return;
-  const id = `g${Date.now()}`;
-  S.settings.sidebar.push({ id, label: label.trim(), icon: "link", items: [] });
-  save();
-  renderSidebar();
+  sbPrompt("New group", "", (label) => {
+    const id = `g${Date.now()}`;
+    S.settings.sidebar.push({ id, label, icon: "link", items: [] });
+    save();
+    renderSidebar();
+  });
 }
 
 function renameSidebarGroup(id) {
   const group = S.settings.sidebar.find((g) => g.id === id);
   if (!group) return;
-  const label = prompt("Rename group", group.label);
-  if (!label || !label.trim()) return;
-  group.label = label.trim();
-  save();
-  renderSidebar();
+  sbPrompt("Rename group", group.label, (label) => {
+    group.label = label;
+    save();
+    renderSidebar();
+  });
 }
 
 function deleteSidebarGroup(id) {
@@ -962,7 +1076,7 @@ git commit -m "feat: add/rename/delete/reorder CRUD for sidebar groups"
 - Modify: `style.css` — item-level edit-mode affordances.
 
 **Interfaces:**
-- Consumes: `SIDEBAR_ADDABLE_VIEWS` (Task 5), `S.settings.sidebar`, `openModal`/`closeModal` (existing), `renderSidebar()` (Task 8).
+- Consumes: `SIDEBAR_ADDABLE_VIEWS` (Task 5), `S.settings.sidebar`, `openModal`/`closeModal` (existing), `renderSidebar()` (Task 8), `sbPrompt(title, initialValue, onSave)` (Task 9 — reused here for item rename, not reimplemented).
 - Produces: `addSidebarLinkItem(groupId, label, url)`, `addSidebarViewItem(groupId, view)`, `renameSidebarItem(groupId, itemId)`, `deleteSidebarItem(groupId, itemId)`, `moveSidebarItem(groupId, itemId, direction)`.
 
 - [ ] **Step 1: Rewrite `openSbAddLink` / `saveSbLink` to target the new model, and add a view picker**
@@ -1077,11 +1191,11 @@ function renameSidebarItem(groupId, itemId) {
   const group = S.settings.sidebar.find((g) => g.id === groupId);
   const item = group?.items.find((it) => it.id === itemId);
   if (!item) return;
-  const label = prompt("Rename item", item.label);
-  if (!label || !label.trim()) return;
-  item.label = label.trim();
-  save();
-  renderSidebar();
+  sbPrompt("Rename item", item.label, (label) => {
+    item.label = label;
+    save();
+    renderSidebar();
+  });
 }
 
 function deleteSidebarItem(groupId, itemId) {
