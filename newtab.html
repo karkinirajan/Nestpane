@@ -140,22 +140,6 @@
           </button>
         </div>
         <div class="sb-group-items">
-          <div id="sidebarWorkspacesList" class="sidebar-folders-list sb-dynamic-list"></div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;padding:2px 0">
-            <button class="sb-work-action" id="newWorkspaceTabBtn" data-tip="New Workspace">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New
-            </button>
-            <button class="sb-work-action" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              Manage
-            </button>
-            <button class="sb-work-action" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
-              Organize
-            </button>
-          </div>
-          <button id="addWorkspaceBtn" style="display:none"></button>
           <div id="snavProjectsItems" class="sb-dynamic-list"></div>
         </div>
       </div>
@@ -304,6 +288,19 @@
       <span class="search-trigger-text">Search everything…</span>
       <kbd class="search-kbd">/</kbd>
     </button>
+    <div class="topbar-ws" id="topbarWorkspaces">
+      <div class="topbar-ws-list" id="topbarWorkspacesList"></div>
+      <button class="topbar-ws-btn" id="newWorkspaceTabBtn" data-tip="New Workspace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="topbar-ws-btn" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <button class="topbar-ws-btn" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+      </button>
+      <button id="addWorkspaceBtn" style="display:none"></button>
+    </div>
     <div class="topbar-actions">
       <!-- topSettingsBtn kept as no-op stub for JS compat -->
       <button id="topSettingsBtn" style="display:none" tabindex="-1" aria-hidden="true"></button>

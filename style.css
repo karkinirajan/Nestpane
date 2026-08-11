@@ -529,6 +529,29 @@ svg { flex-shrink: 0; }
   font-family:var(--font); font-size:10.5px; font-weight:600; color:var(--text-3);
   background:var(--surface-2); border:1px solid var(--border-2); border-radius:4px; padding:1px 5px; flex-shrink:0;
 }
+
+/* Workspace switcher (topbar) */
+.topbar-ws { display: flex; align-items: center; gap: 4px; margin-left: 14px; }
+.topbar-ws-list { display: flex; align-items: center; gap: 3px; }
+.topbar-ws-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: var(--radius-pill);
+  background: none; border: none; color: var(--text-3);
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.topbar-ws-pill:hover { background: var(--surface-2); color: var(--text-2); }
+.topbar-ws-pill.active { background: var(--accent-bg); color: var(--accent-2); }
+.topbar-ws-icon { font-size: 13px; line-height: 1; }
+.topbar-ws-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: var(--radius-xs);
+  background: none; border: none; color: var(--text-3); cursor: pointer;
+  transition: background .1s, color .1s;
+}
+.topbar-ws-btn:hover { background: var(--surface-2); color: var(--text); }
+@media (max-width: 900px) { .topbar-ws-name { display: none; } }
+
 .topbar-actions { display:flex; align-items:center; gap:4px; margin-left:auto; }
 .topbar-btn {
   width:34px; height:34px; display:flex; align-items:center; justify-content:center;
