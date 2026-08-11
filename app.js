@@ -1502,6 +1502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadState();
   migrateAddSocials();
   migrateSidebarToDataModel();
+  renderSidebar();
   migrateSyncSbLinksToQA();
   migrateAddWorkspaceContent();
   initClock();
@@ -3372,13 +3373,7 @@ function updateAvatarDisplay() {
 // ===== RENDER ALL =====
 function renderAll() {
   renderTopbarWorkspaces();
-  renderSnavAI();
-  renderSnavDev();
-  renderSnavHome();
-  renderSnavGoogle();
-  renderSnavProjects();
-  renderSnavOthers();
-  renderSnavSocials();
+  renderSidebar();
   renderSidebarFolders();
   applyWidgetVisibility();
   renderQuickAccess();
@@ -3400,8 +3395,7 @@ function setActiveWorkspace(wsId) {
   S.activeWsId = id;
   save();
   renderTopbarWorkspaces();
-  renderSnavAI();
-  renderSnavDev();
+  renderSidebar();
   renderSidebarFolders();
 
   const content = document.querySelector(".home-content");
@@ -3454,124 +3448,52 @@ function renderTopbarWorkspaces() {
   });
 }
 
-// ===== NEW SIDEBAR: AI / DEV DYNAMIC RENDERS =====
-function _renderSnavLinks(containerId, wsId) {
-  const container = el(containerId);
-  if (!container) return;
-  const data = S.wsData[wsId] || {};
-  const links = data.quickAccess || [];
-  if (!links.length) {
-    container.innerHTML =
-      '<div class="sb-empty-state">No links yet. Click + to add.</div>';
-    return;
+// ===== DATA-DRIVEN SIDEBAR RENDERER =====
+function _sbItemInner(item) {
+  const icon = SB_ICONS[item.icon] || SB_ICONS.link;
+  if (item.kind === "view") {
+    return `
+    <a href="#" class="sb-item" data-view="${escH(item.view)}" data-sb-item-id="${escH(item.id)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
+      <span class="sb-item-label">${escH(item.label)}</span>
+    </a>`;
   }
-  container.innerHTML = links
-    .map(
-      (link) => `
-    <div class="sb-item sb-link-item" data-tip="${escH(link.name)}">
-      <a href="${escH(link.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(link.url)}" alt="">
-        <span class="sb-item-label">${escH(link.name)}</span>
+  return `
+    <div class="sb-item sb-link-item" data-sb-item-id="${escH(item.id)}" data-tip="${escH(item.label)}">
+      <a href="${escH(item.url)}" class="sb-link-main" target="_blank" rel="noopener">
+        <img class="sb-fav" src="${favSrc(item.url)}" alt="">
+        <span class="sb-item-label">${escH(item.label)}</span>
       </a>
-      <div class="sb-link-actions">
-        <a href="${escH(link.url)}" class="sb-open-btn" target="_blank" rel="noopener" title="Open in new tab">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-        <button class="sb-rm-btn" title="Remove" data-rm-ws="${wsId}" data-rm-id="${link.id}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>`,
-    )
+    </div>`;
+}
+
+function renderSidebar() {
+  const container = el("sbGroupsContainer");
+  if (!container || !S.settings.sidebar) return;
+  container.innerHTML = S.settings.sidebar
+    .map((group) => {
+      const icon = SB_ICONS[group.icon] || SB_ICONS.link;
+      const itemsHtml = group.items.length
+        ? group.items.map(_sbItemInner).join("")
+        : `<div class="sb-empty-state">No links yet — click + to add</div>`;
+      return `
+      <div class="sb-group" id="sbg-${escH(group.id)}" data-sb-group-id="${escH(group.id)}">
+        <div class="sb-group-hd">
+          <button class="sb-group-btn" data-group="${escH(group.id)}" data-tip="${escH(group.label)}" aria-expanded="false">
+            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
+            <span class="sb-group-label">${escH(group.label)}</span>
+            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <button class="sb-gplus" data-addlink="${escH(group.id)}" title="Add link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+        <div class="sb-group-items">${itemsHtml}</div>
+      </div>`;
+    })
     .join("");
-}
-function renderSnavAI() {
-  _renderSnavLinks("snavAIItems", 2);
-}
-function renderSnavDev() {
-  _renderSnavLinks("snavDevItems", 3);
-}
-function renderSnavHome() {
-  _renderSnavLinks("sbHomeLinks", 1);
-}
-function renderSnavGoogle() {
-  _renderSnavGlobalLinks("snavGoogleItems", "google");
-}
-function renderSnavProjects() {
-  _renderSnavGlobalLinks("snavProjectsItems", "projects");
-}
-function renderSnavOthers() {
-  _renderSnavGlobalLinks("snavOthersItems", "others");
-}
-function renderSnavSocials() {
-  _renderSnavGlobalLinks("snavSocialsItems", "socials");
-}
-
-// Render global (non-workspace) sidebar link lists
-function _getSbGlobalLinks(group) {
-  if (!S.settings.sbLinks) S.settings.sbLinks = {};
-  if (!S.settings.sbLinks[group]) S.settings.sbLinks[group] = [];
-  return S.settings.sbLinks[group];
-}
-
-function _renderSnavGlobalLinks(containerId, group) {
-  const container = el(containerId);
-  if (!container) return;
-  const links = _getSbGlobalLinks(group);
-  if (!links.length) {
-    container.innerHTML = `<div class="sb-empty-state">No links yet — click + to add</div>`;
-    return;
-  }
-  container.innerHTML = links
-    .map(
-      (link) => `
-    <div class="sb-item sb-link-item" data-tip="${escH(link.name)}">
-      <a href="${escH(link.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(link.url)}" alt="">
-        <span class="sb-item-label">${escH(link.name)}</span>
-      </a>
-      <div class="sb-link-actions">
-        <a href="${escH(link.url)}" class="sb-open-btn" target="_blank" rel="noopener" title="Open in new tab">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-        <button class="sb-rm-btn" title="Remove" data-rm-group="${escH(group)}" data-rm-id="${link.id}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>`,
-    )
-    .join("");
-}
-
-function removeSbGlobalLink(group, linkId) {
-  const links = _getSbGlobalLinks(group);
-  const removed = links.find((l) => l.id === linkId);
-  if (removed?.url) S._qaDeleted.add(_normUrl(removed.url));
-  S.settings.sbLinks[group] = links.filter((l) => l.id !== linkId);
-  save();
-  _renderSnavGlobalLinks(
-    group === "google"
-      ? "snavGoogleItems"
-      : group === "socials"
-        ? "snavSocialsItems"
-        : group === "projects"
-          ? "snavProjectsItems"
-          : "snavOthersItems",
-    group,
-  );
-}
-
-function removeSbLink(wsId, linkId) {
-  const data = S.wsData[wsId];
-  if (!data) return;
-  const removed = (data.quickAccess || []).find((l) => l.id === linkId);
-  if (removed?.url) S._qaDeleted.add(_normUrl(removed.url));
-  data.quickAccess = (data.quickAccess || []).filter((l) => l.id !== linkId);
-  save();
-  _renderSnavLinks(
-    wsId === 1 ? "sbHomeLinks" : wsId === 2 ? "snavAIItems" : "snavDevItems",
-    wsId,
-  );
+  initSidebarTabs();
+  updateSidebarTabActive();
 }
 
 function openSbAddLink(group) {
@@ -3603,14 +3525,13 @@ function saveSbLink() {
   // Global groups (not workspace-based)
   if (group === "google" || group === "socials" || group === "projects" || group === "others") {
     S._qaDeleted.delete(_normUrl(url)); // allow intentional re-add
-    _getSbGlobalLinks(group).push({ id: Date.now(), name, url });
+    if (!S.settings.sbLinks) S.settings.sbLinks = {};
+    if (!S.settings.sbLinks[group]) S.settings.sbLinks[group] = [];
+    S.settings.sbLinks[group].push({ id: Date.now(), name, url });
     _mirrorLinkToHomeQA({ name, url });
     save();
     closeModal("sbAddLinkModal");
-    if (group === "google") renderSnavGoogle();
-    else if (group === "socials") renderSnavSocials();
-    else if (group === "projects") renderSnavProjects();
-    else renderSnavOthers();
+    renderSidebar();
     if (S.activeWsId === 1) renderQuickAccess();
     showToast("Link added", "success");
     return;
@@ -3635,9 +3556,7 @@ function saveSbLink() {
   S.wsData[wsId].quickAccess.push({ id: Date.now(), name, url });
   save();
   closeModal("sbAddLinkModal");
-  if (wsId === 2) renderSnavAI();
-  else if (wsId === 3) renderSnavDev();
-  else renderSnavHome();
+  renderSidebar();
   showToast("Link added", "success");
 }
 
@@ -9046,20 +8965,6 @@ function setupEventListeners() {
     navigateTo(n.dataset.view);
   });
 
-  // Sidebar remove buttons — event delegation (CSP-safe, no inline onclick)
-  el("sbNav")?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".sb-rm-btn");
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const { rmWs, rmGroup, rmId } = btn.dataset;
-    if (rmId !== undefined && rmWs !== undefined) {
-      removeSbLink(Number(rmWs), Number(rmId));
-    } else if (rmId !== undefined && rmGroup !== undefined) {
-      removeSbGlobalLink(rmGroup, Number(rmId));
-    }
-  });
-
   // Global [data-action] dispatch — CSP-safe replacement for inline onclick=
   // in dynamically-rendered HTML (MV3's extension_pages CSP forbids inline
   // script/event-handler attributes; only 'self' script sources are allowed).
@@ -9743,12 +9648,14 @@ function setupEventListeners() {
     e.target.value = "";
   });
 
-  // ── Sidebar + (add link) buttons ───────────────────────────────────────
-  document.querySelectorAll(".sb-gplus").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openSbAddLink(btn.dataset.addlink);
-    });
+  // ── Sidebar + (add link) buttons — event delegation (the buttons are
+  // recreated on every renderSidebar() call, so a per-element listener
+  // attached once at boot would miss every group rendered afterward) ─────
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-addlink]");
+    if (!btn) return;
+    e.stopPropagation();
+    openSbAddLink(btn.dataset.addlink);
   });
   el("sbAddLinkSaveBtn")?.addEventListener("click", saveSbLink);
   el("sbAddLinkName")?.addEventListener("keydown", (e) => {
@@ -10870,7 +10777,6 @@ window.openWsFolderEditModal = openWsFolderEditModal;
 window.openWsBookmarkEditModal = openWsBookmarkEditModal;
 window.removeWsFolder = removeWsFolder;
 // New feature globals
-window.removeSbLink = removeSbLink;
 window.openSbAddLink = openSbAddLink;
 window.toggleHabitDay = toggleHabitDay;
 window.deleteHabit = deleteHabit;
@@ -10884,7 +10790,6 @@ window.refreshWallpaper = refreshWallpaper;
 window.uploadWallpaper = uploadWallpaper;
 window.resetWallpaper = resetWallpaper;
 window.applyHeroColor = applyHeroColor;
-window.removeSbGlobalLink = removeSbGlobalLink;
 window.deleteCalEvent = deleteCalEvent;
 window.signOut = signOut;
 window.signIn = signIn;
