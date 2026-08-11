@@ -300,6 +300,32 @@ svg { flex-shrink: 0; }
 .sb-group.open > .sb-group-items { max-height: 320px; overflow-y: auto; }
 .sidebar-collapsed .sb-group-items { max-height: 0 !important; }
 
+/* Collapsed-sidebar flyout: shows a group's items in a floating panel
+   instead of the dead max-height:0 accordion. */
+.sb-flyout {
+  position: fixed;
+  z-index: 250;
+  min-width: 190px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+}
+.sb-flyout.open { display: flex; }
+.sb-flyout-title {
+  font-size: var(--ty-caption);
+  font-weight: var(--fw-bold);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 6px 8px 4px;
+}
+
 .sb-group.tab-active > .sb-group-btn::before {
   content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
   width: 3px; background: var(--accent);
