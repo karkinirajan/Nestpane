@@ -40,6 +40,28 @@ push, so "instant backup" of the new structure is inherited for free.
   data are preserved via a one-time migration — nothing is deleted from
   installed users, only from the *default seed* used for fresh installs.
 
+## Workspace switcher relocation
+
+The current "Projects" sidebar group secretly does double duty: besides a
+bookmark-links list, it's the **only visible UI** for the workspace
+switcher (`sidebarWorkspacesList` + New/Manage/Organize buttons) — the
+`#workspaceTabs` alternative in `home-content` is `display:none`, dead
+code. Deleting "Projects" outright would silently kill the ability to
+switch, create, rename, or delete a workspace through the UI (Alt+1–9
+would still work blindly, with no visual indicator).
+
+Decision: relocate the workspace switcher into the **topbar**, next to the
+search trigger. `renderTabsWorkspaces()` already renders into `#workspaceTabs`
+using `S.workspaces`/`S.activeWsId` with click-to-switch and drag-to-reorder
+wired up — the fix is markup relocation (move `#workspaceTabs` out of its
+`display:none` wrapper into the topbar, move the `newWorkspaceTabBtn` /
+`manageWorkspacesBtn` / `smartOrganizeBtn` buttons alongside it) plus new
+topbar-appropriate CSS (`.ws-tab` currently has no styling at all, since it
+was always hidden). No JS logic changes needed — all handlers are already
+id-based. The "Projects" *group* (its accordion header + the
+`snavProjectsItems` bookmark-links list) is removed from the sidebar
+entirely, same as Development/Kanban/Others.
+
 ## Non-goals
 
 - Not changing auth, Drive sync, or the build/zip/deploy scripts.
