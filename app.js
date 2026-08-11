@@ -1501,6 +1501,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   await loadState();
   migrateAddSocials();
+  migrateSidebarToDataModel();
   migrateSyncSbLinksToQA();
   migrateAddWorkspaceContent();
   initClock();
@@ -6268,6 +6269,42 @@ function migrateAddSocials() {
     data.quickAccess.push(...toAdd);
   }
   save();
+}
+
+// One-time: build S.settings.sidebar from whatever the user already has, so
+// existing customizations (Google/Socials links, AI tool links) survive the
+// move to the new data-driven sidebar. Safe to call every boot — it's a
+// no-op once S.settings.sidebar exists. AI items are COPIED from the AI
+// workspace's quick access (S.wsData[2].quickAccess), not moved — that
+// workspace's own dashboard quick-access grid is untouched.
+function migrateSidebarToDataModel() {
+  if (S.settings.sidebar) return;
+
+  const toLinkItems = (links) =>
+    (links || []).map((l) => ({
+      id: `link-${l.id}`,
+      label: l.name,
+      url: l.url,
+      icon: "link",
+      kind: "link",
+    }));
+
+  const hasAnyExistingLinks =
+    (S.settings.sbLinks?.google?.length || 0) > 0 ||
+    (S.settings.sbLinks?.socials?.length || 0) > 0 ||
+    (S.wsData?.[2]?.quickAccess?.length || 0) > 0;
+
+  if (!hasAnyExistingLinks) {
+    // Fresh install (or nothing worth carrying over) — just use the default.
+    S.settings.sidebar = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR));
+    return;
+  }
+
+  S.settings.sidebar = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR));
+  const byId = Object.fromEntries(S.settings.sidebar.map((g) => [g.id, g]));
+  if (byId.google) byId.google.items = toLinkItems(S.settings.sbLinks?.google);
+  if (byId.socials) byId.socials.items = toLinkItems(S.settings.sbLinks?.socials);
+  if (byId.ai) byId.ai.items = toLinkItems(S.wsData?.[2]?.quickAccess);
 }
 
 // Normalize a URL for de-dupe comparisons (ignore protocol/trailing slash/case)
