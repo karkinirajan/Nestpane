@@ -3592,10 +3592,67 @@ function saveSbLink() {
 }
 
 // ===== SIDEBAR TAB COLLAPSIBLE LOGIC =====
+// Module-level flyout state — the element and its document-level listeners
+// are created once (initSidebarFlyout, called at boot); initSidebarTabs is
+// called again after every renderSidebar() and only touches per-button
+// listeners, so it never creates a second flyout or a second global listener.
+let _sbFlyoutEl = null;
+let _sbFlyoutGroup = null;
+
+function _sbCloseFlyout() {
+  if (_sbFlyoutEl) _sbFlyoutEl.classList.remove("open");
+  _sbFlyoutGroup = null;
+}
+
+function _sbOpenFlyout(group, btn) {
+  const itemsEl = group.querySelector(".sb-group-items");
+  if (!itemsEl || !_sbFlyoutEl) return;
+  _sbFlyoutEl.innerHTML =
+    `<div class="sb-flyout-title">${escH(btn.dataset.tip || "")}</div>` +
+    itemsEl.innerHTML;
+  const rect = btn.getBoundingClientRect();
+  _sbFlyoutEl.style.left = rect.right + 8 + "px";
+  _sbFlyoutEl.style.top = Math.min(
+    rect.top,
+    window.innerHeight - _sbFlyoutEl.offsetHeight - 12,
+  ) + "px";
+  _sbFlyoutEl.classList.add("open");
+  _sbFlyoutGroup = group;
+}
+
+// Called ONCE at boot (from setupEventListeners). Idempotent guard included
+// defensively, but callers must still only call this once.
+function initSidebarFlyout() {
+  if (_sbFlyoutEl) return;
+  _sbFlyoutEl = document.createElement("div");
+  _sbFlyoutEl.className = "sb-flyout";
+  _sbFlyoutEl.id = "sbFlyout";
+  document.body.appendChild(_sbFlyoutEl);
+  document.addEventListener("click", (e) => {
+    if (
+      _sbFlyoutGroup &&
+      !_sbFlyoutEl.contains(e.target) &&
+      !e.target.closest(".sb-group-btn")
+    ) {
+      _sbCloseFlyout();
+    }
+  });
+  document.addEventListener("scroll", _sbCloseFlyout, true);
+}
+
+// Called at boot AND after every renderSidebar() — (re)attaches per-element
+// click listeners to whatever .sb-group-btn elements currently exist. Safe
+// to call repeatedly: old elements (and their listeners) are gone once
+// renderSidebar() replaces the DOM, so there is nothing to double-attach to.
 function initSidebarTabs() {
   document.querySelectorAll(".sb-group-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const group = btn.closest(".sb-group");
+      if (S.settings.sidebarCollapsed) {
+        if (_sbFlyoutGroup === group) _sbCloseFlyout();
+        else _sbOpenFlyout(group, btn);
+        return;
+      }
       const isOpen = group.classList.contains("open");
       document
         .querySelectorAll(".sb-group")
@@ -8886,6 +8943,7 @@ function showToast(msg, type = "") {
 
 // ===== EVENT LISTENERS =====
 function setupEventListeners() {
+  initSidebarFlyout();
   initSidebarTabs();
 
   // Static HTML buttons
@@ -8904,12 +8962,15 @@ function setupEventListeners() {
   });
   el("weatherWidget").addEventListener("click", openWeatherLocationModal);
 
-  // Nav — sidebar items with data-view
-  document.querySelectorAll(".sb-item[data-view]").forEach((n) => {
-    n.addEventListener("click", (e) => {
-      e.preventDefault();
-      navigateTo(n.dataset.view);
-    });
+  // Nav — sidebar items with data-view (delegated: the sidebar and the
+  // collapsed-mode flyout both regenerate these elements dynamically, so a
+  // per-element listener attached once at boot would miss every one of
+  // them created afterward)
+  document.addEventListener("click", (e) => {
+    const n = e.target.closest(".sb-item[data-view]");
+    if (!n) return;
+    e.preventDefault();
+    navigateTo(n.dataset.view);
   });
 
   // Sidebar remove buttons — event delegation (CSP-safe, no inline onclick)
