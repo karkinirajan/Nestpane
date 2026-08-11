@@ -366,6 +366,69 @@ const API = {
   },
 };
 
+// ===== SIDEBAR ICON LOOKUP =====
+// Inner <svg> markup (no outer <svg> tag) for each icon key, reused by
+// renderSidebar() and the group/item icon pickers. Paths are lifted
+// verbatim from the icons that used to be hardcoded per-group in
+// newtab.html, so the visual language doesn't change.
+const SB_ICONS = {
+  dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  google: '<path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 12h6.5"/><path d="M12 7v5"/>',
+  socials: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  ai: '<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/>',
+  bookmark: '<path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  sessions: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  notes: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  journal: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  reading: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  habits: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 6"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.4a5 5 0 0 0 7.07 7.07L14 18"/>',
+};
+
+// Default sidebar shown on a fresh install. Kept lean on purpose — Google/
+// Socials/AI ship empty (users add their own links); Home/Personal ship 3
+// broadly-useful items each. Item ids are stable strings so migration and
+// "already added" checks can key off them.
+const DEFAULT_SIDEBAR = [
+  {
+    id: "home",
+    label: "Home",
+    icon: "home",
+    items: [
+      { id: "bookmarks", label: "Bookmarks", icon: "bookmark", kind: "view", view: "bookmarks" },
+      { id: "history", label: "History", icon: "history", kind: "view", view: "history" },
+      { id: "downloads", label: "Downloads", icon: "download", kind: "view", view: "downloads" },
+    ],
+  },
+  {
+    id: "personal",
+    label: "Personal",
+    icon: "user",
+    items: [
+      { id: "notes", label: "Notes", icon: "notes", kind: "view", view: "notes" },
+      { id: "journal", label: "Journal", icon: "journal", kind: "view", view: "journal" },
+      { id: "reading", label: "Reading Queue", icon: "reading", kind: "view", view: "reading" },
+    ],
+  },
+  { id: "google", label: "Google", icon: "google", items: [] },
+  { id: "socials", label: "Socials", icon: "socials", items: [] },
+  { id: "ai", label: "AI", icon: "ai", items: [] },
+];
+
+// Every "view" kind item that isn't in DEFAULT_SIDEBAR by default but is
+// still a real internal view a user might want to add back (Task 9's "Add
+// item" picker offers these plus a free-form link option).
+const SIDEBAR_ADDABLE_VIEWS = [
+  { view: "sessions", label: "Tab Sessions", icon: "sessions" },
+  { view: "trash", label: "Trash", icon: "trash" },
+  { view: "habits", label: "Habits", icon: "habits" },
+];
+
 // ===== DEFAULT DATA =====
 const DEFAULT_WORKSPACES = [
   { id: 1, name: "Home", icon: "🏠" },
@@ -1332,6 +1395,7 @@ let S = {
       todo: true,
     },
     sidebarCollapsed: false,
+    sidebar: null, // populated by migrateSidebarToDataModel() on first load after this update, or DEFAULT_SIDEBAR on a fresh install
     heroBg: null,
     qaMode: "icon",
     heroQuote: null,
