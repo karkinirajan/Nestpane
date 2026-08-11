@@ -247,7 +247,7 @@ svg { flex-shrink: 0; }
   padding: 0;
   gap: 0;
 }
-.sidebar-collapsed .sb-logo-img { margin: 12px 0 11px; }
+.sidebar-collapsed .sb-logo-img { display: none; }
 .sidebar-collapsed .sb-collapse-btn {
   width: 100%; height: auto;
   padding: 9px 0;
