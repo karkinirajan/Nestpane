@@ -449,7 +449,7 @@
           </div>
 
           <!-- Right: To-Do from Kanban -->
-          <div class="kanban-dash-wrap">
+          <div class="kanban-dash-wrap" id="widget-todo">
             <div class="section-title-row" style="margin-bottom:10px">
               <h2 class="section-title">To Do</h2>
               <div style="display:flex;gap:6px;align-items:center">
@@ -958,8 +958,16 @@
     <div class="settings-section">
       <div class="settings-section-title">Widgets</div>
       <div class="settings-row">
+        <div class="settings-label"><span>Calendar Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetCalendarToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
         <div class="settings-label"><span>Notes Widget</span></div>
         <label class="switch"><input type="checkbox" id="widgetNotesToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>To-Do Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetTodoToggle" checked><span class="slider"></span></label>
       </div>
       <div class="settings-row">
         <div class="settings-label"><span>Focus Timer Widget</span></div>

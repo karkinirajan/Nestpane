@@ -1328,6 +1328,8 @@ let S = {
     widgets: {
       notes: true,
       timer: true,
+      calendar: true,
+      todo: true,
     },
     sidebarCollapsed: false,
     heroBg: null,
@@ -7836,6 +7838,8 @@ async function openSettings() {
   el("showSecondsToggle").checked = !!S.settings.showSeconds;
   el("widgetNotesToggle").checked = S.settings.widgets.notes !== false;
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
+  el("widgetCalendarToggle").checked = S.settings.widgets.calendar !== false;
+  el("widgetTodoToggle").checked = S.settings.widgets.todo !== false;
   // Highlight active card glow
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
     b.classList.toggle(
@@ -7864,6 +7868,8 @@ async function saveSettings() {
   S.user.name = name;
   S.settings.widgets.notes = el("widgetNotesToggle").checked;
   S.settings.widgets.timer = el("widgetTimerToggle").checked;
+  S.settings.widgets.calendar = el("widgetCalendarToggle").checked;
+  S.settings.widgets.todo = el("widgetTodoToggle").checked;
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
@@ -7959,6 +7965,8 @@ function applyWidgetVisibility() {
   };
   show("widget-notes", w.notes);
   show("widget-timer", w.timer);
+  show("widget-calendar", w.calendar);
+  show("widget-todo", w.todo);
 }
 
 // Export / Import
