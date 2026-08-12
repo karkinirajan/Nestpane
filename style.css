@@ -1109,6 +1109,7 @@ svg { flex-shrink: 0; }
 .trash-item-type.note-type { background:var(--accent-bg); color:var(--accent-2); }
 .trash-item-type.task-type { background:var(--success-bg); color:var(--success); }
 .trash-item-type.qa-type { background:rgba(245,158,11,.1); color:var(--warning); }
+.trash-item-type.sbgroup-type { background:var(--surface-3); color:var(--text-2); }
 .trash-item-name { flex:1; font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .restore-btn { padding:4px 10px; border:1px solid var(--border-2); border-radius:var(--radius-xs); font-size:12px; color:var(--text-2); transition:all .1s; flex-shrink:0; }
 .restore-btn:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
@@ -1651,6 +1652,16 @@ svg { flex-shrink: 0; }
 .sb-group-hd:hover .sb-gplus { opacity:1; }
 .sb-gplus:hover { background:var(--surface-2); color:var(--accent-2); }
 .sidebar-collapsed .sb-gplus { display:none; }
+/* Edit-mode controls have no room on the ~56px collapsed rail, and the edit
+   toggle in particular must not sit next to the collapse toggle — the
+   collapsed brand row shows the collapse toggle only. The collapse handler
+   also forces S.sidebarEditMode off, so these should never have anything to
+   hide; they are the belt-and-braces half in case edit mode is ever entered
+   or persisted while collapsed. */
+.sidebar-collapsed .sb-edit-btn,
+.sidebar-collapsed .sb-group-edit-actions,
+.sidebar-collapsed .sb-item-edit-actions,
+.sidebar-collapsed .sb-add-group-btn { display:none; }
 
 .sb-edit-btn {
   display: flex; align-items: center; justify-content: center;

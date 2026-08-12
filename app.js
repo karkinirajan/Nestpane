@@ -3410,6 +3410,12 @@ function _sbItemInner(item, groupId) {
 function renderSidebar() {
   const container = el("sbGroupsContainer");
   if (!container || !S.settings.sidebar) return;
+  // The flyout holds a snapshot of a group's items HTML plus a reference to
+  // the .sb-group node it was opened from — the innerHTML rebuild below
+  // discards that node and invalidates the snapshot, so close it first. Safe
+  // when nothing is open, and when this runs at boot before the flyout
+  // element even exists (_sbCloseFlyout null-guards _sbFlyoutEl).
+  _sbCloseFlyout();
   container.innerHTML = S.settings.sidebar
     .map((group) => {
       const icon = SB_ICONS[group.icon] || SB_ICONS.link;
@@ -3613,11 +3619,14 @@ function _sbOpenFlyout(group, btn) {
     itemsEl.innerHTML;
   const rect = btn.getBoundingClientRect();
   _sbFlyoutEl.style.left = rect.right + 8 + "px";
-  _sbFlyoutEl.style.top = Math.min(
-    rect.top,
-    window.innerHeight - _sbFlyoutEl.offsetHeight - 12,
-  ) + "px";
+  // .open is what removes display:none, so it must go on BEFORE offsetHeight
+  // is read — measuring a display:none element returns 0 and the clamp below
+  // would silently never clamp, letting tall flyouts run off the viewport.
   _sbFlyoutEl.classList.add("open");
+  _sbFlyoutEl.style.top = Math.max(
+    12,
+    Math.min(rect.top, window.innerHeight - _sbFlyoutEl.offsetHeight - 12),
+  ) + "px";
   _sbFlyoutGroup = group;
 }
 
@@ -7089,20 +7098,26 @@ function renderTrash() {
   const items = [...S.trash].reverse();
   list.innerHTML = items
     .map((item) => {
-      const name = item.name || item.text || item.title || "Item";
+      // Sidebar groups carry their display name in `label`, not name/text/title.
+      const name =
+        item.name || item.text || item.title || item.label || "Item";
       const icon =
         item._type === "task"
           ? "✅"
           : item._type === "quickAccess"
             ? "⚡"
-            : "📝";
+            : item._type === "sidebarGroup"
+              ? "🗂️"
+              : "📝";
       const key = item.id || item._deletedAt;
       const typeClass =
         item._type === "task"
           ? "task-type"
           : item._type === "quickAccess"
             ? "qa-type"
-            : "note-type";
+            : item._type === "sidebarGroup"
+              ? "sbgroup-type"
+              : "note-type";
       return `<div class="trash-item">
       <span>${icon}</span>
       <span class="trash-item-name">${escH(name)}</span>
@@ -9023,6 +9038,14 @@ function setupEventListeners() {
       "sidebar-collapsed",
       S.settings.sidebarCollapsed,
     );
+    // Collapsing hides every edit-mode control, so staying in edit mode would
+    // strand the user in a state they can't see or leave (and would render
+    // per-item action buttons into the flyout). Drop out of it on collapse.
+    if (S.settings.sidebarCollapsed && S.sidebarEditMode) {
+      S.sidebarEditMode = false;
+      el("sbEditModeBtn")?.classList.remove("active");
+      renderSidebar();
+    }
     save();
   });
 
