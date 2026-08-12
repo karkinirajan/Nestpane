@@ -3502,7 +3502,14 @@ function deleteSidebarItem(groupId, itemId) {
   const group = S.settings.sidebar.find((g) => g.id === groupId);
   const item = group?.items.find((it) => it.id === itemId);
   if (!group || !item) return;
-  if (item.kind === "link" && item.url) S._qaDeleted.add(_normUrl(item.url));
+  // NO _qaDeleted tombstone here. That tombstone dates from when adding a
+  // sidebar link also mirrored it into Home's Quick Access, so deleting the
+  // sidebar copy had to suppress the mirrored copy from coming back. Sidebar
+  // items and Quick Access tiles are independent now, and _qaDeleted is
+  // global (it filters quickAccess in EVERY workspace, on every load, cloud
+  // apply and cross-tab sync, and is only ever unioned on Drive pull) — so
+  // writing to it here silently deleted unrelated Quick Access tiles
+  // everywhere, permanently.
   group.items = group.items.filter((it) => it.id !== itemId);
   save();
   renderSidebar();
