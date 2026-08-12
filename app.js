@@ -3478,22 +3478,88 @@ function renderSidebar() {
         : `<div class="sb-empty-state">No links yet — click + to add</div>`;
       return `
       <div class="sb-group" id="sbg-${escH(group.id)}" data-sb-group-id="${escH(group.id)}">
-        <div class="sb-group-hd">
+        <div class="sb-group-hd${S.sidebarEditMode ? " sb-group-hd-edit" : ""}">
           <button class="sb-group-btn" data-group="${escH(group.id)}" data-tip="${escH(group.label)}" aria-expanded="false">
             <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
             <span class="sb-group-label">${escH(group.label)}</span>
             <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          ${
+            S.sidebarEditMode
+              ? `
+          <div class="sb-group-edit-actions">
+            <button class="sb-icon-mini" data-sb-move-group="${escH(group.id)}" data-dir="up" title="Move up">▲</button>
+            <button class="sb-icon-mini" data-sb-move-group="${escH(group.id)}" data-dir="down" title="Move down">▼</button>
+            <button class="sb-icon-mini" data-sb-rename-group="${escH(group.id)}" title="Rename">✎</button>
+            <button class="sb-icon-mini sb-icon-mini-danger" data-sb-delete-group="${escH(group.id)}" title="Delete group">✕</button>
+          </div>`
+              : `
           <button class="sb-gplus" data-addlink="${escH(group.id)}" title="Add link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
+          </button>`
+          }
         </div>
         <div class="sb-group-items">${itemsHtml}</div>
       </div>`;
     })
-    .join("");
+    .join("") +
+    (S.sidebarEditMode
+      ? `<button class="sb-add-group-btn" id="sbAddGroupBtn">+ Add group</button>`
+      : "");
   initSidebarTabs();
   updateSidebarTabActive();
+}
+
+// ===== SIDEBAR GROUP CRUD =====
+function toggleSidebarEditMode() {
+  S.sidebarEditMode = !S.sidebarEditMode;
+  el("sbEditModeBtn")?.classList.toggle("active", S.sidebarEditMode);
+  renderSidebar();
+}
+
+function addSidebarGroup() {
+  sbPrompt("New group", "", (label) => {
+    const id = `g${Date.now()}`;
+    S.settings.sidebar.push({ id, label, icon: "link", items: [] });
+    save();
+    renderSidebar();
+  });
+}
+
+function renameSidebarGroup(id) {
+  const group = S.settings.sidebar.find((g) => g.id === id);
+  if (!group) return;
+  sbPrompt("Rename group", group.label, (label) => {
+    group.label = label;
+    save();
+    renderSidebar();
+  });
+}
+
+function deleteSidebarGroup(id) {
+  const group = S.settings.sidebar.find((g) => g.id === id);
+  if (!group) return;
+  confirm2(
+    "Delete group?",
+    `"${group.label}" and its ${group.items.length} item(s) will be moved to Trash.`,
+    () => {
+      S.trash.push({ ...group, _type: "sidebarGroup", _deletedAt: Date.now() });
+      S.settings.sidebar = S.settings.sidebar.filter((g) => g.id !== id);
+      save();
+      renderSidebar();
+      showToast("Group deleted", "success");
+    },
+  );
+}
+
+function moveSidebarGroup(id, direction) {
+  const arr = S.settings.sidebar;
+  const idx = arr.findIndex((g) => g.id === id);
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (idx < 0 || swapWith < 0 || swapWith >= arr.length) return;
+  [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
+  save();
+  renderSidebar();
 }
 
 function openSbAddLink(group) {
@@ -8911,6 +8977,33 @@ function confirm2(title, msg, onOk, onCancel) {
   openModal("confirmModal");
 }
 
+// Generic single-field text prompt modal — replaces window.prompt() so
+// renames/adds match the rest of the app's custom modal styling. Reused by
+// addSidebarGroup, renameSidebarGroup (this task) and renameSidebarItem
+// (Task 10).
+function sbPrompt(title, initialValue, onSave) {
+  el("sbPromptTitle").textContent = title;
+  const input = el("sbPromptInput");
+  input.value = initialValue || "";
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") el("sbPromptSaveBtn").click();
+  };
+  el("sbPromptSaveBtn").onclick = () => {
+    const value = input.value.trim();
+    if (!value) {
+      showToast("Enter a name", "error");
+      return;
+    }
+    closeModal("sbPromptModal");
+    onSave(value);
+  };
+  openModal("sbPromptModal");
+  setTimeout(() => {
+    input.focus();
+    input.select();
+  }, 80);
+}
+
 // ===== TOAST =====
 let toastTO;
 function showToast(msg, type = "") {
@@ -8952,6 +9045,23 @@ function setupEventListeners() {
     );
     save();
   });
+
+  el("sbEditModeBtn")?.addEventListener("click", toggleSidebarEditMode);
+
+  // Delegated — sidebar is re-rendered on every CRUD action, so these
+  // listeners must be on a stable ancestor (document), not the regenerated
+  // buttons themselves.
+  document.addEventListener("click", (e) => {
+    const addGroupBtn = e.target.closest("#sbAddGroupBtn");
+    if (addGroupBtn) return addSidebarGroup();
+    const moveBtn = e.target.closest("[data-sb-move-group]");
+    if (moveBtn) return moveSidebarGroup(moveBtn.dataset.sbMoveGroup, moveBtn.dataset.dir);
+    const renameBtn = e.target.closest("[data-sb-rename-group]");
+    if (renameBtn) return renameSidebarGroup(renameBtn.dataset.sbRenameGroup);
+    const deleteBtn = e.target.closest("[data-sb-delete-group]");
+    if (deleteBtn) return deleteSidebarGroup(deleteBtn.dataset.sbDeleteGroup);
+  });
+
   el("weatherWidget").addEventListener("click", openWeatherLocationModal);
 
   // Nav — sidebar items with data-view (delegated: the sidebar and the
