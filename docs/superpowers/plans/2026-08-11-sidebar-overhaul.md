@@ -1323,15 +1323,135 @@ git commit -m "feat: replace personal-preference seed data with generic defaults
 
 ---
 
-## Task 12: Full QA pass
+## Task 12: Rebrand to Nestpane
 
-No code changes — this task is the Phase 6 checklist from the design spec, run end-to-end after Tasks 1-11 land.
+**Added mid-plan:** the project (repo, GitHub org path, and eventually the Chrome Web Store listing) is being renamed from `llmaotab` to `Nestpane`. The GitHub repo and local checkout have already been renamed (`github.com/karkinirajan/nestpane`, `~/nestpane`) outside this plan. This task rebrands the codebase itself, run after Task 11 (fresh-install seed data) and before the QA pass, so QA verifies the actual shipping name instead of a build that gets renamed again immediately after.
+
+`llmaotab` was itself a rename from an earlier name, `novatab`. That rename left a working precedent in `app.js` for exactly this situation: a legacy-compat fallback so existing users' synced data and exported files don't silently break. Follow that same pattern here — every place that reads back a name-derived string a user's browser/Drive may already have stored (the Drive sync filename, the workspace-export marker) gets a new primary value plus the old value(s) kept as read-only fallbacks. Every place that's pure display text or a freshly-generated, never-stored-back string (console log prefixes, notification titles/ids, the export/backup *filename* itself, docs) is a straight rename with no fallback needed.
+
+**Files:**
+- Modify: `package.json`, `package-lock.json` — package identity (`name` fields), the `zip` script's output filename.
+- Modify: `manifest.json` — `name` field only. Leave `description`, `version`, `permissions`, `host_permissions` untouched.
+- Modify: `app.js` — see Steps 2-4 for the full list of string literals and the two legacy-compat chains.
+- Modify: `newtab.html`, `popup.html`, `popup.js`, `privacy.html` — titles, visible brand text, logo alt text, the About-dialog credit link.
+- Modify: `style.css` — header comment only (line 2).
+- Modify: `README.md`, `MONETIZATION.md`, `docs/OAUTH_SETUP.md`, `docs/CWS_SUBMISSION.md`, `docs/superpowers/specs/2026-08-11-sidebar-overhaul-design.md` — documentation, lower priority than the shipping files above but still in scope ("every level" per the human's instruction).
+- **Do NOT modify:** `build.js`'s `PUBLISHED_EXTENSION_ID` / `app.js`'s `EXPECTED_EXTENSION_ID` (`aokkcpfoompjgeknhbkphogfcjjlbpol`). This is the Chrome Web Store's assigned listing ID, unrelated to the display name — changing it would break the already-published item.
+
+**Interfaces:**
+- Produces: `DRIVE_FILE_NAME = "nestpane-sync.json"` (new primary), `DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json"`, `DRIVE_FILE_NAME_LEGACY_2 = "novatab-sync.json"` (both checked on read, never written).
+- Produces: workspace-export marker `__nestpaneWorkspace: true` (new primary), with `__llmaotabWorkspace`/`__novatabWorkspace` still accepted on import.
+
+- [ ] **Step 1: Package/manifest identity**
+
+In `package.json`: change `"name": "llmaotab"` → `"name": "nestpane"`. In the `zip` script, change `` `cd dist && zip -r ../llmaotab-v$(...)-chrome.zip .` `` → `` `../nestpane-v$(...)-chrome.zip` `` (keep the rest of the script identical).
+
+In `package-lock.json`: change both `"name": "llmaotab"` occurrences (the top-level field and the `packages[""].name` field) to `"name": "nestpane"`. Do not hand-edit anything else in this file (versions, `lockfileVersion`, dependency entries) — if in doubt, run `npm install` afterward to let npm regenerate it consistently, then confirm via `git diff package-lock.json` that only the name fields changed (no dependency version drift).
+
+In `manifest.json`: change `"name": "llmaotab"` → `"name": "nestpane"`.
+
+- [ ] **Step 2: app.js — straight-rename strings (no fallback needed)**
+
+These are either pure display/log text or freshly-generated strings never read back from stored data, so each is a simple one-for-one replacement (search by the literal text, since prior tasks have shifted line numbers):
+- Header comment: `//  llmaotab — app.js` → `//  Nestpane — app.js`
+- `` `[llmaotab] Running as extension ID "${chrome.runtime.id}"...` `` → `[Nestpane]`
+- `"[llmaotab] Auth flow closed or cancelled."` → `"[Nestpane] Auth flow closed or cancelled."`
+- `console.warn("[llmaotab] Token exchange failed:", ...)` → `[Nestpane]`
+- `console.warn("[llmaotab] Auth request failed — network error.")` → `[Nestpane]`
+- `` const boundary = "llmaotab_boundary_" + Date.now(); `` → `"nestpane_boundary_" + Date.now()`
+- `` a.download = `llmaotab-workspace-${...}.json`; `` → `` `nestpane-workspace-${...}.json` `` (export *filename* — import is keyed off the JSON's internal marker per Step 4, not the filename, so this needs no fallback)
+- `_notifyUser("llmaotab Focus Complete", ...)` → `"Nestpane Focus Complete"`
+- `chrome.notifications.create("llmaotab-" + Date.now(), ...)` → `"nestpane-" + Date.now()` (just a unique id prefix, not user-visible)
+- `_notifyUser("llmaotab Habits", ...)` → `"Nestpane Habits"`
+- `<span class="ins-row-sub">llmaotab 1.x</span>` (About/Insights "Data version" row) → `Nestpane 1.x` — before changing, grep to confirm this exact string isn't parsed/compared anywhere else in app.js (it should be pure display text); note the result either way in your report.
+- `` a.download = `llmaotab-backup-${...}.json`; `` (Settings → Export backup) → `` `nestpane-backup-${...}.json` `` — before changing, check whether the backup-*import* function validates against this filename string anywhere (as opposed to validating the JSON contents). If it does, that needs the same legacy-fallback treatment as Step 3/4 below — stop and report NEEDS_CONTEXT rather than guessing. If it only validates JSON contents (expected), a straight rename is correct.
+
+- [ ] **Step 3: app.js — Drive sync filename (legacy-compat chain)**
+
+Find `const DRIVE_FILE_NAME = "llmaotab-sync.json";` and the `DRIVE_FILE_NAME_LEGACY` constant right below it (currently `"novatab-sync.json"`, with a comment above explaining it's the pre-rename filename still read for old backups). Replace with:
+
+```js
+const DRIVE_FILE_NAME = "nestpane-sync.json";
+// Pre-rename filenames. Backups written by the "novatab"- or "llmaotab"-era
+// build still carry these; the read-side query below checks all three names,
+// and a successful push always rewrites the file under the current
+// DRIVE_FILE_NAME, migrating it forward for that user from then on.
+const DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json";
+const DRIVE_FILE_NAME_LEGACY_2 = "novatab-sync.json";
+```
+
+Find the Drive `files.list` query that currently ORs `DRIVE_FILE_NAME` and `DRIVE_FILE_NAME_LEGACY` together (search for `DRIVE_FILE_NAME_LEGACY` to find it) and extend it to OR in `DRIVE_FILE_NAME_LEGACY_2` as a third alternative — same query-string pattern, one more `or name='${DRIVE_FILE_NAME_LEGACY_2}'` clause.
+
+Leave the push/upload code (the two-branch object literal that sets `{ name: DRIVE_FILE_NAME, ... }`) exactly as-is — it already only ever *writes* the current `DRIVE_FILE_NAME`, which is the correct migration behavior (existing users get moved onto the new filename the next time they push, no extra code needed there).
+
+- [ ] **Step 4: app.js — workspace export marker (legacy-compat chain)**
+
+Find `exportWorkspace()`'s `__llmaotabWorkspace: true,` line and change it to `__nestpaneWorkspace: true,`.
+
+Find `importWorkspaceFile()`'s validation line — currently:
+```js
+      // __novatabWorkspace is the pre-rename marker — files exported by older
+      // builds must still import.
+      if ((!d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
+```
+Replace with:
+```js
+      // __llmaotabWorkspace / __novatabWorkspace are pre-rename markers —
+      // files exported by older builds must still import.
+      if ((!d.__nestpaneWorkspace && !d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
+```
+
+- [ ] **Step 5: HTML branding — newtab.html, popup.html, popup.js, privacy.html**
+
+In `newtab.html`: `<title>llmaotab</title>` → `<title>Nestpane</title>`; the sidebar logo's `alt="llmaotab logo"` → `alt="Nestpane logo"`; `<span class="sb-brand-name" ...>llmaotab</span>` → `Nestpane`; the About-dialog's logo `alt="llmaotab logo"` and name `<div ...>llmaotab</div>` → `Nestpane` (both); the About-dialog's Privacy Policy link `href="https://karkinirajan.github.io/llmaotab/privacy.html"` → `https://karkinirajan.github.io/nestpane/privacy.html` (this assumes GitHub Pages serves the renamed repo at the equivalent path under the same username — note this assumption in your report so it can be verified against the human's actual Pages setup rather than assumed correct).
+
+In `popup.html`: `<title>llmaotab</title>` → `<title>Nestpane</title>`; header logo `alt="llmaotab logo"` → `Nestpane logo`; `<span class="header-name">llmaotab</span>` → `Nestpane`.
+
+In `popup.js`: the empty-state string `"...Open a new tab to set up llmaotab first."` → `"...set up Nestpane first."`; `console.warn('llmaotab popup load error:', err)` → `'Nestpane popup load error:'`.
+
+In `privacy.html`: every occurrence of `llmaotab` (title plus every prose mention throughout the document — roughly 20 occurrences) → `Nestpane`. This file is static prose with no code/legacy-marker logic, so a full-file find-and-replace (e.g. `sed -i 's/llmaotab/Nestpane/g' privacy.html`) is safe here — confirm afterward with a grep that zero `llmaotab` occurrences remain in this specific file (unlike app.js, this file should end up with *zero* matches, no legacy exceptions).
+
+- [ ] **Step 6: style.css header comment**
+
+Change `llmaotab — Design System v2` (line 2) → `Nestpane — Design System v2`.
+
+- [ ] **Step 7: README.md**
+
+Update every occurrence of `llmaotab` to `Nestpane` (title, prose, the directory-listing block, `cd llmaotab` in setup instructions → `cd nestpane`, the "reload icon under llmaotab" instruction, the zip-filename/CWS-upload instructions at the bottom). Use judgment on phrasing but keep it consistent with Step 1's actual new zip filename (`nestpane-v<version>-chrome.zip`).
+
+- [ ] **Step 8: Remaining docs — best-effort full-repo consistency**
+
+Update `llmaotab` → `Nestpane` throughout `MONETIZATION.md`, `docs/OAUTH_SETUP.md`, `docs/CWS_SUBMISSION.md`, and `docs/superpowers/specs/2026-08-11-sidebar-overhaul-design.md`. These are internal/process docs, not shipped in the extension — lower priority than Steps 1-7, but still requested ("every level"). For `docs/OAUTH_SETUP.md` specifically: updating the doc text to instruct a future reader to name their Google Cloud OAuth client "Nestpane" does **not** retroactively rename any OAuth client the human may have already created under the old name in their real Google Cloud Console — that's an external resource this repo has no control over. Leave the historical `novatab`-collision anecdote in `MONETIZATION.md` alone if rewriting it would misrepresent history; just update the current-name references.
+
+Do not touch `.claude/settings.local.json`'s stray `novatab`-path Bash permission entries — those reference an already-defunct path from an earlier rename, are dead/harmless, and are tooling config rather than product code; out of scope for this task.
+
+- [ ] **Step 9: Verification**
+
+```bash
+grep -rniI "llmaotab" --include="*.json" --include="*.js" --include="*.html" --include="*.css" --include="*.md" . --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git
+```
+Expected: the only remaining matches are the two intentional legacy-compat literals from Steps 3-4 (`DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json"` and the `__llmaotabWorkspace` fallback check, plus their explanatory comments) — nothing else. Paste the full output in your report so the reviewer can eyeball every remaining hit and confirm each one is one of these two.
+
+Then: `node --check app.js` (syntax); `npm run build` (confirm the printed `Name:` line now reads `Name: nestpane v1.4.0` — version bump is Task 14's job, not this one); `npm run lint` (check your true starting baseline before editing anything, confirm it's unchanged after). Do not run `npm run zip` — that belongs to Task 14, after the version bump.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add -A
+git commit -m "refactor: rebrand llmaotab to Nestpane, preserve legacy Drive/export compat"
+```
+
+---
+
+## Task 13: Full QA pass
+
+No code changes — this task is the Phase 6 checklist from the design spec, run end-to-end after Tasks 1-12 land.
 
 **Files:** none.
 
 - [ ] **Step 1: Fresh-install check**
 
-Clear storage, reload. Confirm: new icon shows everywhere (tab strip, `chrome://extensions`, sidebar brand); sidebar shows Dashboard/Home/Personal/Google/Socials/AI only; Home/Personal show their 3 defaults; Google/Socials/AI are empty with the add-link hint; Quick Access shows the 10 generic defaults; Notes widget is empty.
+Clear storage, reload. Confirm: new icon shows everywhere (tab strip, `chrome://extensions`, sidebar brand); the "Nestpane" brand name shows in the sidebar brand row, the browser tab title, the popup, and the About dialog (Task 12's rebrand); sidebar shows Dashboard/Home/Personal/Google/Socials/AI only; Home/Personal show their 3 defaults; Google/Socials/AI are empty with the add-link hint; Quick Access shows the 10 generic defaults; Notes widget is empty.
 
 - [ ] **Step 2: Existing-profile migration check**
 
@@ -1363,9 +1483,9 @@ If Step 7 surfaces any fixes, commit them individually with descriptive messages
 
 ---
 
-## Task 13: Clean rebuild + version bump to 1.5.0 + release zip
+## Task 14: Clean rebuild + version bump to 1.5.0 + release zip
 
-Run after Task 12 passes clean. Produces the deployable artifact.
+Run after Task 13 passes clean. Produces the deployable artifact.
 
 **Files:**
 - Modify: `package.json:3` (`version`)
@@ -1416,37 +1536,37 @@ git commit -m "chore: bump version to 1.5.0 for the sidebar overhaul release"
 ```bash
 npm run build
 ```
-Expected: `validate()` prints ✓ for every required file (including the new icon files from Task 1), ✓ for manifest permissions, a ⚠ (not ✗) for the missing `key` field (expected — matches the current, intentional post-`c9c2daa` state), then "Name: llmaotab v1.5.0" and "✓ Build complete". If anything prints ✗, stop and fix it before continuing — that means a required file listed in `build.js`'s `REQUIRED_FILES` is missing or a required permission was accidentally dropped from `manifest.json` somewhere in Tasks 1-12.
+Expected: `validate()` prints ✓ for every required file (including the new icon files from Task 1), ✓ for manifest permissions, a ⚠ (not ✗) for the missing `key` field (expected — matches the current, intentional post-`c9c2daa` state), then "Name: nestpane v1.5.0" and "✓ Build complete". If anything prints ✗, stop and fix it before continuing — that means a required file listed in `build.js`'s `REQUIRED_FILES` is missing or a required permission was accidentally dropped from `manifest.json` somewhere in Tasks 1-13.
 
 - [ ] **Step 5: Package the zip**
 
 ```bash
 npm run zip
 ```
-Expected: produces `llmaotab-v1.5.0-chrome.zip` in the repo root (filename derived from `package.json`'s version, per the existing `zip` script — confirms Step 2 took effect).
+Expected: produces `nestpane-v1.5.0-chrome.zip` in the repo root (filename derived from `package.json`'s version, per the existing `zip` script — confirms Step 2 took effect).
 
 - [ ] **Step 6: Spot-check the zip contents**
 
 ```bash
-unzip -l llmaotab-v1.5.0-chrome.zip
+unzip -l nestpane-v1.5.0-chrome.zip
 ```
 Expected: contains exactly `manifest.json`, `newtab.html`, `app.js`, `style.css`, `fouc.js`, `icons/favicon.svg`, `icons/favicon.png`, `icons/icon-16.png`, `icons/icon-48.png`, `popup.html`, `popup.js`, `privacy.html` — the same `REQUIRED_FILES` list `build.js` validates against, nothing extra (no `docs/`, no `.git`, no source-map cruft).
 
 ```bash
-unzip -p llmaotab-v1.5.0-chrome.zip manifest.json | grep version
+unzip -p nestpane-v1.5.0-chrome.zip manifest.json | grep version
 ```
 Expected: `"version": "1.5.0"`.
 
 - [ ] **Step 7: Final smoke test as an unpacked load**
 
-In `chrome://extensions`, remove any previously-loaded unpacked copy of this extension, then "Load unpacked" pointing at the fresh `dist/` folder from Step 4. Open a new tab and re-run the Task 12 checklist once more against this exact build (not a dev server) — this is the build that would actually ship. Confirm no console errors on load (`chrome://extensions` → Details → Inspect views → service worker / the new tab page's devtools console).
+In `chrome://extensions`, remove any previously-loaded unpacked copy of this extension, then "Load unpacked" pointing at the fresh `dist/` folder from Step 4. Open a new tab and re-run the Task 13 checklist once more against this exact build (not a dev server) — this is the build that would actually ship. Confirm no console errors on load (`chrome://extensions` → Details → Inspect views → service worker / the new tab page's devtools console).
 
-This task produces `llmaotab-v1.5.0-chrome.zip`, ready to upload to the Chrome Web Store Developer Dashboard for the existing published item (`aokkcpfoompjgeknhbkphogfcjjlbpol`) — uploading it is a separate, manual, user-initiated step outside this plan's scope (publishing to a live store listing is exactly the kind of external/hard-to-reverse action that needs your explicit go-ahead, not something to automate).
+This task produces `nestpane-v1.5.0-chrome.zip`, ready to upload to the Chrome Web Store Developer Dashboard for the existing published item (`aokkcpfoompjgeknhbkphogfcjjlbpol`) — uploading it is a separate, manual, user-initiated step outside this plan's scope (publishing to a live store listing is exactly the kind of external/hard-to-reverse action that needs your explicit go-ahead, not something to automate).
 
 ---
 
 ## Self-Review Notes
 
-- **Spec coverage:** Icon (Task 1), collapsed z-index/flyout (Task 3), logo/toggle swap (Task 2), data model + migration (Tasks 5-6), workspace-switcher preservation (Task 7), group+item CRUD (Tasks 9-10), Development/Kanban/Projects/Others removal (Task 8), new-install defaults (Task 11), widget parity (Task 4), full QA (Task 12) — every spec section maps to at least one task. Task 13 (clean rebuild, version 1.5.0, release zip) covers the user's post-implementation follow-up request and is deliberately last, gated on Task 12 passing.
+- **Spec coverage:** Icon (Task 1), collapsed z-index/flyout (Task 3), logo/toggle swap (Task 2), data model + migration (Tasks 5-6), workspace-switcher preservation (Task 7), group+item CRUD (Tasks 9-10), Development/Kanban/Projects/Others removal (Task 8), new-install defaults (Task 11), widget parity (Task 4), full QA (Task 13) — every spec section maps to at least one task. Task 12 (rebrand to Nestpane) was added mid-plan once the human renamed the project, inserted before QA so the QA pass verifies the final shipping name. Task 14 (clean rebuild, version 1.5.0, release zip) covers the user's post-implementation follow-up request and is deliberately last, gated on Task 13 passing.
 - **Type consistency:** item shape `{id, label, icon, kind, view?, url?}` is defined once in Task 5 and used identically in Tasks 6, 8, 9, 10 — `kind` is always `"view"` or `"link"`, `group.items` is always an array, never `undefined` (both `DEFAULT_SIDEBAR` and every CRUD function that creates a group initialize `items: []`).
 - **`_sbAddLinkGroup`** is reused from the existing codebase (already declared in initial state, `app.js:1420`) rather than introducing a parallel field — Task 10 relies on this.
