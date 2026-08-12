@@ -7145,7 +7145,13 @@ function renderTrash() {
     })
     .join("");
   list.querySelectorAll(".restore-btn[data-key]").forEach((btn) => {
-    btn.addEventListener("click", () => restoreItem(Number(btn.dataset.key)));
+    btn.addEventListener("click", () => {
+      const raw = btn.dataset.key;
+      const num = Number(raw);
+      // Sidebar-group ids are non-numeric strings (e.g. "home", "g<timestamp>"),
+      // so only coerce to a number when the key actually looks numeric.
+      restoreItem(Number.isNaN(num) ? raw : num);
+    });
   });
 }
 
@@ -7174,6 +7180,13 @@ function restoreItem(key) {
       id: item.id || Date.now(),
       name: item.name,
       url: item.url,
+    });
+  else if (item._type === "sidebarGroup")
+    S.settings.sidebar.push({
+      id: item.id || `g${Date.now()}`,
+      label: item.label,
+      icon: item.icon,
+      items: item.items || [],
     });
   save();
   renderAll();

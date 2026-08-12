@@ -1665,7 +1665,7 @@ svg { flex-shrink: 0; }
   font-size: 10px; cursor: pointer;
 }
 .sb-icon-mini:hover { background: var(--surface-2); color: var(--text); }
-.sb-icon-mini-danger:hover { color: #fb4934; }
+.sb-icon-mini-danger:hover { color: var(--error); }
 .sb-add-group-btn {
   margin: 8px 10px 4px; padding: 7px; border-radius: var(--radius-xs);
   border: 1.5px dashed var(--border-2); background: none; color: var(--text-3);
