@@ -440,110 +440,18 @@ const DEFAULT_WS_DATA = (id) => {
   if (id === 1)
     return {
       quickAccess: [
-        // AI
-        { id: 101, name: "Claude",         url: "https://claude.ai" },
-        { id: 102, name: "ChatGPT",        url: "https://chat.openai.com" },
-        { id: 103, name: "Gemini",         url: "https://gemini.google.com" },
-        { id: 104, name: "Perplexity",     url: "https://perplexity.ai" },
-        { id: 105, name: "Cursor",         url: "https://cursor.com" },
-        { id: 106, name: "Bolt",           url: "https://bolt.new" },
-        // Dev
-        { id: 107, name: "GitHub",         url: "https://github.com" },
-        { id: 108, name: "Vercel",         url: "https://vercel.com" },
-        { id: 109, name: "Supabase",       url: "https://supabase.com" },
-        { id: 110, name: "Cloudflare",     url: "https://cloudflare.com" },
-        { id: 111, name: "Docker Hub",     url: "https://hub.docker.com" },
-        { id: 112, name: "Linear",         url: "https://linear.app" },
-        { id: 113, name: "Stripe",         url: "https://stripe.com" },
-        { id: 114, name: "DEV.to",         url: "https://dev.to" },
-        { id: 115, name: "Stack Overflow", url: "https://stackoverflow.com" },
-        { id: 116, name: "Postman",        url: "https://postman.com" },
-        // Frameworks & docs
-        { id: 117, name: "Python",         url: "https://python.org" },
-        { id: 118, name: "Django",         url: "https://djangoproject.com" },
-        { id: 120, name: "FastAPI",        url: "https://fastapi.tiangolo.com" },
-        { id: 121, name: "Rust",           url: "https://rust-lang.org" },
-        { id: 122, name: "React",          url: "https://react.dev" },
-        { id: 123, name: "Next.js",        url: "https://nextjs.org" },
-        { id: 124, name: "Tailwind",       url: "https://tailwindcss.com" },
-        // Productivity & tools
-        { id: 125, name: "Notion",         url: "https://notion.so" },
-        { id: 127, name: "Readwise",       url: "https://readwise.io" },
-        { id: 128, name: "Raindrop",       url: "https://raindrop.io" },
-        { id: 130, name: "Upwork",         url: "https://upwork.com" },
-        { id: 131, name: "ProductHunt",    url: "https://producthunt.com" },
-        { id: 132, name: "Mobbin",         url: "https://mobbin.com" },
-        { id: 133, name: "n8n",            url: "https://n8n.io" },
-        { id: 134, name: "Hamro Patro",    url: "https://hamropatro.com" },
-        // Socials
-        { id: 138, name: "Twitter / X",    url: "https://x.com" },
-        { id: 139, name: "LinkedIn",       url: "https://linkedin.com/feed" },
-        { id: 140, name: "Instagram",      url: "https://instagram.com" },
-        { id: 141, name: "Reddit",         url: "https://reddit.com" },
-        { id: 142, name: "Discord",        url: "https://discord.com/app" },
-        { id: 143, name: "YouTube",        url: "https://youtube.com" },
-        // Google
-        { id: 135, name: "Gmail",          url: "https://mail.google.com" },
-        { id: 136, name: "Drive",          url: "https://drive.google.com" },
-        { id: 137, name: "Calendar",       url: "https://calendar.google.com" },
-        { id: 144, name: "Docs",           url: "https://docs.google.com" },
+        { id: 101, name: "Gmail",           url: "https://mail.google.com" },
+        { id: 102, name: "Google Calendar", url: "https://calendar.google.com" },
+        { id: 103, name: "Google Drive",    url: "https://drive.google.com" },
+        { id: 104, name: "YouTube",         url: "https://youtube.com" },
+        { id: 105, name: "Google Maps",     url: "https://maps.google.com" },
+        { id: 106, name: "Amazon",          url: "https://amazon.com" },
+        { id: 107, name: "Wikipedia",       url: "https://wikipedia.org" },
+        { id: 108, name: "Reddit",          url: "https://reddit.com" },
+        { id: 109, name: "LinkedIn",        url: "https://linkedin.com/feed" },
+        { id: 110, name: "Netflix",         url: "https://netflix.com" },
       ],
-      notes: [
-        {
-          id: 1001,
-          title: "Project Ideas",
-          content:
-            "Build a personal dashboard with weather, notes, and quick-access shortcuts.\nConsider adding a Kanban board and habit tracker integration for daily use.",
-          tags: ["ideas", "dev"],
-          pinned: true,
-          createdAt: Date.now() - 86400000 * 4,
-        },
-        {
-          id: 1002,
-          title: "Meeting Notes — Product Sync",
-          content:
-            "Discussed roadmap for Q3. Key actions:\n• Wireframes ready by Friday\n• API spec review by end of week\n• Confirm stakeholder sign-off on scope",
-          tags: ["work", "meetings"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 3,
-        },
-        {
-          id: 1003,
-          title: "Books to Read in 2025",
-          content:
-            "1. Atomic Habits — James Clear\n2. Deep Work — Cal Newport\n3. The Pragmatic Programmer\n4. Clean Code — Robert Martin\n5. Designing Data-Intensive Applications",
-          tags: ["reading", "personal"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 2,
-        },
-        {
-          id: 1004,
-          title: "Dev Environment Setup",
-          content:
-            "Node 20 LTS, pnpm 9, VS Code\nExtensions: Prettier, ESLint, GitLens, Error Lens\nTerminal: zsh + starship prompt + fzf",
-          tags: ["dev", "setup"],
-          pinned: false,
-          createdAt: Date.now() - 86400000,
-        },
-        {
-          id: 1005,
-          title: "Travel Packing Checklist",
-          content:
-            "Passport, charger, USB-C adapter, earbuds, power bank, toiletries bag. Print boarding pass night before. Notify bank before departure.",
-          tags: ["personal", "travel"],
-          pinned: false,
-          createdAt: Date.now() - 3600000 * 6,
-        },
-        {
-          id: 1006,
-          title: "Weekly Review Template",
-          content:
-            "✅ What went well this week?\n🔍 What needs improvement?\n🎯 Top 3 priorities for next week\n⚡ Energy level: ___/10\n📚 What did I learn?",
-          tags: ["productivity"],
-          pinned: false,
-          createdAt: Date.now() - 1800000,
-        },
-      ],
+      notes: [],
       tasks: [
         { id: 2001, text: "Review and merge open pull requests", done: false },
         {
