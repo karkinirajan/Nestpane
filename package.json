@@ -1,13 +1,13 @@
 {
-  "name": "llmaotab",
-  "version": "1.4.0",
+  "name": "nestpane",
+  "version": "1.5.0",
   "description": "Chrome MV3 extension replacing the new tab page with a local-first productivity dashboard",
   "private": true,
   "scripts": {
     "build": "node build.js",
     "dev": "node build.js --watch",
     "lint": "eslint app.js popup.js fouc.js build.js",
-    "zip": "node build.js && cd dist && zip -r ../llmaotab-v$(node -p \"require('../package.json').version\")-chrome.zip ."
+    "zip": "node build.js && cd dist && zip -r ../nestpane-v$(node -p \"require('../package.json').version\")-chrome.zip ."
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

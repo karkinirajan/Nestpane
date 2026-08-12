@@ -12,6 +12,9 @@ dist/
 node_modules/
 npm-debug.log*
 
+# Git worktrees (checked out working copies, not tracked content)
+.claude/worktrees/
+
 # OS
 .DS_Store
 Thumbs.db
