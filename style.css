@@ -1651,8 +1651,6 @@ svg { flex-shrink: 0; }
 .sb-group-hd:hover .sb-gplus { opacity:1; }
 .sb-gplus:hover { background:var(--surface-2); color:var(--accent-2); }
 .sidebar-collapsed .sb-gplus { display:none; }
-/* Personal has no sb-gplus, so compensate with equivalent right padding (28px + 6px margin = 34px extra) */
-#sbg-personal .sb-group-btn { padding-right: 44px; }
 
 /* ── 26. HABIT TRACKER ───────────────────────────────────── */
 .habits-list { display:flex; flex-direction:column; gap:10px; padding:0 22px 32px; }
