@@ -3449,21 +3449,36 @@ function renderTopbarWorkspaces() {
 }
 
 // ===== DATA-DRIVEN SIDEBAR RENDERER =====
-function _sbItemInner(item) {
+function _sbItemInner(item, groupId) {
   const icon = SB_ICONS[item.icon] || SB_ICONS.link;
+  const editControls = S.sidebarEditMode
+    ? `
+    <div class="sb-item-edit-actions">
+      <button class="sb-icon-mini" data-sb-move-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" data-dir="up" title="Move up">▲</button>
+      <button class="sb-icon-mini" data-sb-move-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" data-dir="down" title="Move down">▼</button>
+      <button class="sb-icon-mini" data-sb-rename-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Rename">✎</button>
+      <button class="sb-icon-mini sb-icon-mini-danger" data-sb-delete-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Delete">✕</button>
+    </div>`
+    : "";
   if (item.kind === "view") {
     return `
-    <a href="#" class="sb-item" data-view="${escH(item.view)}" data-sb-item-id="${escH(item.id)}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
-      <span class="sb-item-label">${escH(item.label)}</span>
-    </a>`;
-  }
-  return `
-    <div class="sb-item sb-link-item" data-sb-item-id="${escH(item.id)}" data-tip="${escH(item.label)}">
-      <a href="${escH(item.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(item.url)}" alt="">
+    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
+      <a href="#" class="sb-item" data-view="${escH(item.view)}" data-sb-item-id="${escH(item.id)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
         <span class="sb-item-label">${escH(item.label)}</span>
       </a>
+      ${editControls}
+    </div>`;
+  }
+  return `
+    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
+      <div class="sb-item sb-link-item" data-sb-item-id="${escH(item.id)}" data-tip="${escH(item.label)}">
+        <a href="${escH(item.url)}" class="sb-link-main" target="_blank" rel="noopener">
+          <img class="sb-fav" src="${favSrc(item.url)}" alt="">
+          <span class="sb-item-label">${escH(item.label)}</span>
+        </a>
+      </div>
+      ${editControls}
     </div>`;
 }
 
@@ -3474,7 +3489,7 @@ function renderSidebar() {
     .map((group) => {
       const icon = SB_ICONS[group.icon] || SB_ICONS.link;
       const itemsHtml = group.items.length
-        ? group.items.map(_sbItemInner).join("")
+        ? group.items.map((it) => _sbItemInner(it, group.id)).join("")
         : `<div class="sb-empty-state">No links yet — click + to add</div>`;
       return `
       <div class="sb-group" id="sbg-${escH(group.id)}" data-sb-group-id="${escH(group.id)}">
@@ -3562,22 +3577,71 @@ function moveSidebarGroup(id, direction) {
   renderSidebar();
 }
 
-function openSbAddLink(group) {
-  S._sbAddLinkGroup = group;
-  const titles = {
-    home: "Add Link to Home",
-    ai: "Add AI Tool",
-    dev: "Add Dev Tool",
-    google: "Add Google Link",
-    socials: "Add Social Link",
-    projects: "Add Project",
-    others: "Add Link",
-  };
-  el("sbAddLinkTitle").textContent = titles[group] || "Add Link";
+// ===== SIDEBAR ITEM CRUD =====
+function renameSidebarItem(groupId, itemId) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  const item = group?.items.find((it) => it.id === itemId);
+  if (!item) return;
+  sbPrompt("Rename item", item.label, (label) => {
+    item.label = label;
+    save();
+    renderSidebar();
+  });
+}
+
+function deleteSidebarItem(groupId, itemId) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  const item = group?.items.find((it) => it.id === itemId);
+  if (!group || !item) return;
+  if (item.kind === "link" && item.url) S._qaDeleted.add(_normUrl(item.url));
+  group.items = group.items.filter((it) => it.id !== itemId);
+  save();
+  renderSidebar();
+  showToast("Item removed", "success");
+}
+
+function moveSidebarItem(groupId, itemId, direction) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  if (!group) return;
+  const idx = group.items.findIndex((it) => it.id === itemId);
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (idx < 0 || swapWith < 0 || swapWith >= group.items.length) return;
+  [group.items[idx], group.items[swapWith]] = [group.items[swapWith], group.items[idx]];
+  save();
+  renderSidebar();
+}
+
+function openSbAddLink(groupId) {
+  S._sbAddLinkGroup = groupId;
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  el("sbAddLinkTitle").textContent = `Add to ${group ? group.label : "Sidebar"}`;
   el("sbAddLinkName").value = "";
   el("sbAddLinkUrl").value = "";
+  const addableViews = SIDEBAR_ADDABLE_VIEWS.filter(
+    (v) => !group?.items.some((it) => it.kind === "view" && it.view === v.view),
+  );
+  const pickerEl = el("sbAddLinkViewPicker");
+  if (pickerEl) {
+    pickerEl.innerHTML = addableViews
+      .map(
+        (v) => `<button type="button" class="sb-view-pick-btn" data-add-view="${escH(v.view)}">${escH(v.label)}</button>`,
+      )
+      .join("");
+    pickerEl.style.display = addableViews.length ? "" : "none";
+  }
   openModal("sbAddLinkModal");
   setTimeout(() => el("sbAddLinkName").focus(), 80);
+}
+
+function addSidebarViewItem(groupId, view) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  const meta = SIDEBAR_ADDABLE_VIEWS.find((v) => v.view === view);
+  if (!group || !meta) return;
+  group.items.push({ id: `view-${view}-${Date.now()}`, label: meta.label, icon: meta.icon, kind: "view", view: meta.view });
+  save();
+  renderSidebar();
+  closeModal("sbAddLinkModal");
+  showToast(`${meta.label} added`, "success");
 }
 
 function saveSbLink() {
@@ -3587,42 +3651,12 @@ function saveSbLink() {
     showToast("Enter a name and URL", "error");
     return;
   }
-  const group = S._sbAddLinkGroup;
-  // Global groups (not workspace-based)
-  if (group === "google" || group === "socials" || group === "projects" || group === "others") {
-    S._qaDeleted.delete(_normUrl(url)); // allow intentional re-add
-    if (!S.settings.sbLinks) S.settings.sbLinks = {};
-    if (!S.settings.sbLinks[group]) S.settings.sbLinks[group] = [];
-    S.settings.sbLinks[group].push({ id: Date.now(), name, url });
-    _mirrorLinkToHomeQA({ name, url });
-    save();
-    closeModal("sbAddLinkModal");
-    renderSidebar();
-    if (S.activeWsId === 1) renderQuickAccess();
-    showToast("Link added", "success");
-    return;
-  }
-  // Workspace-based groups
-  const wsId = group === "ai" ? 2 : group === "dev" ? 3 : 1;
-  if (!S.wsData[wsId])
-    S.wsData[wsId] = {
-      quickAccess: [],
-      notes: [],
-      tasks: [],
-      folders: [],
-      importedBookmarks: [],
-    };
-  if (!S.wsData[wsId].quickAccess) S.wsData[wsId].quickAccess = [];
-  const normNew = _normUrl(url);
-  if (S.wsData[wsId].quickAccess.some((l) => _normUrl(l.url) === normNew)) {
-    showToast("Link already in Quick Access", "error");
-    return;
-  }
-  S._qaDeleted.delete(normNew); // allow intentional re-add
-  S.wsData[wsId].quickAccess.push({ id: Date.now(), name, url });
+  const group = S.settings.sidebar.find((g) => g.id === S._sbAddLinkGroup);
+  if (!group) return;
+  group.items.push({ id: `link-${Date.now()}`, label: name, url: safeUrl(url), icon: "link", kind: "link" });
   save();
-  closeModal("sbAddLinkModal");
   renderSidebar();
+  closeModal("sbAddLinkModal");
   showToast("Link added", "success");
 }
 
@@ -9073,6 +9107,14 @@ function setupEventListeners() {
     if (renameBtn) return renameSidebarGroup(renameBtn.dataset.sbRenameGroup);
     const deleteBtn = e.target.closest("[data-sb-delete-group]");
     if (deleteBtn) return deleteSidebarGroup(deleteBtn.dataset.sbDeleteGroup);
+    const addViewBtn = e.target.closest("[data-add-view]");
+    if (addViewBtn) return addSidebarViewItem(S._sbAddLinkGroup, addViewBtn.dataset.addView);
+    const moveItemBtn = e.target.closest("[data-sb-move-item]");
+    if (moveItemBtn) return moveSidebarItem(moveItemBtn.dataset.sbItemGroup, moveItemBtn.dataset.sbMoveItem, moveItemBtn.dataset.dir);
+    const renameItemBtn = e.target.closest("[data-sb-rename-item]");
+    if (renameItemBtn) return renameSidebarItem(renameItemBtn.dataset.sbItemGroup, renameItemBtn.dataset.sbRenameItem);
+    const deleteItemBtn = e.target.closest("[data-sb-delete-item]");
+    if (deleteItemBtn) return deleteSidebarItem(deleteItemBtn.dataset.sbItemGroup, deleteItemBtn.dataset.sbDeleteItem);
   });
 
   el("weatherWidget").addEventListener("click", openWeatherLocationModal);
