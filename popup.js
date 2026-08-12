@@ -198,7 +198,7 @@ function init() {
     wsData     = stored.wsData     || {};
 
     if (!workspaces.length) {
-      mainForm.innerHTML = '<div class="empty">No workspaces found.<br>Open a new tab to set up llmaotab first.</div>';
+      mainForm.innerHTML = '<div class="empty">No workspaces found.<br>Open a new tab to set up Nestpane first.</div>';
       return;
     }
 
@@ -208,7 +208,7 @@ function init() {
       emoji: ws.emoji || '',
     })));
   }).catch(err => {
-    console.warn('llmaotab popup load error:', err);
+    console.warn('Nestpane popup load error:', err);
   });
 
   // ── Destination toggle ────────────────────────────────────────────────────

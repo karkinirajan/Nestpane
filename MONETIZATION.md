@@ -1,4 +1,4 @@
-# Can you sell llmaotab? An honest assessment
+# Can you sell Nestpane? An honest assessment
 
 **Short answer:** Yes, but not as a *paid Chrome Web Store listing* — that model is mostly dead for extensions. There are two realistic paths that actually fit what you've built, and both are below. This doc is the brutally honest version, including the stuff that will get your submission rejected or your launch ignored if you don't fix it first.
 
@@ -70,7 +70,7 @@ These aren't nice-to-haves — they are things Google's review process actively 
 | **No LICENSE file** | If you're selling this (Option A) or want "all rights reserved," you need an explicit license — right now anyone who finds the repo has an ambiguous right to reuse it. | 🟡 Important |
 | **Hardcoded `GOOGLE_CLIENT_SECRET` in `app.js`** (`GOCSPX-...`) | Works for "installed app" OAuth (Google treats this as non-confidential, PKCE protects the flow), but if this extension scales to real users under your brand, every install shares one OAuth client's quota/branding and the secret sits in plaintext source. Switching to Google's **"Chrome Extension" OAuth client type** removes the need for a client secret entirely and ties the client to your extension ID. | 🟡 Should fix before scaling |
 | **OAuth consent screen verification** | `drive.appdata` is a non-sensitive scope, but `userinfo.email`/`userinfo.profile` plus an "External" OAuth app with real users will require Google's basic verification (privacy policy URL + verified homepage). Budget a few days for this once you publish. | 🟡 Needed before wide release |
-| **"llmaotab" naming** | Distinctive enough to be defensible (unlike the previous "novatab", which collided with the crowded field of "Nova"-prefixed productivity apps), but it reads as LLM-centric while AI is only three of ~25 features — worth confirming the name doesn't misset expectations for the non-AI majority of the product. Still run a trademark/CWS-namespace check before committing to it commercially. | 🟢 Cheap to check now |
+| **"Nestpane" naming** | Distinctive enough to be defensible (unlike the previous "novatab", which collided with the crowded field of "Nova"-prefixed productivity apps) — worth a trademark/CWS-namespace check before committing to it commercially. | 🟢 Cheap to check now |
 | **No tests** | Not a CWS blocker, but if you're selling this (source or subscription), "no test suite" is a credibility/quality signal that matters to buyers and to your own ability to ship updates without regressions. | 🟢 Quality issue |
 | **AI features need user's own Anthropic API key** | Good for *your* costs (zero), bad for *conversion* — most non-technical users will never get an API key, so your most differentiated features (Ask AI, daily briefing, smart organize) will go unused by ~95% of installs. This undercuts the premium pitch. | 🟡 Strategic, fix if pursuing Option B |
 

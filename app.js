@@ -1,6 +1,6 @@
 "use strict";
 // =============================================
-//  llmaotab — app.js
+//  Nestpane — app.js
 //  Author: kneeraazon.com
 // =============================================
 
@@ -23,7 +23,7 @@ const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
 const EXPECTED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
   console.warn(
-    `[llmaotab] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
+    `[Nestpane] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
       "Google sign-in will fail with redirect_uri_mismatch unless https://" +
       chrome.runtime.id +
       ".chromiumapp.org/ is also authorized in Google Cloud Console, or manifest.json's \"key\" is corrected.",
@@ -2069,12 +2069,13 @@ const OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/drive.appdata",
 ];
-const DRIVE_FILE_NAME = "llmaotab-sync.json";
-// Pre-rename filename. Backups written by the "novatab"-era build still carry
-// it, so pull must look for both or existing users silently lose their cloud
-// data. Push always writes DRIVE_FILE_NAME, which renames the file in place on
-// the first successful sync after upgrading.
-const DRIVE_FILE_NAME_LEGACY = "novatab-sync.json";
+const DRIVE_FILE_NAME = "nestpane-sync.json";
+// Pre-rename filenames. Backups written by the "novatab"- or "llmaotab"-era
+// build still carry these; the read-side query below checks all three names,
+// and a successful push always rewrites the file under the current
+// DRIVE_FILE_NAME, migrating it forward for that user from then on.
+const DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json";
+const DRIVE_FILE_NAME_LEGACY_2 = "novatab-sync.json";
 const DRIVE_SPACES = "appDataFolder";
 const _TK_ACCESS_KEY = "_ntAccess"; // { token, expiry }
 const _TK_REFRESH_KEY = "_ntRefresh"; // refresh token string
@@ -2200,7 +2201,7 @@ async function _launchPKCEFlow() {
       (url) => {
         if (chrome.runtime.lastError) {
           console.warn(
-            "[llmaotab] Auth flow closed or cancelled.",
+            "[Nestpane] Auth flow closed or cancelled.",
             chrome.runtime.lastError.message,
           );
         }
@@ -2232,7 +2233,7 @@ async function _launchPKCEFlow() {
     });
     if (!r.ok) {
       const errBody = await r.text().catch(() => "(unreadable)");
-      console.warn("[llmaotab] Token exchange failed:", r.status, errBody);
+      console.warn("[Nestpane] Token exchange failed:", r.status, errBody);
       return null;
     }
     const d = await r.json();
@@ -2242,7 +2243,7 @@ async function _launchPKCEFlow() {
       return d.access_token;
     }
   } catch {
-    console.warn("[llmaotab] Auth request failed — network error.");
+    console.warn("[Nestpane] Auth request failed — network error.");
   }
   return null;
 }
@@ -2408,7 +2409,7 @@ function _timeAgo(ts) {
 async function findDriveFiles(token) {
   try {
     const r = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_SPACES}&q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' or name='${DRIVE_FILE_NAME_LEGACY}'`)}&fields=files(id%2CmodifiedTime)&orderBy=modifiedTime%20desc`,
+      `https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_SPACES}&q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' or name='${DRIVE_FILE_NAME_LEGACY}' or name='${DRIVE_FILE_NAME_LEGACY_2}'`)}&fields=files(id%2CmodifiedTime)&orderBy=modifiedTime%20desc`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!r.ok) return [];
@@ -2938,7 +2939,7 @@ async function _doPush(token) {
   } else {
     body = JSON.stringify(payload);
   }
-  const boundary = "llmaotab_boundary_" + Date.now();
+  const boundary = "nestpane_boundary_" + Date.now();
   // Only PATCH if Drive._fileId was set by a successful POST *in this session*.
   // Never search for existing files on push — avoids 403s from files created by
   // a previous OAuth client that pass GET-metadata checks but fail on PATCH.
@@ -3870,7 +3871,7 @@ function exportWorkspace() {
   if (!ws) return;
   const data = S.wsData[ws.id] || {};
   const payload = {
-    __llmaotabWorkspace: true,
+    __nestpaneWorkspace: true,
     version: 1,
     exportedAt: new Date().toISOString(),
     workspace: { name: ws.name, icon: ws.icon },
@@ -3887,7 +3888,7 @@ function exportWorkspace() {
   });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `llmaotab-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
+  a.download = `nestpane-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
   a.click();
   showToast(`Exported "${ws.name}"`, "success");
 }
@@ -3897,9 +3898,9 @@ function importWorkspaceFile(file) {
   reader.onload = (e) => {
     try {
       const d = JSON.parse(e.target.result);
-      // __novatabWorkspace is the pre-rename marker — files exported by older
-      // builds must still import.
-      if ((!d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
+      // __llmaotabWorkspace / __novatabWorkspace are pre-rename markers —
+      // files exported by older builds must still import.
+      if ((!d.__nestpaneWorkspace && !d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
         showToast("Not a valid workspace file", "error");
         return;
       }
@@ -6876,7 +6877,7 @@ function timerPlay() {
       applyFocusBlockRules(false);
       _timerAudioDing();
       showToast("⏰ Focus session complete! Great job!", "success");
-      _notifyUser("llmaotab Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
+      _notifyUser("Nestpane Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
       if (T._mode === "focus") {
         const today = _todayKey();
         S._focusSessions = S._focusSessions || {};
@@ -6929,7 +6930,7 @@ function resetTimer(mins, mode) {
 // ── Chrome notification helper ───────────────────────────────────────────
 function _notifyUser(title, opts = {}) {
   if (!IS_CHROME || !chrome.notifications) return;
-  chrome.notifications.create("llmaotab-" + Date.now(), {
+  chrome.notifications.create("nestpane-" + Date.now(), {
     type: "basic",
     iconUrl: opts.icon || "icons/favicon.png",
     title,
@@ -6951,7 +6952,7 @@ function _scheduleHabitNotifications() {
     const today = _todayKey();
     const unchecked = habits.filter((h) => !h.days?.[today]);
     if (unchecked.length) {
-      _notifyUser("llmaotab Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
+      _notifyUser("Nestpane Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
     }
   }, delay);
 }
@@ -7484,7 +7485,7 @@ async function renderAnalytics() {
         }
         <div class="ins-row"><span class="ins-row-label">Display name</span><span class="ins-row-sub">${escH(S.user.name || "—")}</span></div>
         ${chromeVer ? `<div class="ins-row"><span class="ins-row-label">Chrome</span><span class="ins-row-sub">v${chromeVer}</span></div>` : ""}
-        <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">llmaotab 1.x</span></div>
+        <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">Nestpane 1.x</span></div>
       </div>
 
     </div>
@@ -7995,7 +7996,7 @@ function exportData() {
   );
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `llmaotab-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `nestpane-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   showToast("Data exported!", "success");
 }

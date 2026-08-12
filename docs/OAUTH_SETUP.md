@@ -1,6 +1,6 @@
 # Google OAuth Setup Guide
 
-Complete step-by-step instructions for configuring Google OAuth so that llmaotab's
+Complete step-by-step instructions for configuring Google OAuth so that Nestpane's
 **Sign in with Google** and **Drive sync** features work.
 
 You will need a Google account and access to [Google Cloud Console](https://console.cloud.google.com/).
@@ -14,7 +14,7 @@ Total time: about 10 minutes.
 
 1. Click the project dropdown in the top-left header bar.
 2. Click **New Project**.
-3. Name it anything — e.g. `llmaotab`. Click **Create**.
+3. Name it anything — e.g. `Nestpane`. Click **Create**.
 4. Wait ~10 seconds. Confirm the new project is selected in the top-left dropdown.
 
 **Expected result:** The dashboard header shows your project name.
@@ -46,7 +46,7 @@ name in the header before clicking Enable.
 1. **User Type:** select **External**. Click **Create**.
 
 2. **App information screen:**
-   - App name: `llmaotab`
+   - App name: `Nestpane`
    - User support email: your email address
    - Developer contact email: your email address
    - Leave App logo, App domain, and Authorized domains blank.
@@ -87,7 +87,7 @@ Google blocks sign-in with "access_denied" even when everything else is correct.
 2. Enable **Developer mode** (top-right toggle) if not already on.
 3. If the extension is not loaded yet: click **Load unpacked** → select the
    project root folder.
-4. Find **llmaotab** in the list. Copy the ID shown beneath the name — it is a
+4. Find **Nestpane** in the list. Copy the ID shown beneath the name — it is a
    32-character lowercase string, e.g.:
 
    ```
@@ -110,7 +110,7 @@ which breaks the redirect URI you configure in the next step.
 2. **Application type:** select **Chrome Extension**.
    *(If "Chrome Extension" is not listed, select "Web application" — see Step 6 for
    the redirect URI you must add in that case.)*
-3. **Name:** `llmaotab extension` (internal only).
+3. **Name:** `Nestpane extension` (internal only).
 4. **Item ID / Application ID:** paste your 32-character extension ID from Step 4.
 5. Click **Create**.
 6. A dialog appears with **Your Client ID** — copy it. It ends in
@@ -213,4 +213,4 @@ If it fails, check:
 | "access_denied" | Your account is not in the Test Users list — check Step 3 |
 | Popup never opens | Extension ID changed — reload extension from same folder, recopy ID |
 | "Sync failed" after sign-in | Drive API not enabled — check Step 2 |
-| Everything looks right but still fails | Check `chrome://extensions` → llmaotab → **Errors** for details |
+| Everything looks right but still fails | Check `chrome://extensions` → Nestpane → **Errors** for details |
