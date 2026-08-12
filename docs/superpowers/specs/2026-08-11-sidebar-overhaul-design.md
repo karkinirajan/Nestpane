@@ -8,7 +8,7 @@ Status: Approved by user, pending written-spec review
 Rebuild the sidebar from a hardcoded HTML nav into a fully data-driven,
 user-editable structure (add/rename/delete/reorder both groups and their
 items), fix two real collapsed-sidebar UX bugs, redesign the extension icon
-for the `llmaotab` rebrand, strip personal-preference demo data out of new
+for the `Nestpane` rebrand, strip personal-preference demo data out of new
 installs, and bring the dashboard's widget-visibility system (currently only
 covering Notes and Focus Timer) up to also cover Calendar and To-Do.
 
@@ -97,7 +97,7 @@ entirely, same as Development/Kanban/Others.
   notes about "Meeting Notes — Product Sync", etc.) — this is what ships to
   every new install today.
 - `icons/favicon.svg` is the old "novatab" nova-burst mark, unrelated to the
-  `llmaotab` name.
+  `Nestpane` name.
 
 ## Phase 0 — Icon
 

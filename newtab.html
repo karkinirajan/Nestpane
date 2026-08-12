@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>llmaotab</title>
+  <title>Nestpane</title>
   <link rel="icon" type="image/png" href="icons/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,8 +21,11 @@
 
   <!-- Brand + collapse toggle -->
   <div class="sb-brand">
-    <img class="sb-logo-img" src="icons/favicon.png" alt="llmaotab logo" aria-hidden="true">
-    <span class="sb-brand-name" aria-hidden="true">llmaotab</span>
+    <img class="sb-logo-img" src="icons/favicon.png" alt="Nestpane logo" aria-hidden="true">
+    <span class="sb-brand-name" aria-hidden="true">Nestpane</span>
+    <button class="sb-edit-btn" id="sbEditModeBtn" data-tip="Edit sidebar" aria-label="Edit sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
     <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar" aria-controls="sbNav">
       <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
       <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
@@ -33,202 +36,14 @@
   <div class="sb-nav-wrap">
     <nav class="sb-nav" id="sbNav" role="menubar" aria-label="Navigation groups">
 
-      <!-- 0. DASHBOARD — standalone main item -->
+      <!-- 0. DASHBOARD — standalone, non-deletable -->
       <a href="#" class="sb-item sb-main-item" data-view="home">
         <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
         <span class="sb-group-label">Dashboard</span>
       </a>
 
-      <!-- 1. HOME GROUP -->
-      <div class="sb-group" id="sbg-home">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="home" data-tip="Home" aria-expanded="false" aria-controls="sbg-home-items" role="menuitem">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span class="sb-group-label">Home</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="home" title="Add link to Home">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <a href="#" class="sb-item" data-view="bookmarks">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            <span class="sb-item-label">Bookmarks</span>
-          </a>
-          <a href="#" class="sb-item" data-view="history">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
-            <span class="sb-item-label">History</span>
-          </a>
-          <a href="#" class="sb-item" data-view="downloads">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span class="sb-item-label">Downloads</span>
-          </a>
-          <a href="#" class="sb-item" data-view="sessions">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-            <span class="sb-item-label">Tab Sessions</span>
-          </a>
-          <a href="#" class="sb-item" data-view="trash">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            <span class="sb-item-label">Trash</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- 1b. KANBAN — standalone main item -->
-      <a href="#" class="sb-item sb-main-item" data-view="kanban">
-        <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
-        <span class="sb-group-label">Kanban</span>
-      </a>
-
-      <!-- 2. DEVELOPMENT GROUP -->
-      <div class="sb-group" id="sbg-dev">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="dev" data-tip="Development" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            <span class="sb-group-label">Development</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="dev" title="Add dev link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <div id="snavDevItems" class="sb-dynamic-list"></div>
-        </div>
-      </div>
-
-      <!-- 3. PERSONAL GROUP -->
-      <div class="sb-group" id="sbg-personal">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="personal" data-tip="Personal" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span class="sb-group-label">Personal</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <a href="#" class="sb-item" data-view="notes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span class="sb-item-label">Notes</span>
-          </a>
-          <a href="#" class="sb-item" data-view="journal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            <span class="sb-item-label">Journal</span>
-          </a>
-          <a href="#" class="sb-item" data-view="reading">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            <span class="sb-item-label">Reading Queue</span>
-          </a>
-          <a href="#" class="sb-item" data-view="habits">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <span class="sb-item-label">Habits</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- 4. PROJECTS GROUP -->
-      <div class="sb-group" id="sbg-projects">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="projects" data-tip="Projects" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-            <span class="sb-group-label">Projects</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="projects" title="Add project link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <div id="sidebarWorkspacesList" class="sidebar-folders-list sb-dynamic-list"></div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;padding:2px 0">
-            <button class="sb-work-action" id="newWorkspaceTabBtn" data-tip="New Workspace">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New
-            </button>
-            <button class="sb-work-action" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              Manage
-            </button>
-            <button class="sb-work-action" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
-              Organize
-            </button>
-          </div>
-          <button id="addWorkspaceBtn" style="display:none"></button>
-          <div id="snavProjectsItems" class="sb-dynamic-list"></div>
-        </div>
-      </div>
-
-      <!-- 5. GOOGLE GROUP -->
-      <div class="sb-group" id="sbg-google">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="google" data-tip="Google" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 12h6.5"/><path d="M12 7v5"/></svg>
-            <span class="sb-group-label">Google</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="google" title="Add Google link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <div id="snavGoogleItems" class="sb-dynamic-list"></div>
-        </div>
-      </div>
-
-      <!-- 6. SOCIALS GROUP -->
-      <div class="sb-group" id="sbg-socials">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="socials" data-tip="Socials" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span class="sb-group-label">Socials</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="socials" title="Add social link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <div id="snavSocialsItems" class="sb-dynamic-list"></div>
-        </div>
-      </div>
-
-      <!-- 7. OTHERS GROUP -->
-      <div class="sb-group" id="sbg-others">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="others" data-tip="Others" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
-            <span class="sb-group-label">Others</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="others" title="Add link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <div id="snavOthersItems" class="sb-dynamic-list">
-            <div class="sb-empty-state">No links yet — click + to add</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 8. AI GROUP -->
-      <div class="sb-group" id="sbg-ai">
-        <div class="sb-group-hd">
-          <button class="sb-group-btn" data-group="ai" data-tip="AI" aria-expanded="false">
-            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/></svg>
-            <span class="sb-group-label">AI</span>
-            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <button class="sb-gplus" data-addlink="ai" title="Add AI tool link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sb-group-items">
-          <div id="snavAIItems" class="sb-dynamic-list"></div>
-        </div>
-      </div>
+      <!-- Data-driven groups render here via renderSidebar() -->
+      <div id="sbGroupsContainer"></div>
 
     </nav><!-- /sb-nav -->
 
@@ -304,6 +119,19 @@
       <span class="search-trigger-text">Search everything…</span>
       <kbd class="search-kbd">/</kbd>
     </button>
+    <div class="topbar-ws" id="topbarWorkspaces">
+      <div class="topbar-ws-list" id="topbarWorkspacesList"></div>
+      <button class="topbar-ws-btn" id="newWorkspaceTabBtn" data-tip="New Workspace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="topbar-ws-btn" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <button class="topbar-ws-btn" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+      </button>
+      <button id="addWorkspaceBtn" style="display:none"></button>
+    </div>
     <div class="topbar-actions">
       <!-- topSettingsBtn kept as no-op stub for JS compat -->
       <button id="topSettingsBtn" style="display:none" tabindex="-1" aria-hidden="true"></button>
@@ -449,7 +277,7 @@
           </div>
 
           <!-- Right: To-Do from Kanban -->
-          <div class="kanban-dash-wrap">
+          <div class="kanban-dash-wrap" id="widget-todo">
             <div class="section-title-row" style="margin-bottom:10px">
               <h2 class="section-title">To Do</h2>
               <div style="display:flex;gap:6px;align-items:center">
@@ -958,8 +786,16 @@
     <div class="settings-section">
       <div class="settings-section-title">Widgets</div>
       <div class="settings-row">
+        <div class="settings-label"><span>Calendar Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetCalendarToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
         <div class="settings-label"><span>Notes Widget</span></div>
         <label class="switch"><input type="checkbox" id="widgetNotesToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>To-Do Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetTodoToggle" checked><span class="slider"></span></label>
       </div>
       <div class="settings-row">
         <div class="settings-label"><span>Focus Timer Widget</span></div>
@@ -1086,9 +922,9 @@
     <div class="settings-section">
       <div class="settings-section-title">About</div>
       <div class="settings-about">
-        <div class="about-logo"><img src="icons/favicon.png" alt="llmaotab logo" width="32" height="32" style="border-radius:6px;object-fit:contain"></div>
+        <div class="about-logo"><img src="icons/favicon.png" alt="Nestpane logo" width="32" height="32" style="border-radius:6px;object-fit:contain"></div>
         <div>
-          <div style="font-weight:700;font-size:15px">llmaotab</div>
+          <div style="font-weight:700;font-size:15px">Nestpane</div>
           <div style="color:var(--text-2);font-size:12px" id="aboutVersion">Version 1.3.0</div>
           <div style="color:var(--text-2);font-size:12px;margin-top:4px">Your new tab, your way</div>
         </div>
@@ -1098,7 +934,7 @@
         Built by <a class="credit-link" href="https://kneeraazon.com" target="_blank" rel="noopener">kneeraazon</a>
       </div>
       <div class="owner-credit" style="margin-top:4px">
-        <a class="credit-link" href="https://karkinirajan.github.io/llmaotab/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+        <a class="credit-link" href="https://karkinirajan.github.io/nestpane/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
       </div>
     </div>
 
@@ -1402,6 +1238,26 @@
   </div>
 </div>
 
+<!-- Generic single-field rename/add prompt — replaces window.prompt() so
+     these flows match the rest of the app's custom modal styling. -->
+<div class="modal-overlay" id="sbPromptModal" role="dialog" aria-modal="true" aria-labelledby="sbPromptTitle">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <h3 id="sbPromptTitle">Rename</h3>
+      <button class="modal-close" data-modal="sbPromptModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="sbPromptInput" class="modal-input" maxlength="40">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="sbPromptModal">Cancel</button>
+      <button class="btn-primary" id="sbPromptSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Weather Location Modal -->
 <div class="modal-overlay" id="weatherLocationModal" role="dialog" aria-modal="true" aria-labelledby="weatherLocationTitle">
   <div class="modal" style="max-width:380px">
@@ -1653,6 +1509,7 @@
       <button class="modal-close" data-modal="sbAddLinkModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
+      <div class="sb-view-picker" id="sbAddLinkViewPicker"></div>
       <label for="qaName">Name</label>
       <input type="text" id="sbAddLinkName" class="modal-input" placeholder="e.g. ChatGPT">
       <label for="qaUrl">URL</label>

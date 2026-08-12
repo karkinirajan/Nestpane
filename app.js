@@ -1,6 +1,6 @@
 "use strict";
 // =============================================
-//  llmaotab — app.js
+//  Nestpane — app.js
 //  Author: kneeraazon.com
 // =============================================
 
@@ -23,7 +23,7 @@ const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
 const EXPECTED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
   console.warn(
-    `[llmaotab] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
+    `[Nestpane] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
       "Google sign-in will fail with redirect_uri_mismatch unless https://" +
       chrome.runtime.id +
       ".chromiumapp.org/ is also authorized in Google Cloud Console, or manifest.json's \"key\" is corrected.",
@@ -366,6 +366,69 @@ const API = {
   },
 };
 
+// ===== SIDEBAR ICON LOOKUP =====
+// Inner <svg> markup (no outer <svg> tag) for each icon key, reused by
+// renderSidebar() and the group/item icon pickers. Paths are lifted
+// verbatim from the icons that used to be hardcoded per-group in
+// newtab.html, so the visual language doesn't change.
+const SB_ICONS = {
+  dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  google: '<path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 12h6.5"/><path d="M12 7v5"/>',
+  socials: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  ai: '<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/>',
+  bookmark: '<path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  sessions: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  notes: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  journal: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  reading: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  habits: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 6"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.4a5 5 0 0 0 7.07 7.07L14 18"/>',
+};
+
+// Default sidebar shown on a fresh install. Kept lean on purpose — Google/
+// Socials/AI ship empty (users add their own links); Home/Personal ship 3
+// broadly-useful items each. Item ids are stable strings so migration and
+// "already added" checks can key off them.
+const DEFAULT_SIDEBAR = [
+  {
+    id: "home",
+    label: "Home",
+    icon: "home",
+    items: [
+      { id: "bookmarks", label: "Bookmarks", icon: "bookmark", kind: "view", view: "bookmarks" },
+      { id: "history", label: "History", icon: "history", kind: "view", view: "history" },
+      { id: "downloads", label: "Downloads", icon: "download", kind: "view", view: "downloads" },
+    ],
+  },
+  {
+    id: "personal",
+    label: "Personal",
+    icon: "user",
+    items: [
+      { id: "notes", label: "Notes", icon: "notes", kind: "view", view: "notes" },
+      { id: "journal", label: "Journal", icon: "journal", kind: "view", view: "journal" },
+      { id: "reading", label: "Reading Queue", icon: "reading", kind: "view", view: "reading" },
+    ],
+  },
+  { id: "google", label: "Google", icon: "google", items: [] },
+  { id: "socials", label: "Socials", icon: "socials", items: [] },
+  { id: "ai", label: "AI", icon: "ai", items: [] },
+];
+
+// Every "view" kind item that isn't in DEFAULT_SIDEBAR by default but is
+// still a real internal view a user might want to add back (Task 9's "Add
+// item" picker offers these plus a free-form link option).
+const SIDEBAR_ADDABLE_VIEWS = [
+  { view: "sessions", label: "Tab Sessions", icon: "sessions" },
+  { view: "trash", label: "Trash", icon: "trash" },
+  { view: "habits", label: "Habits", icon: "habits" },
+];
+
 // ===== DEFAULT DATA =====
 const DEFAULT_WORKSPACES = [
   { id: 1, name: "Home", icon: "🏠" },
@@ -377,110 +440,18 @@ const DEFAULT_WS_DATA = (id) => {
   if (id === 1)
     return {
       quickAccess: [
-        // AI
-        { id: 101, name: "Claude",         url: "https://claude.ai" },
-        { id: 102, name: "ChatGPT",        url: "https://chat.openai.com" },
-        { id: 103, name: "Gemini",         url: "https://gemini.google.com" },
-        { id: 104, name: "Perplexity",     url: "https://perplexity.ai" },
-        { id: 105, name: "Cursor",         url: "https://cursor.com" },
-        { id: 106, name: "Bolt",           url: "https://bolt.new" },
-        // Dev
-        { id: 107, name: "GitHub",         url: "https://github.com" },
-        { id: 108, name: "Vercel",         url: "https://vercel.com" },
-        { id: 109, name: "Supabase",       url: "https://supabase.com" },
-        { id: 110, name: "Cloudflare",     url: "https://cloudflare.com" },
-        { id: 111, name: "Docker Hub",     url: "https://hub.docker.com" },
-        { id: 112, name: "Linear",         url: "https://linear.app" },
-        { id: 113, name: "Stripe",         url: "https://stripe.com" },
-        { id: 114, name: "DEV.to",         url: "https://dev.to" },
-        { id: 115, name: "Stack Overflow", url: "https://stackoverflow.com" },
-        { id: 116, name: "Postman",        url: "https://postman.com" },
-        // Frameworks & docs
-        { id: 117, name: "Python",         url: "https://python.org" },
-        { id: 118, name: "Django",         url: "https://djangoproject.com" },
-        { id: 120, name: "FastAPI",        url: "https://fastapi.tiangolo.com" },
-        { id: 121, name: "Rust",           url: "https://rust-lang.org" },
-        { id: 122, name: "React",          url: "https://react.dev" },
-        { id: 123, name: "Next.js",        url: "https://nextjs.org" },
-        { id: 124, name: "Tailwind",       url: "https://tailwindcss.com" },
-        // Productivity & tools
-        { id: 125, name: "Notion",         url: "https://notion.so" },
-        { id: 127, name: "Readwise",       url: "https://readwise.io" },
-        { id: 128, name: "Raindrop",       url: "https://raindrop.io" },
-        { id: 130, name: "Upwork",         url: "https://upwork.com" },
-        { id: 131, name: "ProductHunt",    url: "https://producthunt.com" },
-        { id: 132, name: "Mobbin",         url: "https://mobbin.com" },
-        { id: 133, name: "n8n",            url: "https://n8n.io" },
-        { id: 134, name: "Hamro Patro",    url: "https://hamropatro.com" },
-        // Socials
-        { id: 138, name: "Twitter / X",    url: "https://x.com" },
-        { id: 139, name: "LinkedIn",       url: "https://linkedin.com/feed" },
-        { id: 140, name: "Instagram",      url: "https://instagram.com" },
-        { id: 141, name: "Reddit",         url: "https://reddit.com" },
-        { id: 142, name: "Discord",        url: "https://discord.com/app" },
-        { id: 143, name: "YouTube",        url: "https://youtube.com" },
-        // Google
-        { id: 135, name: "Gmail",          url: "https://mail.google.com" },
-        { id: 136, name: "Drive",          url: "https://drive.google.com" },
-        { id: 137, name: "Calendar",       url: "https://calendar.google.com" },
-        { id: 144, name: "Docs",           url: "https://docs.google.com" },
+        { id: 101, name: "Gmail",           url: "https://mail.google.com" },
+        { id: 102, name: "Google Calendar", url: "https://calendar.google.com" },
+        { id: 103, name: "Google Drive",    url: "https://drive.google.com" },
+        { id: 104, name: "YouTube",         url: "https://youtube.com" },
+        { id: 105, name: "Google Maps",     url: "https://maps.google.com" },
+        { id: 106, name: "Amazon",          url: "https://amazon.com" },
+        { id: 107, name: "Wikipedia",       url: "https://wikipedia.org" },
+        { id: 108, name: "Reddit",          url: "https://reddit.com" },
+        { id: 109, name: "LinkedIn",        url: "https://linkedin.com/feed" },
+        { id: 110, name: "Netflix",         url: "https://netflix.com" },
       ],
-      notes: [
-        {
-          id: 1001,
-          title: "Project Ideas",
-          content:
-            "Build a personal dashboard with weather, notes, and quick-access shortcuts.\nConsider adding a Kanban board and habit tracker integration for daily use.",
-          tags: ["ideas", "dev"],
-          pinned: true,
-          createdAt: Date.now() - 86400000 * 4,
-        },
-        {
-          id: 1002,
-          title: "Meeting Notes — Product Sync",
-          content:
-            "Discussed roadmap for Q3. Key actions:\n• Wireframes ready by Friday\n• API spec review by end of week\n• Confirm stakeholder sign-off on scope",
-          tags: ["work", "meetings"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 3,
-        },
-        {
-          id: 1003,
-          title: "Books to Read in 2025",
-          content:
-            "1. Atomic Habits — James Clear\n2. Deep Work — Cal Newport\n3. The Pragmatic Programmer\n4. Clean Code — Robert Martin\n5. Designing Data-Intensive Applications",
-          tags: ["reading", "personal"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 2,
-        },
-        {
-          id: 1004,
-          title: "Dev Environment Setup",
-          content:
-            "Node 20 LTS, pnpm 9, VS Code\nExtensions: Prettier, ESLint, GitLens, Error Lens\nTerminal: zsh + starship prompt + fzf",
-          tags: ["dev", "setup"],
-          pinned: false,
-          createdAt: Date.now() - 86400000,
-        },
-        {
-          id: 1005,
-          title: "Travel Packing Checklist",
-          content:
-            "Passport, charger, USB-C adapter, earbuds, power bank, toiletries bag. Print boarding pass night before. Notify bank before departure.",
-          tags: ["personal", "travel"],
-          pinned: false,
-          createdAt: Date.now() - 3600000 * 6,
-        },
-        {
-          id: 1006,
-          title: "Weekly Review Template",
-          content:
-            "✅ What went well this week?\n🔍 What needs improvement?\n🎯 Top 3 priorities for next week\n⚡ Energy level: ___/10\n📚 What did I learn?",
-          tags: ["productivity"],
-          pinned: false,
-          createdAt: Date.now() - 1800000,
-        },
-      ],
+      notes: [],
       tasks: [
         { id: 2001, text: "Review and merge open pull requests", done: false },
         {
@@ -1328,8 +1299,11 @@ let S = {
     widgets: {
       notes: true,
       timer: true,
+      calendar: true,
+      todo: true,
     },
     sidebarCollapsed: false,
+    sidebar: null, // populated by migrateSidebarToDataModel() on first load after this update, or DEFAULT_SIDEBAR on a fresh install
     heroBg: null,
     qaMode: "icon",
     heroQuote: null,
@@ -1378,8 +1352,14 @@ let S = {
         { id: 5001, name: "Notion", url: "https://notion.so" },
         { id: 5002, name: "Readwise", url: "https://readwise.io" },
         { id: 5003, name: "Raindrop", url: "https://raindrop.io" },
-        { id: 5004, name: "Hamro Patro", url: "https://hamropatro.com" },
-        { id: 5005, name: "Upwork", url: "https://upwork.com" },
+        // Generic replacements for the former "Hamro Patro" / "Upwork" seeds.
+        // migrateSyncSbLinksToQA() mirrors every sbLinks group into Home's
+        // Quick Access on boot, so personal-preference entries here land on a
+        // fresh install's dashboard regardless of DEFAULT_WS_DATA(1). New ids
+        // (not 5004/5005) so _topUpSbGroup can never top an existing user's
+        // saved list up into two entries sharing one id.
+        { id: 5011, name: "Dropbox", url: "https://dropbox.com" },
+        { id: 5012, name: "Canva", url: "https://canva.com" },
         { id: 5006, name: "Luma", url: "https://lu.ma" },
         { id: 5007, name: "ProductHunt", url: "https://producthunt.com" },
         { id: 5008, name: "Mobbin", url: "https://mobbin.com" },
@@ -1423,6 +1403,7 @@ let S = {
   _calMonth: null, // { year, month } — currently viewed month
   _qaDeleted: new Set(), // normalized URLs of explicitly-deleted QA items (tombstones)
   _cloudResetDone: false, // one-time cloud wipe+reupload has run on this install
+  _freshInstall: false, // set by loadState(): storage was empty before this boot (session-only, never persisted)
 };
 
 // ===== BOOT =====
@@ -1435,6 +1416,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   await loadState();
   migrateAddSocials();
+  migrateSidebarToDataModel();
+  renderSidebar();
   migrateSyncSbLinksToQA();
   migrateAddWorkspaceContent();
   initClock();
@@ -1528,6 +1511,15 @@ async function loadState() {
       save();
     }
   }
+  // "Genuinely fresh install" = storage held nothing for this profile. This
+  // MUST be captured here: before any of the merges below fold the hardcoded
+  // defaults in S into the live state, and after the sync-storage fallback
+  // above so a profile recovered from sync isn't misread as fresh. Migrations
+  // that need to tell "brand new user" from "existing user who never
+  // customized a default" have to use this flag — they cannot infer it from a
+  // default-seeded field like settings.sbLinks, which is baked into S and is
+  // therefore never empty. Session-only: no save()/Drive path persists it.
+  S._freshInstall = !(d.settings || d.wsData || d.workspaces || d.user);
   S.user = d.user || S.user;
   S.workspaces =
     Array.isArray(d.workspaces) && d.workspaces.length
@@ -2093,12 +2085,13 @@ const OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/drive.appdata",
 ];
-const DRIVE_FILE_NAME = "llmaotab-sync.json";
-// Pre-rename filename. Backups written by the "novatab"-era build still carry
-// it, so pull must look for both or existing users silently lose their cloud
-// data. Push always writes DRIVE_FILE_NAME, which renames the file in place on
-// the first successful sync after upgrading.
-const DRIVE_FILE_NAME_LEGACY = "novatab-sync.json";
+const DRIVE_FILE_NAME = "nestpane-sync.json";
+// Pre-rename filenames. Backups written by the "novatab"- or "llmaotab"-era
+// build still carry these; the read-side query below checks all three names,
+// and a successful push always rewrites the file under the current
+// DRIVE_FILE_NAME, migrating it forward for that user from then on.
+const DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json";
+const DRIVE_FILE_NAME_LEGACY_2 = "novatab-sync.json";
 const DRIVE_SPACES = "appDataFolder";
 const _TK_ACCESS_KEY = "_ntAccess"; // { token, expiry }
 const _TK_REFRESH_KEY = "_ntRefresh"; // refresh token string
@@ -2224,7 +2217,7 @@ async function _launchPKCEFlow() {
       (url) => {
         if (chrome.runtime.lastError) {
           console.warn(
-            "[llmaotab] Auth flow closed or cancelled.",
+            "[Nestpane] Auth flow closed or cancelled.",
             chrome.runtime.lastError.message,
           );
         }
@@ -2256,7 +2249,7 @@ async function _launchPKCEFlow() {
     });
     if (!r.ok) {
       const errBody = await r.text().catch(() => "(unreadable)");
-      console.warn("[llmaotab] Token exchange failed:", r.status, errBody);
+      console.warn("[Nestpane] Token exchange failed:", r.status, errBody);
       return null;
     }
     const d = await r.json();
@@ -2266,7 +2259,7 @@ async function _launchPKCEFlow() {
       return d.access_token;
     }
   } catch {
-    console.warn("[llmaotab] Auth request failed — network error.");
+    console.warn("[Nestpane] Auth request failed — network error.");
   }
   return null;
 }
@@ -2432,7 +2425,7 @@ function _timeAgo(ts) {
 async function findDriveFiles(token) {
   try {
     const r = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_SPACES}&q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' or name='${DRIVE_FILE_NAME_LEGACY}'`)}&fields=files(id%2CmodifiedTime)&orderBy=modifiedTime%20desc`,
+      `https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_SPACES}&q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' or name='${DRIVE_FILE_NAME_LEGACY}' or name='${DRIVE_FILE_NAME_LEGACY_2}'`)}&fields=files(id%2CmodifiedTime)&orderBy=modifiedTime%20desc`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!r.ok) return [];
@@ -2962,7 +2955,7 @@ async function _doPush(token) {
   } else {
     body = JSON.stringify(payload);
   }
-  const boundary = "llmaotab_boundary_" + Date.now();
+  const boundary = "nestpane_boundary_" + Date.now();
   // Only PATCH if Drive._fileId was set by a successful POST *in this session*.
   // Never search for existing files on push — avoids 403s from files created by
   // a previous OAuth client that pass GET-metadata checks but fail on PATCH.
@@ -3304,15 +3297,8 @@ function updateAvatarDisplay() {
 
 // ===== RENDER ALL =====
 function renderAll() {
-  renderSidebarWorkspaces();
-  renderSnavAI();
-  renderSnavDev();
-  renderSnavHome();
-  renderSnavGoogle();
-  renderSnavProjects();
-  renderSnavOthers();
-  renderSnavSocials();
-  renderTabsWorkspaces();
+  renderTopbarWorkspaces();
+  renderSidebar();
   renderSidebarFolders();
   applyWidgetVisibility();
   renderQuickAccess();
@@ -3333,10 +3319,8 @@ function setActiveWorkspace(wsId) {
   if (id === S.activeWsId) return;
   S.activeWsId = id;
   save();
-  renderSidebarWorkspaces();
-  renderSnavAI();
-  renderSnavDev();
-  renderTabsWorkspaces();
+  renderTopbarWorkspaces();
+  renderSidebar();
   renderSidebarFolders();
 
   const content = document.querySelector(".home-content");
@@ -3366,180 +3350,236 @@ function setActiveWorkspace(wsId) {
   }
 }
 
-// ===== WORKSPACES SIDEBAR =====
-function renderSidebarWorkspaces() {
-  const list = el("sidebarWorkspacesList");
+// ===== TOPBAR WORKSPACE SWITCHER =====
+// Replaces the old sidebar-only workspace renderer (which showed just the
+// custom workspaces, id > 3) and the dead tabs renderer (which rendered into
+// a display:none container). This shows every workspace, including the 3
+// built-in ones, since they previously had no click-to-switch UI at all —
+// only Alt+1-9 reached them.
+function renderTopbarWorkspaces() {
+  const list = el("topbarWorkspacesList");
   if (!list) return;
-  const custom = S.workspaces.filter((ws) => ws.id > 3);
-  if (!custom.length) {
-    list.innerHTML = '<div class="sb-empty-state">No custom workspaces</div>';
-    return;
-  }
-  list.innerHTML = custom
+  list.innerHTML = S.workspaces
     .map(
       (ws) => `
-    <div class="workspace-sidebar-item ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}">
-      <div class="ws-icon">${ws.icon}</div>
-      <span style="flex:1">${escH(ws.name)}</span>
-    </div>`,
+    <button class="topbar-ws-pill ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}" data-tip="${escH(ws.name)}">
+      <span class="topbar-ws-icon">${ws.icon}</span>
+      <span class="topbar-ws-name">${escH(ws.name)}</span>
+    </button>`,
     )
     .join("");
-  list.querySelectorAll(".workspace-sidebar-item").forEach((item) => {
-    item.addEventListener("click", () => setActiveWorkspace(item.dataset.wsid));
+  list.querySelectorAll(".topbar-ws-pill").forEach((btn) => {
+    btn.addEventListener("click", () => setActiveWorkspace(btn.dataset.wsid));
   });
-  _addDragDrop(list, ".workspace-sidebar-item");
-  // Scroll overflow indicator (same as folders)
-  const wrap = el("sidebarWorkspacesWrap");
-  if (wrap) {
-    const update = () => {
-      const overflows = list.scrollHeight > list.clientHeight;
-      const atBottom =
-        list.scrollTop + list.clientHeight >= list.scrollHeight - 2;
-      wrap.classList.toggle("no-overflow", !overflows || atBottom);
-    };
-    update();
-    list.removeEventListener("scroll", list._wsScrollIndicator);
-    list._wsScrollIndicator = update;
-    list.addEventListener("scroll", update);
-  }
 }
 
-// ===== NEW SIDEBAR: AI / DEV DYNAMIC RENDERS =====
-function _renderSnavLinks(containerId, wsId) {
-  const container = el(containerId);
-  if (!container) return;
-  const data = S.wsData[wsId] || {};
-  const links = data.quickAccess || [];
-  if (!links.length) {
-    container.innerHTML =
-      '<div class="sb-empty-state">No links yet. Click + to add.</div>';
-    return;
-  }
-  container.innerHTML = links
-    .map(
-      (link) => `
-    <div class="sb-item sb-link-item" data-tip="${escH(link.name)}">
-      <a href="${escH(link.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(link.url)}" alt="">
-        <span class="sb-item-label">${escH(link.name)}</span>
+// ===== DATA-DRIVEN SIDEBAR RENDERER =====
+function _sbItemInner(item, groupId) {
+  const icon = SB_ICONS[item.icon] || SB_ICONS.link;
+  const editControls = S.sidebarEditMode
+    ? `
+    <div class="sb-item-edit-actions">
+      <button class="sb-icon-mini" data-sb-move-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" data-dir="up" title="Move up">▲</button>
+      <button class="sb-icon-mini" data-sb-move-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" data-dir="down" title="Move down">▼</button>
+      <button class="sb-icon-mini" data-sb-rename-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Rename">✎</button>
+      <button class="sb-icon-mini sb-icon-mini-danger" data-sb-delete-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Delete">✕</button>
+    </div>`
+    : "";
+  if (item.kind === "view") {
+    return `
+    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
+      <a href="#" class="sb-item" data-view="${escH(item.view)}" data-sb-item-id="${escH(item.id)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
+        <span class="sb-item-label">${escH(item.label)}</span>
       </a>
-      <div class="sb-link-actions">
-        <a href="${escH(link.url)}" class="sb-open-btn" target="_blank" rel="noopener" title="Open in new tab">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-        <button class="sb-rm-btn" title="Remove" data-rm-ws="${wsId}" data-rm-id="${link.id}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>`,
-    )
-    .join("");
-}
-function renderSnavAI() {
-  _renderSnavLinks("snavAIItems", 2);
-}
-function renderSnavDev() {
-  _renderSnavLinks("snavDevItems", 3);
-}
-function renderSnavHome() {
-  _renderSnavLinks("sbHomeLinks", 1);
-}
-function renderSnavGoogle() {
-  _renderSnavGlobalLinks("snavGoogleItems", "google");
-}
-function renderSnavProjects() {
-  _renderSnavGlobalLinks("snavProjectsItems", "projects");
-}
-function renderSnavOthers() {
-  _renderSnavGlobalLinks("snavOthersItems", "others");
-}
-function renderSnavSocials() {
-  _renderSnavGlobalLinks("snavSocialsItems", "socials");
-}
-
-// Render global (non-workspace) sidebar link lists
-function _getSbGlobalLinks(group) {
-  if (!S.settings.sbLinks) S.settings.sbLinks = {};
-  if (!S.settings.sbLinks[group]) S.settings.sbLinks[group] = [];
-  return S.settings.sbLinks[group];
-}
-
-function _renderSnavGlobalLinks(containerId, group) {
-  const container = el(containerId);
-  if (!container) return;
-  const links = _getSbGlobalLinks(group);
-  if (!links.length) {
-    container.innerHTML = `<div class="sb-empty-state">No links yet — click + to add</div>`;
-    return;
+      ${editControls}
+    </div>`;
   }
-  container.innerHTML = links
-    .map(
-      (link) => `
-    <div class="sb-item sb-link-item" data-tip="${escH(link.name)}">
-      <a href="${escH(link.url)}" class="sb-link-main" target="_blank" rel="noopener">
-        <img class="sb-fav" src="${favSrc(link.url)}" alt="">
-        <span class="sb-item-label">${escH(link.name)}</span>
-      </a>
-      <div class="sb-link-actions">
-        <a href="${escH(link.url)}" class="sb-open-btn" target="_blank" rel="noopener" title="Open in new tab">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  return `
+    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
+      <div class="sb-item sb-link-item" data-sb-item-id="${escH(item.id)}" data-tip="${escH(item.label)}">
+        <a href="${escH(item.url)}" class="sb-link-main" target="_blank" rel="noopener">
+          <img class="sb-fav" src="${favSrc(item.url)}" alt="">
+          <span class="sb-item-label">${escH(item.label)}</span>
         </a>
-        <button class="sb-rm-btn" title="Remove" data-rm-group="${escH(group)}" data-rm-id="${link.id}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
       </div>
-    </div>`,
-    )
-    .join("");
+      ${editControls}
+    </div>`;
 }
 
-function removeSbGlobalLink(group, linkId) {
-  const links = _getSbGlobalLinks(group);
-  const removed = links.find((l) => l.id === linkId);
-  if (removed?.url) S._qaDeleted.add(_normUrl(removed.url));
-  S.settings.sbLinks[group] = links.filter((l) => l.id !== linkId);
-  save();
-  _renderSnavGlobalLinks(
-    group === "google"
-      ? "snavGoogleItems"
-      : group === "socials"
-        ? "snavSocialsItems"
-        : group === "projects"
-          ? "snavProjectsItems"
-          : "snavOthersItems",
-    group,
+function renderSidebar() {
+  const container = el("sbGroupsContainer");
+  if (!container || !S.settings.sidebar) return;
+  // The flyout holds a snapshot of a group's items HTML plus a reference to
+  // the .sb-group node it was opened from — the innerHTML rebuild below
+  // discards that node and invalidates the snapshot, so close it first. Safe
+  // when nothing is open, and when this runs at boot before the flyout
+  // element even exists (_sbCloseFlyout null-guards _sbFlyoutEl).
+  _sbCloseFlyout();
+  container.innerHTML = S.settings.sidebar
+    .map((group) => {
+      const icon = SB_ICONS[group.icon] || SB_ICONS.link;
+      const itemsHtml = group.items.length
+        ? group.items.map((it) => _sbItemInner(it, group.id)).join("")
+        : `<div class="sb-empty-state">No links yet — click + to add</div>`;
+      return `
+      <div class="sb-group" id="sbg-${escH(group.id)}" data-sb-group-id="${escH(group.id)}">
+        <div class="sb-group-hd${S.sidebarEditMode ? " sb-group-hd-edit" : ""}">
+          <button class="sb-group-btn" data-group="${escH(group.id)}" data-tip="${escH(group.label)}" aria-expanded="false">
+            <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
+            <span class="sb-group-label">${escH(group.label)}</span>
+            <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          ${
+            S.sidebarEditMode
+              ? `
+          <div class="sb-group-edit-actions">
+            <button class="sb-icon-mini" data-sb-move-group="${escH(group.id)}" data-dir="up" title="Move up">▲</button>
+            <button class="sb-icon-mini" data-sb-move-group="${escH(group.id)}" data-dir="down" title="Move down">▼</button>
+            <button class="sb-icon-mini" data-sb-rename-group="${escH(group.id)}" title="Rename">✎</button>
+            <button class="sb-icon-mini sb-icon-mini-danger" data-sb-delete-group="${escH(group.id)}" title="Delete group">✕</button>
+          </div>`
+              : `
+          <button class="sb-gplus" data-addlink="${escH(group.id)}" title="Add link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>`
+          }
+        </div>
+        <div class="sb-group-items">${itemsHtml}</div>
+      </div>`;
+    })
+    .join("") +
+    (S.sidebarEditMode
+      ? `<button class="sb-add-group-btn" id="sbAddGroupBtn">+ Add group</button>`
+      : "");
+  initSidebarTabs();
+  updateSidebarTabActive();
+}
+
+// ===== SIDEBAR GROUP CRUD =====
+function toggleSidebarEditMode() {
+  S.sidebarEditMode = !S.sidebarEditMode;
+  el("sbEditModeBtn")?.classList.toggle("active", S.sidebarEditMode);
+  renderSidebar();
+}
+
+function addSidebarGroup() {
+  sbPrompt("New group", "", (label) => {
+    const id = `g${Date.now()}`;
+    S.settings.sidebar.push({ id, label, icon: "link", items: [] });
+    save();
+    renderSidebar();
+  });
+}
+
+function renameSidebarGroup(id) {
+  const group = S.settings.sidebar.find((g) => g.id === id);
+  if (!group) return;
+  sbPrompt("Rename group", group.label, (label) => {
+    group.label = label;
+    save();
+    renderSidebar();
+  });
+}
+
+function deleteSidebarGroup(id) {
+  const group = S.settings.sidebar.find((g) => g.id === id);
+  if (!group) return;
+  confirm2(
+    "Delete group?",
+    `"${group.label}" and its ${group.items.length} item(s) will be moved to Trash.`,
+    () => {
+      S.trash.push({ ...group, _type: "sidebarGroup", _deletedAt: Date.now() });
+      S.settings.sidebar = S.settings.sidebar.filter((g) => g.id !== id);
+      save();
+      renderSidebar();
+      showToast("Group deleted", "success");
+    },
   );
 }
 
-function removeSbLink(wsId, linkId) {
-  const data = S.wsData[wsId];
-  if (!data) return;
-  const removed = (data.quickAccess || []).find((l) => l.id === linkId);
-  if (removed?.url) S._qaDeleted.add(_normUrl(removed.url));
-  data.quickAccess = (data.quickAccess || []).filter((l) => l.id !== linkId);
+function moveSidebarGroup(id, direction) {
+  const arr = S.settings.sidebar;
+  const idx = arr.findIndex((g) => g.id === id);
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (idx < 0 || swapWith < 0 || swapWith >= arr.length) return;
+  [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
   save();
-  _renderSnavLinks(
-    wsId === 1 ? "sbHomeLinks" : wsId === 2 ? "snavAIItems" : "snavDevItems",
-    wsId,
-  );
+  renderSidebar();
 }
 
-function openSbAddLink(group) {
-  S._sbAddLinkGroup = group;
-  const titles = {
-    home: "Add Link to Home",
-    ai: "Add AI Tool",
-    dev: "Add Dev Tool",
-    google: "Add Google Link",
-    socials: "Add Social Link",
-    projects: "Add Project",
-    others: "Add Link",
-  };
-  el("sbAddLinkTitle").textContent = titles[group] || "Add Link";
+// ===== SIDEBAR ITEM CRUD =====
+function renameSidebarItem(groupId, itemId) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  const item = group?.items.find((it) => it.id === itemId);
+  if (!item) return;
+  sbPrompt("Rename item", item.label, (label) => {
+    item.label = label;
+    save();
+    renderSidebar();
+  });
+}
+
+function deleteSidebarItem(groupId, itemId) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  const item = group?.items.find((it) => it.id === itemId);
+  if (!group || !item) return;
+  // NO _qaDeleted tombstone here. That tombstone dates from when adding a
+  // sidebar link also mirrored it into Home's Quick Access, so deleting the
+  // sidebar copy had to suppress the mirrored copy from coming back. Sidebar
+  // items and Quick Access tiles are independent now, and _qaDeleted is
+  // global (it filters quickAccess in EVERY workspace, on every load, cloud
+  // apply and cross-tab sync, and is only ever unioned on Drive pull) — so
+  // writing to it here silently deleted unrelated Quick Access tiles
+  // everywhere, permanently.
+  group.items = group.items.filter((it) => it.id !== itemId);
+  save();
+  renderSidebar();
+  showToast("Item removed", "success");
+}
+
+function moveSidebarItem(groupId, itemId, direction) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  if (!group) return;
+  const idx = group.items.findIndex((it) => it.id === itemId);
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (idx < 0 || swapWith < 0 || swapWith >= group.items.length) return;
+  [group.items[idx], group.items[swapWith]] = [group.items[swapWith], group.items[idx]];
+  save();
+  renderSidebar();
+}
+
+function openSbAddLink(groupId) {
+  S._sbAddLinkGroup = groupId;
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  el("sbAddLinkTitle").textContent = `Add to ${group ? group.label : "Sidebar"}`;
   el("sbAddLinkName").value = "";
   el("sbAddLinkUrl").value = "";
+  const addableViews = SIDEBAR_ADDABLE_VIEWS.filter(
+    (v) => !group?.items.some((it) => it.kind === "view" && it.view === v.view),
+  );
+  const pickerEl = el("sbAddLinkViewPicker");
+  if (pickerEl) {
+    pickerEl.innerHTML = addableViews
+      .map(
+        (v) => `<button type="button" class="sb-view-pick-btn" data-add-view="${escH(v.view)}">${escH(v.label)}</button>`,
+      )
+      .join("");
+    pickerEl.style.display = addableViews.length ? "" : "none";
+  }
   openModal("sbAddLinkModal");
   setTimeout(() => el("sbAddLinkName").focus(), 80);
+}
+
+function addSidebarViewItem(groupId, view) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  const meta = SIDEBAR_ADDABLE_VIEWS.find((v) => v.view === view);
+  if (!group || !meta) return;
+  group.items.push({ id: `view-${view}-${Date.now()}`, label: meta.label, icon: meta.icon, kind: "view", view: meta.view });
+  save();
+  renderSidebar();
+  closeModal("sbAddLinkModal");
+  showToast(`${meta.label} added`, "success");
 }
 
 function saveSbLink() {
@@ -3549,53 +3589,80 @@ function saveSbLink() {
     showToast("Enter a name and URL", "error");
     return;
   }
-  const group = S._sbAddLinkGroup;
-  // Global groups (not workspace-based)
-  if (group === "google" || group === "socials" || group === "projects" || group === "others") {
-    S._qaDeleted.delete(_normUrl(url)); // allow intentional re-add
-    _getSbGlobalLinks(group).push({ id: Date.now(), name, url });
-    _mirrorLinkToHomeQA({ name, url });
-    save();
-    closeModal("sbAddLinkModal");
-    if (group === "google") renderSnavGoogle();
-    else if (group === "socials") renderSnavSocials();
-    else if (group === "projects") renderSnavProjects();
-    else renderSnavOthers();
-    if (S.activeWsId === 1) renderQuickAccess();
-    showToast("Link added", "success");
-    return;
-  }
-  // Workspace-based groups
-  const wsId = group === "ai" ? 2 : group === "dev" ? 3 : 1;
-  if (!S.wsData[wsId])
-    S.wsData[wsId] = {
-      quickAccess: [],
-      notes: [],
-      tasks: [],
-      folders: [],
-      importedBookmarks: [],
-    };
-  if (!S.wsData[wsId].quickAccess) S.wsData[wsId].quickAccess = [];
-  const normNew = _normUrl(url);
-  if (S.wsData[wsId].quickAccess.some((l) => _normUrl(l.url) === normNew)) {
-    showToast("Link already in Quick Access", "error");
-    return;
-  }
-  S._qaDeleted.delete(normNew); // allow intentional re-add
-  S.wsData[wsId].quickAccess.push({ id: Date.now(), name, url });
+  const group = S.settings.sidebar.find((g) => g.id === S._sbAddLinkGroup);
+  if (!group) return;
+  group.items.push({ id: `link-${Date.now()}`, label: name, url: safeUrl(url), icon: "link", kind: "link" });
   save();
+  renderSidebar();
   closeModal("sbAddLinkModal");
-  if (wsId === 2) renderSnavAI();
-  else if (wsId === 3) renderSnavDev();
-  else renderSnavHome();
   showToast("Link added", "success");
 }
 
 // ===== SIDEBAR TAB COLLAPSIBLE LOGIC =====
+// Module-level flyout state — the element and its document-level listeners
+// are created once (initSidebarFlyout, called at boot); initSidebarTabs is
+// called again after every renderSidebar() and only touches per-button
+// listeners, so it never creates a second flyout or a second global listener.
+let _sbFlyoutEl = null;
+let _sbFlyoutGroup = null;
+
+function _sbCloseFlyout() {
+  if (_sbFlyoutEl) _sbFlyoutEl.classList.remove("open");
+  _sbFlyoutGroup = null;
+}
+
+function _sbOpenFlyout(group, btn) {
+  const itemsEl = group.querySelector(".sb-group-items");
+  if (!itemsEl || !_sbFlyoutEl) return;
+  _sbFlyoutEl.innerHTML =
+    `<div class="sb-flyout-title">${escH(btn.dataset.tip || "")}</div>` +
+    itemsEl.innerHTML;
+  const rect = btn.getBoundingClientRect();
+  _sbFlyoutEl.style.left = rect.right + 8 + "px";
+  // .open is what removes display:none, so it must go on BEFORE offsetHeight
+  // is read — measuring a display:none element returns 0 and the clamp below
+  // would silently never clamp, letting tall flyouts run off the viewport.
+  _sbFlyoutEl.classList.add("open");
+  _sbFlyoutEl.style.top = Math.max(
+    12,
+    Math.min(rect.top, window.innerHeight - _sbFlyoutEl.offsetHeight - 12),
+  ) + "px";
+  _sbFlyoutGroup = group;
+}
+
+// Called ONCE at boot (from setupEventListeners). Idempotent guard included
+// defensively, but callers must still only call this once.
+function initSidebarFlyout() {
+  if (_sbFlyoutEl) return;
+  _sbFlyoutEl = document.createElement("div");
+  _sbFlyoutEl.className = "sb-flyout";
+  _sbFlyoutEl.id = "sbFlyout";
+  document.body.appendChild(_sbFlyoutEl);
+  document.addEventListener("click", (e) => {
+    if (
+      _sbFlyoutGroup &&
+      !_sbFlyoutEl.contains(e.target) &&
+      !e.target.closest(".sb-group-btn")
+    ) {
+      _sbCloseFlyout();
+    }
+  });
+  document.addEventListener("scroll", _sbCloseFlyout, true);
+}
+
+// Called at boot AND after every renderSidebar() — (re)attaches per-element
+// click listeners to whatever .sb-group-btn elements currently exist. Safe
+// to call repeatedly: old elements (and their listeners) are gone once
+// renderSidebar() replaces the DOM, so there is nothing to double-attach to.
 function initSidebarTabs() {
   document.querySelectorAll(".sb-group-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const group = btn.closest(".sb-group");
+      if (S.settings.sidebarCollapsed) {
+        if (_sbFlyoutGroup === group) _sbCloseFlyout();
+        else _sbOpenFlyout(group, btn);
+        return;
+      }
       const isOpen = group.classList.contains("open");
       document
         .querySelectorAll(".sb-group")
@@ -3643,8 +3710,7 @@ function reorderWorkspaces(fromId, toId) {
   const [item] = S.workspaces.splice(from, 1);
   S.workspaces.splice(to, 0, item);
   save();
-  renderSidebarWorkspaces();
-  renderTabsWorkspaces();
+  renderTopbarWorkspaces();
   renderManageWorkspacesList();
 }
 
@@ -3681,23 +3747,6 @@ function _addDragDrop(container, itemSelector) {
         reorderWorkspaces(dragId, item.dataset.wsid);
     });
   });
-}
-
-function renderTabsWorkspaces() {
-  const tabs = el("workspaceTabs");
-  tabs.innerHTML = S.workspaces
-    .map(
-      (ws) => `
-    <div class="ws-tab ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}">
-      <span class="ws-tab-icon">${ws.icon}</span>
-      <span>${escH(ws.name)}</span>
-    </div>`,
-    )
-    .join("");
-  tabs.querySelectorAll(".ws-tab").forEach((tab) => {
-    tab.addEventListener("click", () => setActiveWorkspace(tab.dataset.wsid));
-  });
-  _addDragDrop(tabs, ".ws-tab");
 }
 
 function renderManageWorkspacesList() {
@@ -3811,8 +3860,7 @@ function addWorkspace(name, icon) {
     importedBookmarks: [],
   };
   save();
-  renderSidebarWorkspaces();
-  renderTabsWorkspaces();
+  renderTopbarWorkspaces();
   showToast(`Workspace "${name}" created!`, "success");
 }
 
@@ -3855,7 +3903,7 @@ function exportWorkspace() {
   if (!ws) return;
   const data = S.wsData[ws.id] || {};
   const payload = {
-    __llmaotabWorkspace: true,
+    __nestpaneWorkspace: true,
     version: 1,
     exportedAt: new Date().toISOString(),
     workspace: { name: ws.name, icon: ws.icon },
@@ -3872,7 +3920,7 @@ function exportWorkspace() {
   });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `llmaotab-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
+  a.download = `nestpane-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
   a.click();
   showToast(`Exported "${ws.name}"`, "success");
 }
@@ -3882,9 +3930,9 @@ function importWorkspaceFile(file) {
   reader.onload = (e) => {
     try {
       const d = JSON.parse(e.target.result);
-      // __novatabWorkspace is the pre-rename marker — files exported by older
-      // builds must still import.
-      if ((!d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
+      // __llmaotabWorkspace / __novatabWorkspace are pre-rename markers —
+      // files exported by older builds must still import.
+      if ((!d.__nestpaneWorkspace && !d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
         showToast("Not a valid workspace file", "error");
         return;
       }
@@ -6147,6 +6195,43 @@ function migrateAddSocials() {
   save();
 }
 
+// One-time: build S.settings.sidebar from whatever the user already has, so
+// existing customizations (Google/Socials links, AI tool links) survive the
+// move to the new data-driven sidebar. Safe to call every boot — it's a
+// no-op once S.settings.sidebar exists. AI items are COPIED from the AI
+// workspace's quick access (S.wsData[2].quickAccess), not moved — that
+// workspace's own dashboard quick-access grid is untouched.
+function migrateSidebarToDataModel() {
+  if (S.settings.sidebar) return;
+
+  const toLinkItems = (links) =>
+    (links || []).map((l) => ({
+      id: `link-${l.id}`,
+      label: l.name,
+      url: l.url,
+      icon: "link",
+      kind: "link",
+    }));
+
+  // Fresh install → ship DEFAULT_SIDEBAR as-is (Google/Socials/AI empty, per
+  // its own doc comment). This deliberately keys off S._freshInstall, which
+  // loadState() derives from what was actually in storage before defaults
+  // were merged. The obvious-looking alternative — testing whether
+  // settings.sbLinks.google/socials or wsData[2].quickAccess are empty — is
+  // always false: all three are seeded from hardcoded defaults in S, so that
+  // test never identified a fresh install and this branch was dead code.
+  if (S._freshInstall) {
+    S.settings.sidebar = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR));
+    return;
+  }
+
+  S.settings.sidebar = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR));
+  const byId = Object.fromEntries(S.settings.sidebar.map((g) => [g.id, g]));
+  if (byId.google) byId.google.items = toLinkItems(S.settings.sbLinks?.google);
+  if (byId.socials) byId.socials.items = toLinkItems(S.settings.sbLinks?.socials);
+  if (byId.ai) byId.ai.items = toLinkItems(S.wsData?.[2]?.quickAccess);
+}
+
 // Normalize a URL for de-dupe comparisons (ignore protocol/trailing slash/case)
 function _normUrl(u) {
   return (u || "")
@@ -6825,7 +6910,7 @@ function timerPlay() {
       applyFocusBlockRules(false);
       _timerAudioDing();
       showToast("⏰ Focus session complete! Great job!", "success");
-      _notifyUser("llmaotab Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
+      _notifyUser("Nestpane Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
       if (T._mode === "focus") {
         const today = _todayKey();
         S._focusSessions = S._focusSessions || {};
@@ -6878,7 +6963,7 @@ function resetTimer(mins, mode) {
 // ── Chrome notification helper ───────────────────────────────────────────
 function _notifyUser(title, opts = {}) {
   if (!IS_CHROME || !chrome.notifications) return;
-  chrome.notifications.create("llmaotab-" + Date.now(), {
+  chrome.notifications.create("nestpane-" + Date.now(), {
     type: "basic",
     iconUrl: opts.icon || "icons/favicon.png",
     title,
@@ -6900,7 +6985,7 @@ function _scheduleHabitNotifications() {
     const today = _todayKey();
     const unchecked = habits.filter((h) => !h.days?.[today]);
     if (unchecked.length) {
-      _notifyUser("llmaotab Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
+      _notifyUser("Nestpane Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
     }
   }, delay);
 }
@@ -7013,20 +7098,26 @@ function renderTrash() {
   const items = [...S.trash].reverse();
   list.innerHTML = items
     .map((item) => {
-      const name = item.name || item.text || item.title || "Item";
+      // Sidebar groups carry their display name in `label`, not name/text/title.
+      const name =
+        item.name || item.text || item.title || item.label || "Item";
       const icon =
         item._type === "task"
           ? "✅"
           : item._type === "quickAccess"
             ? "⚡"
-            : "📝";
+            : item._type === "sidebarGroup"
+              ? "🗂️"
+              : "📝";
       const key = item.id || item._deletedAt;
       const typeClass =
         item._type === "task"
           ? "task-type"
           : item._type === "quickAccess"
             ? "qa-type"
-            : "note-type";
+            : item._type === "sidebarGroup"
+              ? "sbgroup-type"
+              : "note-type";
       return `<div class="trash-item">
       <span>${icon}</span>
       <span class="trash-item-name">${escH(name)}</span>
@@ -7036,7 +7127,13 @@ function renderTrash() {
     })
     .join("");
   list.querySelectorAll(".restore-btn[data-key]").forEach((btn) => {
-    btn.addEventListener("click", () => restoreItem(Number(btn.dataset.key)));
+    btn.addEventListener("click", () => {
+      const raw = btn.dataset.key;
+      const num = Number(raw);
+      // Sidebar-group ids are non-numeric strings (e.g. "home", "g<timestamp>"),
+      // so only coerce to a number when the key actually looks numeric.
+      restoreItem(Number.isNaN(num) ? raw : num);
+    });
   });
 }
 
@@ -7065,6 +7162,13 @@ function restoreItem(key) {
       id: item.id || Date.now(),
       name: item.name,
       url: item.url,
+    });
+  else if (item._type === "sidebarGroup")
+    S.settings.sidebar.push({
+      id: item.id || `g${Date.now()}`,
+      label: item.label,
+      icon: item.icon,
+      items: item.items || [],
     });
   save();
   renderAll();
@@ -7420,7 +7524,7 @@ async function renderAnalytics() {
         }
         <div class="ins-row"><span class="ins-row-label">Display name</span><span class="ins-row-sub">${escH(S.user.name || "—")}</span></div>
         ${chromeVer ? `<div class="ins-row"><span class="ins-row-label">Chrome</span><span class="ins-row-sub">v${chromeVer}</span></div>` : ""}
-        <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">llmaotab 1.x</span></div>
+        <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">Nestpane 1.x</span></div>
       </div>
 
     </div>
@@ -7779,6 +7883,8 @@ async function openSettings() {
   el("showSecondsToggle").checked = !!S.settings.showSeconds;
   el("widgetNotesToggle").checked = S.settings.widgets.notes !== false;
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
+  el("widgetCalendarToggle").checked = S.settings.widgets.calendar !== false;
+  el("widgetTodoToggle").checked = S.settings.widgets.todo !== false;
   // Highlight active card glow
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
     b.classList.toggle(
@@ -7807,6 +7913,8 @@ async function saveSettings() {
   S.user.name = name;
   S.settings.widgets.notes = el("widgetNotesToggle").checked;
   S.settings.widgets.timer = el("widgetTimerToggle").checked;
+  S.settings.widgets.calendar = el("widgetCalendarToggle").checked;
+  S.settings.widgets.todo = el("widgetTodoToggle").checked;
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
@@ -7902,6 +8010,8 @@ function applyWidgetVisibility() {
   };
   show("widget-notes", w.notes);
   show("widget-timer", w.timer);
+  show("widget-calendar", w.calendar);
+  show("widget-todo", w.todo);
 }
 
 // Export / Import
@@ -7925,7 +8035,7 @@ function exportData() {
   );
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `llmaotab-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `nestpane-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   showToast("Data exported!", "success");
 }
@@ -8862,6 +8972,33 @@ function confirm2(title, msg, onOk, onCancel) {
   openModal("confirmModal");
 }
 
+// Generic single-field text prompt modal — replaces window.prompt() so
+// renames/adds match the rest of the app's custom modal styling. Reused by
+// addSidebarGroup, renameSidebarGroup (this task) and renameSidebarItem
+// (Task 10).
+function sbPrompt(title, initialValue, onSave) {
+  el("sbPromptTitle").textContent = title;
+  const input = el("sbPromptInput");
+  input.value = initialValue || "";
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") el("sbPromptSaveBtn").click();
+  };
+  el("sbPromptSaveBtn").onclick = () => {
+    const value = input.value.trim();
+    if (!value) {
+      showToast("Enter a name", "error");
+      return;
+    }
+    closeModal("sbPromptModal");
+    onSave(value);
+  };
+  openModal("sbPromptModal");
+  setTimeout(() => {
+    input.focus();
+    input.select();
+  }, 80);
+}
+
 // ===== TOAST =====
 let toastTO;
 function showToast(msg, type = "") {
@@ -8886,6 +9023,7 @@ function showToast(msg, type = "") {
 
 // ===== EVENT LISTENERS =====
 function setupEventListeners() {
+  initSidebarFlyout();
   initSidebarTabs();
 
   // Static HTML buttons
@@ -8900,30 +9038,52 @@ function setupEventListeners() {
       "sidebar-collapsed",
       S.settings.sidebarCollapsed,
     );
+    // Collapsing hides every edit-mode control, so staying in edit mode would
+    // strand the user in a state they can't see or leave (and would render
+    // per-item action buttons into the flyout). Drop out of it on collapse.
+    if (S.settings.sidebarCollapsed && S.sidebarEditMode) {
+      S.sidebarEditMode = false;
+      el("sbEditModeBtn")?.classList.remove("active");
+      renderSidebar();
+    }
     save();
   });
-  el("weatherWidget").addEventListener("click", openWeatherLocationModal);
 
-  // Nav — sidebar items with data-view
-  document.querySelectorAll(".sb-item[data-view]").forEach((n) => {
-    n.addEventListener("click", (e) => {
-      e.preventDefault();
-      navigateTo(n.dataset.view);
-    });
+  el("sbEditModeBtn")?.addEventListener("click", toggleSidebarEditMode);
+
+  // Delegated — sidebar is re-rendered on every CRUD action, so these
+  // listeners must be on a stable ancestor (document), not the regenerated
+  // buttons themselves.
+  document.addEventListener("click", (e) => {
+    const addGroupBtn = e.target.closest("#sbAddGroupBtn");
+    if (addGroupBtn) return addSidebarGroup();
+    const moveBtn = e.target.closest("[data-sb-move-group]");
+    if (moveBtn) return moveSidebarGroup(moveBtn.dataset.sbMoveGroup, moveBtn.dataset.dir);
+    const renameBtn = e.target.closest("[data-sb-rename-group]");
+    if (renameBtn) return renameSidebarGroup(renameBtn.dataset.sbRenameGroup);
+    const deleteBtn = e.target.closest("[data-sb-delete-group]");
+    if (deleteBtn) return deleteSidebarGroup(deleteBtn.dataset.sbDeleteGroup);
+    const addViewBtn = e.target.closest("[data-add-view]");
+    if (addViewBtn) return addSidebarViewItem(S._sbAddLinkGroup, addViewBtn.dataset.addView);
+    const moveItemBtn = e.target.closest("[data-sb-move-item]");
+    if (moveItemBtn) return moveSidebarItem(moveItemBtn.dataset.sbItemGroup, moveItemBtn.dataset.sbMoveItem, moveItemBtn.dataset.dir);
+    const renameItemBtn = e.target.closest("[data-sb-rename-item]");
+    if (renameItemBtn) return renameSidebarItem(renameItemBtn.dataset.sbItemGroup, renameItemBtn.dataset.sbRenameItem);
+    const deleteItemBtn = e.target.closest("[data-sb-delete-item]");
+    if (deleteItemBtn) return deleteSidebarItem(deleteItemBtn.dataset.sbItemGroup, deleteItemBtn.dataset.sbDeleteItem);
   });
 
-  // Sidebar remove buttons — event delegation (CSP-safe, no inline onclick)
-  el("sbNav")?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".sb-rm-btn");
-    if (!btn) return;
+  el("weatherWidget").addEventListener("click", openWeatherLocationModal);
+
+  // Nav — sidebar items with data-view (delegated: the sidebar and the
+  // collapsed-mode flyout both regenerate these elements dynamically, so a
+  // per-element listener attached once at boot would miss every one of
+  // them created afterward)
+  document.addEventListener("click", (e) => {
+    const n = e.target.closest(".sb-item[data-view]");
+    if (!n) return;
     e.preventDefault();
-    e.stopPropagation();
-    const { rmWs, rmGroup, rmId } = btn.dataset;
-    if (rmId !== undefined && rmWs !== undefined) {
-      removeSbLink(Number(rmWs), Number(rmId));
-    } else if (rmId !== undefined && rmGroup !== undefined) {
-      removeSbGlobalLink(rmGroup, Number(rmId));
-    }
+    navigateTo(n.dataset.view);
   });
 
   // Global [data-action] dispatch — CSP-safe replacement for inline onclick=
@@ -9238,7 +9398,7 @@ function setupEventListeners() {
     reDetectWeather();
   });
 
-  // Workspaces (buttons now live inside sidebar Work tab)
+  // Workspaces (buttons now live in the topbar)
   el("addWorkspaceBtn")?.addEventListener("click", openNewWorkspaceModal);
   el("newWorkspaceTabBtn")?.addEventListener("click", openNewWorkspaceModal);
   el("manageWorkspacesBtn")?.addEventListener("click", () => {
@@ -9273,8 +9433,7 @@ function setupEventListeners() {
         ws.icon = icon;
       }
       save();
-      renderSidebarWorkspaces();
-      renderTabsWorkspaces();
+      renderTopbarWorkspaces();
       showToast("Workspace updated!", "success");
     } else {
       addWorkspace(name, icon);
@@ -9610,12 +9769,14 @@ function setupEventListeners() {
     e.target.value = "";
   });
 
-  // ── Sidebar + (add link) buttons ───────────────────────────────────────
-  document.querySelectorAll(".sb-gplus").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openSbAddLink(btn.dataset.addlink);
-    });
+  // ── Sidebar + (add link) buttons — event delegation (the buttons are
+  // recreated on every renderSidebar() call, so a per-element listener
+  // attached once at boot would miss every group rendered afterward) ─────
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-addlink]");
+    if (!btn) return;
+    e.stopPropagation();
+    openSbAddLink(btn.dataset.addlink);
   });
   el("sbAddLinkSaveBtn")?.addEventListener("click", saveSbLink);
   el("sbAddLinkName")?.addEventListener("keydown", (e) => {
@@ -10737,7 +10898,6 @@ window.openWsFolderEditModal = openWsFolderEditModal;
 window.openWsBookmarkEditModal = openWsBookmarkEditModal;
 window.removeWsFolder = removeWsFolder;
 // New feature globals
-window.removeSbLink = removeSbLink;
 window.openSbAddLink = openSbAddLink;
 window.toggleHabitDay = toggleHabitDay;
 window.deleteHabit = deleteHabit;
@@ -10751,7 +10911,6 @@ window.refreshWallpaper = refreshWallpaper;
 window.uploadWallpaper = uploadWallpaper;
 window.resetWallpaper = resetWallpaper;
 window.applyHeroColor = applyHeroColor;
-window.removeSbGlobalLink = removeSbGlobalLink;
 window.deleteCalEvent = deleteCalEvent;
 window.signOut = signOut;
 window.signIn = signIn;
