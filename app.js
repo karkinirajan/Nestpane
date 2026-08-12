@@ -1352,8 +1352,14 @@ let S = {
         { id: 5001, name: "Notion", url: "https://notion.so" },
         { id: 5002, name: "Readwise", url: "https://readwise.io" },
         { id: 5003, name: "Raindrop", url: "https://raindrop.io" },
-        { id: 5004, name: "Hamro Patro", url: "https://hamropatro.com" },
-        { id: 5005, name: "Upwork", url: "https://upwork.com" },
+        // Generic replacements for the former "Hamro Patro" / "Upwork" seeds.
+        // migrateSyncSbLinksToQA() mirrors every sbLinks group into Home's
+        // Quick Access on boot, so personal-preference entries here land on a
+        // fresh install's dashboard regardless of DEFAULT_WS_DATA(1). New ids
+        // (not 5004/5005) so _topUpSbGroup can never top an existing user's
+        // saved list up into two entries sharing one id.
+        { id: 5011, name: "Dropbox", url: "https://dropbox.com" },
+        { id: 5012, name: "Canva", url: "https://canva.com" },
         { id: 5006, name: "Luma", url: "https://lu.ma" },
         { id: 5007, name: "ProductHunt", url: "https://producthunt.com" },
         { id: 5008, name: "Mobbin", url: "https://mobbin.com" },
@@ -1397,6 +1403,7 @@ let S = {
   _calMonth: null, // { year, month } — currently viewed month
   _qaDeleted: new Set(), // normalized URLs of explicitly-deleted QA items (tombstones)
   _cloudResetDone: false, // one-time cloud wipe+reupload has run on this install
+  _freshInstall: false, // set by loadState(): storage was empty before this boot (session-only, never persisted)
 };
 
 // ===== BOOT =====
@@ -1504,6 +1511,15 @@ async function loadState() {
       save();
     }
   }
+  // "Genuinely fresh install" = storage held nothing for this profile. This
+  // MUST be captured here: before any of the merges below fold the hardcoded
+  // defaults in S into the live state, and after the sync-storage fallback
+  // above so a profile recovered from sync isn't misread as fresh. Migrations
+  // that need to tell "brand new user" from "existing user who never
+  // customized a default" have to use this flag — they cannot infer it from a
+  // default-seeded field like settings.sbLinks, which is baked into S and is
+  // therefore never empty. Session-only: no save()/Drive path persists it.
+  S._freshInstall = !(d.settings || d.wsData || d.workspaces || d.user);
   S.user = d.user || S.user;
   S.workspaces =
     Array.isArray(d.workspaces) && d.workspaces.length
@@ -6188,13 +6204,14 @@ function migrateSidebarToDataModel() {
       kind: "link",
     }));
 
-  const hasAnyExistingLinks =
-    (S.settings.sbLinks?.google?.length || 0) > 0 ||
-    (S.settings.sbLinks?.socials?.length || 0) > 0 ||
-    (S.wsData?.[2]?.quickAccess?.length || 0) > 0;
-
-  if (!hasAnyExistingLinks) {
-    // Fresh install (or nothing worth carrying over) — just use the default.
+  // Fresh install → ship DEFAULT_SIDEBAR as-is (Google/Socials/AI empty, per
+  // its own doc comment). This deliberately keys off S._freshInstall, which
+  // loadState() derives from what was actually in storage before defaults
+  // were merged. The obvious-looking alternative — testing whether
+  // settings.sbLinks.google/socials or wsData[2].quickAccess are empty — is
+  // always false: all three are seeded from hardcoded defaults in S, so that
+  // test never identified a fresh install and this branch was dead code.
+  if (S._freshInstall) {
     S.settings.sidebar = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR));
     return;
   }
