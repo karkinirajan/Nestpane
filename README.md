@@ -1,4 +1,4 @@
-# llmaotab
+# Nestpane
 
 A Manifest V3 extension that replaces the new tab page with a local-first productivity dashboard, for Chrome and Chromium-based browsers.
 
@@ -6,9 +6,9 @@ A Manifest V3 extension that replaces the new tab page with a local-first produc
 
 ## What this is and why it was built
 
-llmaotab overrides `chrome_url_overrides.newtab` with a single-page dashboard built entirely on browser extension APIs — no backend, no account, no subscription, and no data leaving the device unless Drive sync is explicitly enabled.
+Nestpane overrides `chrome_url_overrides.newtab` with a single-page dashboard built entirely on browser extension APIs — no backend, no account, no subscription, and no data leaving the device unless Drive sync is explicitly enabled.
 
-The problem it solves is fragmentation: bookmarks live in the browser, tasks live in a separate app, notes live somewhere else. llmaotab consolidates them onto the surface you already open dozens of times a day, so the context switch disappears.
+The problem it solves is fragmentation: bookmarks live in the browser, tasks live in a separate app, notes live somewhere else. Nestpane consolidates them onto the surface you already open dozens of times a day, so the context switch disappears.
 
 It is single-user and offline-first. All state lives in `chrome.storage.local`. Google Drive sync is optional and scoped to `drive.appdata` alone — backups are written to a per-extension folder that is hidden from the Drive UI and unreadable by any other application.
 
@@ -72,7 +72,7 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 ## Project Structure
 
 ```
-llmaotab/
+nestpane/
 ├── manifest.json     Manifest V3 — name, version, permissions, host permissions, icons
 ├── newtab.html       New tab page — full dashboard markup (~1800 lines)
 ├── app.js            All application logic, including the OAuth client ID (~10800 lines)
@@ -108,19 +108,19 @@ No build step is required for local development. Edit source files and reload th
 
 ```bash
 git clone <your-repo-url>
-cd llmaotab
+cd nestpane
 ```
 
 **2. Load as an unpacked extension**
 
 1. Open Chrome → `chrome://extensions`
 2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked** → select the project root folder (`llmaotab/`)
+3. Click **Load unpacked** → select the project root folder (`nestpane/`)
 4. Open a new tab — the dashboard loads immediately
 
 **3. Make changes**
 
-Edit `app.js`, `style.css`, `newtab.html`, or `popup.js` directly. After saving, go to `chrome://extensions` and click the reload icon (↻) under llmaotab, then open a new tab.
+Edit `app.js`, `style.css`, `newtab.html`, or `popup.js` directly. After saving, go to `chrome://extensions` and click the reload icon (↻) under Nestpane, then open a new tab.
 
 **4. (Optional) Regenerate PNG icons after editing `icons/favicon.svg`**
 
@@ -215,7 +215,7 @@ This script:
 npm run zip
 ```
 
-This builds and writes `llmaotab-v<version>-chrome.zip` to the project root, reading `<version>` from `package.json` so it always matches the current release. The ZIP contains the **contents** of `dist/` at its root — not the `dist/` folder itself.
+This builds and writes `nestpane-v<version>-chrome.zip` to the project root, reading `<version>` from `package.json` so it always matches the current release. The ZIP contains the **contents** of `dist/` at its root — not the `dist/` folder itself.
 
 ---
 
@@ -237,12 +237,12 @@ cd ..
 npm run zip
 ```
 
-Verify no errors are reported. This produces `llmaotab-v<version>-chrome.zip` in the project root.
+Verify no errors are reported. This produces `nestpane-v<version>-chrome.zip` in the project root.
 
 **Step 3 — Submit**
 
 1. Go to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
-2. Click **New Item** → upload `llmaotab-v<version>-chrome.zip`.
+2. Click **New Item** → upload `nestpane-v<version>-chrome.zip`.
 3. Fill in the listing:
    - **Category**: Productivity
    - **Screenshots**: 1280×800 or 640×400 px (at least one required)

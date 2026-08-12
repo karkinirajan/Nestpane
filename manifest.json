@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "llmaotab",
+  "name": "nestpane",
   "version": "1.4.0",
   "description": "Replaces the new tab with a local-first dashboard: workspaces, bookmarks, notes, tasks, focus timer, optional Drive sync.",
   "chrome_url_overrides": {
