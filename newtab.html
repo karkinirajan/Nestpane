@@ -23,6 +23,9 @@
   <div class="sb-brand">
     <img class="sb-logo-img" src="icons/favicon.png" alt="llmaotab logo" aria-hidden="true">
     <span class="sb-brand-name" aria-hidden="true">llmaotab</span>
+    <button class="sb-edit-btn" id="sbEditModeBtn" data-tip="Edit sidebar" aria-label="Edit sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
     <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar" aria-controls="sbNav">
       <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
       <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
@@ -1231,6 +1234,26 @@
     <div class="modal-footer">
       <button class="btn-secondary" data-modal="confirmModal">Cancel</button>
       <button class="btn-danger" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic single-field rename/add prompt — replaces window.prompt() so
+     these flows match the rest of the app's custom modal styling. -->
+<div class="modal-overlay" id="sbPromptModal" role="dialog" aria-modal="true" aria-labelledby="sbPromptTitle">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <h3 id="sbPromptTitle">Rename</h3>
+      <button class="modal-close" data-modal="sbPromptModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="sbPromptInput" class="modal-input" maxlength="40">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="sbPromptModal">Cancel</button>
+      <button class="btn-primary" id="sbPromptSaveBtn">Save</button>
     </div>
   </div>
 </div>
