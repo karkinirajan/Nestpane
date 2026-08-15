@@ -286,7 +286,7 @@
                 </button>
                 <button class="edit-btn" id="kanbanDashOpenBtn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
-                  Board
+                  Nestodo
                 </button>
               </div>
             </div>
@@ -347,6 +347,18 @@
               </button>
             </div>
             <div class="notes-list" id="notesList"></div>
+          </div>
+
+          <!-- Reminders widget -->
+          <div class="widget reminders-widget" id="widget-reminders">
+            <div class="widget-top-row">
+              <span class="widget-label">Reminders</span>
+              <button class="edit-btn" id="remindersOpenBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
+                Nestodo
+              </button>
+            </div>
+            <div class="reminders-list" id="remindersList"></div>
           </div>
 
           <!-- Focus Timer widget -->
@@ -638,7 +650,7 @@
           <button class="view-back-btn" data-tip="Back" aria-label="Go back">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <h1>Kanban Board</h1>
+          <h1>Nestodo</h1>
         </div>
       </div>
       <div class="kanban-board" id="kanbanBoard">
@@ -798,6 +810,10 @@
         <label class="switch"><input type="checkbox" id="widgetTodoToggle" checked><span class="slider"></span></label>
       </div>
       <div class="settings-row">
+        <div class="settings-label"><span>Reminders Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetRemindersToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
         <div class="settings-label"><span>Focus Timer Widget</span></div>
         <label class="switch"><input type="checkbox" id="widgetTimerToggle" checked><span class="slider"></span></label>
       </div>
@@ -818,7 +834,7 @@
         <input type="text" id="kbNote" class="settings-input settings-input-sm" value="Alt+N" maxlength="20" placeholder="Alt+N">
       </div>
       <div class="settings-row">
-        <div class="settings-label"><span>New Quick Task</span><small>Default: Alt+K</small></div>
+        <div class="settings-label"><span>Open Nestodo</span><small>Default: Alt+K</small></div>
         <input type="text" id="kbTask" class="settings-input settings-input-sm" value="Alt+K" maxlength="20" placeholder="Alt+K">
       </div>
       <div class="settings-row">
@@ -901,7 +917,7 @@
         </button>
         <button class="settings-action-btn danger-soft" id="clearTasksBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Clear All Tasks (current workspace)
+          Clear All Nestodo (current workspace)
         </button>
         <button class="settings-action-btn danger-soft" id="clearQuickAccessBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -934,7 +950,9 @@
         Built by <a class="credit-link" href="https://kneeraazon.com" target="_blank" rel="noopener">kneeraazon</a>
       </div>
       <div class="owner-credit" style="margin-top:4px">
-        <a class="credit-link" href="https://karkinirajan.github.io/nestpane/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+        <a class="credit-link" href="https://nestpane.netlify.app/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+        &nbsp;·&nbsp;
+        <a class="credit-link" href="https://nestpane.netlify.app/terms.html" target="_blank" rel="noopener">Terms of Service</a>
       </div>
     </div>
 
@@ -1074,26 +1092,6 @@
           <button class="btn-primary" id="saveNoteBtn">Save</button>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Task Modal -->
-<div class="modal-overlay" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="taskModalTitle">Add Task</h3>
-      <button class="modal-close" data-modal="taskModal" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <label class="sr-only" for="taskInput">Task description</label>
-      <input type="text" id="taskInput" placeholder="What do you need to do?" class="modal-input" autocomplete="off">
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" data-modal="taskModal">Cancel</button>
-      <button class="btn-primary" id="saveTaskBtn">Add Task</button>
     </div>
   </div>
 </div>
@@ -1589,8 +1587,16 @@
       <input type="text" id="kanbanCardTitleInput" class="modal-input" placeholder="e.g. Fix login bug">
       <label>Notes (optional)</label>
       <textarea id="kanbanCardDescInput" class="modal-input" rows="2" placeholder="Details…" style="resize:vertical"></textarea>
+      <div class="reminder-field-row">
+        <label class="reminder-toggle-label">
+          <input type="checkbox" id="kanbanCardRemindToggle">
+          <span>🔔 Remind me</span>
+        </label>
+        <input type="datetime-local" id="kanbanCardRemindInput" class="modal-input" style="display:none">
+      </div>
     </div>
     <div class="modal-footer">
+      <button class="btn-secondary danger-soft" id="kanbanCardDeleteBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" data-modal="kanbanCardModal">Cancel</button>
       <button class="btn-primary" id="kanbanCardSaveBtn">Add Card</button>
     </div>

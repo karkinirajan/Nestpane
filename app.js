@@ -4,10 +4,12 @@
 //  Author: kneeraazon.com
 // =============================================
 
-// OAuth 2.0 credentials — Web application type (client_secret required for token exchange)
-const GOOGLE_CLIENT_ID =
-  "1068722184119-5oo9t1q96u9r6ccb3gd02nm6jbp9ekq1.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET = "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";
+// OAuth 2.0 credentials: the client_id lives in manifest.json's "oauth2"
+// block (Google Cloud Console client type "Chrome Extension"), not here.
+// This client type is bound to the extension ID and issues no client_secret
+// at all — sign-in and token refresh both go through chrome.identity.getAuthToken()
+// below, so there's no secret to leak and no manual token-exchange/refresh
+// logic to maintain.
 
 // ===== CHROME API WRAPPER =====
 const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
@@ -16,17 +18,18 @@ const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
 // email's "Item ID" field, not derived from manifest.json's "key" (a prior
 // key in this repo computed to a DIFFERENT id and got the upload rejected:
 // "key field value in the manifest doesn't match the current item"). Keep
-// this in sync with build.js's PUBLISHED_EXTENSION_ID. chrome.identity's
-// OAuth redirect URI is always built from the LIVE chrome.runtime.id (see
-// _launchPKCEFlow), never hardcoded — this check only flags drift for
-// visibility, it never blocks login.
+// this in sync with build.js's PUBLISHED_EXTENSION_ID. The Google Cloud
+// Console OAuth client (type "Chrome Extension") is registered against this
+// exact extension ID — chrome.identity.getAuthToken() will fail for anyone
+// running under a different ID (e.g. unpacked/local dev without a matching
+// manifest "key") until that ID is also added in Cloud Console, or the
+// "key" field is corrected so local loads get this same ID.
 const EXPECTED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
   console.warn(
     `[Nestpane] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
-      "Google sign-in will fail with redirect_uri_mismatch unless https://" +
-      chrome.runtime.id +
-      ".chromiumapp.org/ is also authorized in Google Cloud Console, or manifest.json's \"key\" is corrected.",
+      "Google sign-in will fail unless this ID is registered on the Chrome Extension OAuth client " +
+      "in Google Cloud Console, or manifest.json's \"key\" is corrected to produce the expected ID.",
   );
 }
 
@@ -71,14 +74,21 @@ const API = {
       }
     }),
   setLocal: (data) =>
-    new Promise((res) => {
+    new Promise((res, rej) => {
       if (IS_CHROME && chrome.storage) {
-        chrome.storage.local.set(data, res);
+        chrome.storage.local.set(data, () => {
+          if (chrome.runtime.lastError) rej(new Error(chrome.runtime.lastError.message));
+          else res();
+        });
       } else {
-        Object.entries(data).forEach(([k, v]) =>
-          localStorage.setItem("ftL_" + k, JSON.stringify(v)),
-        );
-        res();
+        try {
+          Object.entries(data).forEach(([k, v]) =>
+            localStorage.setItem("ftL_" + k, JSON.stringify(v)),
+          );
+          res();
+        } catch (e) {
+          rej(e);
+        }
       }
     }),
   bookmarks: () =>
@@ -388,6 +398,7 @@ const SB_ICONS = {
   reading: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
   habits: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   link: '<path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 6"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.4a5 5 0 0 0 7.07 7.07L14 18"/>',
+  nestodo: '<rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/>',
 };
 
 // Default sidebar shown on a fresh install. Kept lean on purpose — Google/
@@ -411,6 +422,7 @@ const DEFAULT_SIDEBAR = [
     icon: "user",
     items: [
       { id: "notes", label: "Notes", icon: "notes", kind: "view", view: "notes" },
+      { id: "nestodo", label: "Nestodo", icon: "nestodo", kind: "view", view: "kanban" },
       { id: "journal", label: "Journal", icon: "journal", kind: "view", view: "journal" },
       { id: "reading", label: "Reading Queue", icon: "reading", kind: "view", view: "reading" },
     ],
@@ -1263,19 +1275,73 @@ const DEFAULT_WS_DATA = (id) => {
   return { quickAccess: [], notes: [], tasks: [], importedBookmarks: [] };
 };
 
-const FALLBACK_QUOTES = [
-  {
-    quote: "The best way to predict the future is to create it.",
-    author: "Peter Drucker",
-  },
-  {
-    quote: "Simplicity is the ultimate sophistication.",
-    author: "Leonardo da Vinci",
-  },
-  {
-    quote: "It always seems impossible until it's done.",
-    author: "Nelson Mandela",
-  },
+// Bundled quote list — this used to be topped up from a personal Vercel
+// deployment (motivational-spark-api.vercel.app), but that's a dangling-
+// subdomain risk: if that project is ever deleted, the *.vercel.app name
+// becomes claimable by anyone, who could then serve arbitrary text into
+// every installed user's new-tab page. The feature doesn't need to be
+// dynamic, so it's bundled and the network call/host permission are gone.
+const HERO_QUOTES = [
+  { quote: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+  { quote: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+  { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { quote: "Well done is better than well said.", author: "Benjamin Franklin" },
+  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { quote: "Quality is not an act, it is a habit.", author: "Aristotle" },
+  { quote: "What you get by achieving your goals is not as important as what you become by achieving your goals.", author: "Zig Ziglar" },
+  { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { quote: "Do not wait to strike till the iron is hot, but make it hot by striking.", author: "William Butler Yeats" },
+  { quote: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { quote: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
+  { quote: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { quote: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
+  { quote: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
+  { quote: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+  { quote: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { quote: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { quote: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
+  { quote: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+  { quote: "Opportunities don't happen, you create them.", author: "Chris Grosser" },
+  { quote: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
+  { quote: "I find that the harder I work, the more luck I seem to have.", author: "Thomas Jefferson" },
+  { quote: "Success is walking from failure to failure with no loss of enthusiasm.", author: "Winston Churchill" },
+  { quote: "The harder the conflict, the more glorious the triumph.", author: "Thomas Paine" },
+  { quote: "Life is 10% what happens to us and 90% how we react to it.", author: "Charles R. Swindoll" },
+  { quote: "The only place where success comes before work is in the dictionary.", author: "Vidal Sassoon" },
+  { quote: "Try not to become a person of success, but rather try to become a person of value.", author: "Albert Einstein" },
+  { quote: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
+  { quote: "It is never too late to be what you might have been.", author: "George Eliot" },
+  { quote: "Setting goals is the first step in turning the invisible into the visible.", author: "Tony Robbins" },
+  { quote: "Winners never quit, and quitters never win.", author: "Vince Lombardi" },
+  { quote: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Rohn" },
+  { quote: "The mind is everything. What you think you become.", author: "Buddha" },
+  { quote: "The best revenge is massive success.", author: "Frank Sinatra" },
+  { quote: "I am not a product of my circumstances. I am a product of my decisions.", author: "Stephen Covey" },
+  { quote: "Either you run the day, or the day runs you.", author: "Jim Rohn" },
+  { quote: "The two most important days in your life are the day you are born and the day you find out why.", author: "Mark Twain" },
+  { quote: "Whatever the mind can conceive and believe, it can achieve.", author: "Napoleon Hill" },
+  { quote: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein" },
+  { quote: "Two roads diverged in a wood, and I—I took the one less traveled by, and that has made all the difference.", author: "Robert Frost" },
+  { quote: "I attribute my success to this: I never gave or took any excuse.", author: "Florence Nightingale" },
+  { quote: "You can't use up creativity. The more you use, the more you have.", author: "Maya Angelou" },
+  { quote: "Dream big and dare to fail.", author: "Norman Vaughan" },
+  { quote: "Our lives begin to end the day we become silent about things that matter.", author: "Martin Luther King Jr." },
+  { quote: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
+  { quote: "If you want to lift yourself up, lift up someone else.", author: "Booker T. Washington" },
+  { quote: "Act as if what you do makes a difference. It does.", author: "William James" },
+  { quote: "Success is not how high you have climbed, but how you make a positive difference to the world.", author: "Roy T. Bennett" },
+  { quote: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson" },
+  { quote: "Go confidently in the direction of your dreams. Live the life you have imagined.", author: "Henry David Thoreau" },
+  { quote: "When I let go of what I am, I become what I might be.", author: "Lao Tzu" },
+  { quote: "Happiness is not something ready-made. It comes from your own actions.", author: "Dalai Lama" },
+  { quote: "If you look at what you have in life, you'll always have more.", author: "Oprah Winfrey" },
+  { quote: "Change your thoughts and you change your world.", author: "Norman Vincent Peale" },
+  { quote: "Nothing is impossible. The word itself says 'I'm possible!'", author: "Audrey Hepburn" },
+  { quote: "There is only one way to avoid criticism: do nothing, say nothing, and be nothing.", author: "Aristotle" },
+  { quote: "You must be the change you wish to see in the world.", author: "Mahatma Gandhi" },
 ];
 
 // ===== STATE =====
@@ -1301,6 +1367,7 @@ let S = {
       timer: true,
       calendar: true,
       todo: true,
+      reminders: true,
     },
     sidebarCollapsed: false,
     sidebar: null, // populated by migrateSidebarToDataModel() on first load after this update, or DEFAULT_SIDEBAR on a fresh install
@@ -1417,6 +1484,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadState();
   migrateAddSocials();
   migrateSidebarToDataModel();
+  migrateAddNestodoSidebarItem();
   renderSidebar();
   migrateSyncSbLinksToQA();
   migrateAddWorkspaceContent();
@@ -1433,6 +1501,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadBookmarks();
   loadHistory("");
   _scheduleHabitNotifications();
+  _checkDueReminders();
+  setInterval(_checkDueReminders, 60000);
   loadDownloads();
   checkGoogleIdentity();
   _registerLiveStorageSync();
@@ -1458,7 +1528,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (_kbMatch(e, searchKey)) { e.preventDefault(); openCmdPalette(); return; }
       if (timerKey && _kbMatch(e, timerKey)) { e.preventDefault(); navigateTo("timer"); return; }
       if (noteKey && _kbMatch(e, noteKey)) { e.preventDefault(); navigateTo("notes"); return; }
-      if (taskKey && _kbMatch(e, taskKey)) { e.preventDefault(); navigateTo("tasks"); return; }
+      if (taskKey && _kbMatch(e, taskKey)) { e.preventDefault(); navigateTo("kanban"); return; }
     }
     if (e.key === "Escape") {
       if (el("cmdPaletteOverlay").classList.contains("open")) {
@@ -1590,6 +1660,7 @@ async function loadState() {
   S.tabSessions = Array.isArray(d.tabSessions) ? d.tabSessions : [];
   S.journal = d.journal && typeof d.journal === "object" ? d.journal : {};
   S.kanban = d.kanban && typeof d.kanban === "object" ? d.kanban : {};
+  if (_migrateLegacyTasksIntoKanban()) save();
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
   S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
@@ -1645,7 +1716,27 @@ function save() {
   });
   // Debounce cloud push — near-instant (2 s after last change)
   if (S.googleUser) scheduleDriveSync();
-  return p;
+  // Never let a storage failure become an uncaught rejection at 100+ call
+  // sites that don't (and shouldn't have to) handle it individually — but
+  // never let it stay silent either.
+  return p.catch((err) => _warnSaveFailed(err));
+}
+
+// A failed local-storage write (most commonly QUOTA_BYTES exceeded, since
+// this extension doesn't request "unlimitedStorage") must never be silent —
+// the UI shows "Saved!" everywhere save() is called, so this is the one
+// place that can catch it. Throttled so a burst of failing saves doesn't
+// spam the toast.
+let _lastSaveFailedToastAt = 0;
+function _warnSaveFailed(err) {
+  const now = Date.now();
+  if (now - _lastSaveFailedToastAt < 10000) return;
+  _lastSaveFailedToastAt = now;
+  console.error("save() failed:", err);
+  showToast(
+    "Couldn't save — local storage may be full. Recent changes may be lost.",
+    "error",
+  );
 }
 
 // ===== HELPERS =====
@@ -1776,9 +1867,6 @@ function wsData() {
 function wsNotes() {
   return wsData().notes;
 }
-function wsTasks() {
-  return wsData().tasks;
-}
 function wsQA() {
   return wsData().quickAccess;
 }
@@ -1875,7 +1963,7 @@ async function fetchWeather(locationOverride) {
     ? `https://wttr.in/${encodeURIComponent(loc)}?format=j1`
     : "https://wttr.in/?format=j1";
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { signal: AbortSignal.timeout(7000) });
     if (!r.ok) throw new Error("bad response");
     const d = await r.json();
     const c = d.current_condition[0];
@@ -1898,7 +1986,7 @@ async function fetchWeather(locationOverride) {
         .slice(0, 3)
         .map((w) => {
           const date = new Date(w.date + "T00:00:00");
-          const isToday = w.date === new Date().toISOString().slice(0, 10);
+          const isToday = w.date === _dateKey(new Date());
           const label = isToday ? "Today" : days[date.getDay()];
           const code = parseInt(
             w.hourly?.[4]?.weatherCode || w.hourly?.[0]?.weatherCode || "113",
@@ -1922,6 +2010,7 @@ async function fetchWeather(locationOverride) {
 }
 
 // Detect city from IP — uses ipwho.is (free, no Cloudflare block)
+// Returns true if a city was resolved and weather fetched successfully.
 async function detectByIP() {
   try {
     const r = await fetch("https://ipwho.is/", {
@@ -1935,12 +2024,13 @@ async function detectByIP() {
       if (ok) {
         S.weatherLocation = cityName;
         save();
-        return;
+        return true;
       }
     }
   } catch {}
   // Fallback: let wttr.in detect from the extension's outgoing IP
-  fetchWeather(undefined);
+  await fetchWeather(undefined);
+  return false;
 }
 
 // Reverse-geocode GPS coords to city via Nominatim (OpenStreetMap) — no key needed
@@ -1968,7 +2058,14 @@ async function reversGeocode(lat, lon) {
   }
 }
 
-// GPS → Nominatim → ipwho.is → wttr.in bare IP
+// ipwho.is → (GPS → Nominatim fallback) → wttr.in bare IP
+//
+// IP-based detection is tried FIRST, not GPS+Nominatim. Two reasons: it
+// needs no geolocation permission prompt on a fresh install, and it cuts
+// Nominatim call volume across the whole install base, since GPS+reverse-
+// geocoding now only runs for the minority of users whose IP-based city
+// lookup failed — Nominatim is a shared, volunteer-funded instance with a
+// ~1req/s unattributed-use policy.
 async function autoDetectWeather() {
   if (S.weatherLocation) {
     fetchWeather(S.weatherLocation);
@@ -1978,9 +2075,18 @@ async function autoDetectWeather() {
   el("weatherTemp").textContent = "--°C";
   el("weatherDesc").textContent = "";
 
-  if (!navigator.geolocation) {
-    detectByIP();
-    return;
+  const gotCity = await detectByIP();
+  if (gotCity || !navigator.geolocation) return;
+  // This runs automatically at boot, not from a click — can't call
+  // chrome.permissions.request() here (Chrome silently denies prompts
+  // outside a user gesture). Only proceed if geolocation was already
+  // granted (e.g. via the manual "Detect" button); otherwise IP-based
+  // detection above is already the result.
+  if (IS_CHROME && chrome.permissions) {
+    const has = await chrome.permissions
+      .contains({ permissions: ["geolocation"] })
+      .catch(() => false);
+    if (!has) return;
   }
 
   navigator.geolocation.getCurrentPosition(
@@ -1992,12 +2098,10 @@ async function autoDetectWeather() {
         if (ok) {
           S.weatherLocation = city;
           save();
-          return;
         }
       }
-      detectByIP();
     },
-    () => detectByIP(),
+    () => {},
     { timeout: 7000, maximumAge: 600000 },
   );
 }
@@ -2042,10 +2146,18 @@ async function detectWeatherLocation() {
     status.textContent = "⚠ Geolocation not supported by this browser.";
     return;
   }
+  const granted = await _ensurePermission(["geolocation"]);
+  if (!granted) {
+    status.textContent = "⚠ Location permission denied.";
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       const { latitude: lat, longitude: lon } = pos.coords;
-      const locStr = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+      // 1 decimal place (~11km) is city-block precision, not the ~11m that
+      // 4 decimals gives — this gets stored indefinitely and synced to
+      // Drive, so it shouldn't be more precise than the feature needs.
+      const locStr = `${lat.toFixed(1)},${lon.toFixed(1)}`;
       status.textContent = "🌐 Fetching weather...";
       const ok = await fetchWeather(locStr);
       if (ok) {
@@ -2079,12 +2191,9 @@ function weatherEmoji(c) {
 }
 
 // ===== GOOGLE AUTH + DRIVE CLOUD SYNC ====================================
+// OAuth scopes are declared in manifest.json's "oauth2.scopes" — that's the
+// only place chrome.identity.getAuthToken() reads them from.
 
-const OAUTH_SCOPES = [
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/userinfo.profile",
-  "https://www.googleapis.com/auth/drive.appdata",
-];
 const DRIVE_FILE_NAME = "nestpane-sync.json";
 // Pre-rename filenames. Backups written by the "novatab"- or "llmaotab"-era
 // build still carry these; the read-side query below checks all three names,
@@ -2093,9 +2202,6 @@ const DRIVE_FILE_NAME = "nestpane-sync.json";
 const DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json";
 const DRIVE_FILE_NAME_LEGACY_2 = "novatab-sync.json";
 const DRIVE_SPACES = "appDataFolder";
-const _TK_ACCESS_KEY = "_ntAccess"; // { token, expiry }
-const _TK_REFRESH_KEY = "_ntRefresh"; // refresh token string
-
 // Drive namespace
 const Drive = {
   _fileId: null,
@@ -2104,179 +2210,49 @@ const Drive = {
   _status: "idle",
 };
 
-// ── PKCE helpers ────────────────────────────────────────────────────────
-function _randomBase64Url(bytes = 48) {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return btoa(String.fromCharCode(...arr))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
-async function _sha256Base64Url(str) {
-  const buf = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(str),
-  );
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
-
-// ── Token storage (chrome.storage.local — survives tab reloads) ─────────
-async function _getAccess() {
-  try {
-    const d = await API.getLocal([_TK_ACCESS_KEY]);
-    const c = d[_TK_ACCESS_KEY];
-    if (c?.token && c.expiry > Date.now() + 60000) return c.token;
-  } catch {}
-  return null;
-}
-async function _saveAccess(token, expiresInSecs = 3500) {
-  await API.setLocal({
-    [_TK_ACCESS_KEY]: { token, expiry: Date.now() + expiresInSecs * 1000 },
-  });
-}
-async function _getRefresh() {
-  try {
-    const d = await API.getLocal([_TK_REFRESH_KEY]);
-    return d[_TK_REFRESH_KEY] || null;
-  } catch {
-    return null;
-  }
-}
-async function _saveRefresh(token) {
-  await API.setLocal({ [_TK_REFRESH_KEY]: token });
-}
-async function _clearTokens() {
-  await API.setLocal({ [_TK_ACCESS_KEY]: null, [_TK_REFRESH_KEY]: null });
-}
-
-// ── Refresh access token using stored refresh token ─────────────────────
-async function _refreshAccessToken() {
-  const refresh = await _getRefresh();
-  if (!refresh) return null;
-  try {
-    const refreshParams = {
-      client_id: GOOGLE_CLIENT_ID,
-      refresh_token: refresh,
-      grant_type: "refresh_token",
-    };
-    if (GOOGLE_CLIENT_SECRET)
-      refreshParams.client_secret = GOOGLE_CLIENT_SECRET;
-
-    const r = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(refreshParams),
-    });
-    if (!r.ok) {
-      // Only clear tokens for definitive auth failures (400/401 = token revoked/expired).
-      // Network errors and 5xx are transient — don't wipe the refresh token for those.
-      if (r.status === 400 || r.status === 401) await _clearTokens();
-      return null;
+// ── Google auth via chrome.identity.getAuthToken() ───────────────────────
+// Uses the "oauth2" client_id declared in manifest.json (Google Cloud
+// Console client type "Chrome Extension" — no client_secret exists for this
+// type). Chrome owns the token cache and refresh entirely: non-interactive
+// calls return a cached/silently-refreshed token or null; interactive calls
+// show Chrome's native account picker/consent UI. This replaces the old
+// manual PKCE + token-exchange + refresh + cross-tab-lock machinery, which
+// existed only to work around not using this API.
+function getAuthToken(interactive = false) {
+  return new Promise((resolve) => {
+    if (!IS_CHROME || !chrome.identity) {
+      resolve(null);
+      return;
     }
-    const d = await r.json();
-    if (d.access_token) {
-      await _saveAccess(d.access_token, d.expires_in || 3500);
-      return d.access_token;
-    }
-  } catch {}
-  return null;
-}
-
-// ── PKCE auth code flow via launchWebAuthFlow ───────────────────────────
-// Works with ANY OAuth client type — no extension ID registration needed.
-// Only requires:  https://<extensionId>.chromiumapp.org/  as a redirect URI
-// in Google Console → Credentials → your OAuth client → Authorized redirect URIs
-async function _launchPKCEFlow() {
-  if (!IS_CHROME || !chrome.identity) return null;
-
-  const verifier = _randomBase64Url(48);
-  const challenge = await _sha256Base64Url(verifier);
-  const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
-
-  const authUrl =
-    "https://accounts.google.com/o/oauth2/v2/auth?" +
-    new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      response_type: "code",
-      redirect_uri: redirectUri,
-      scope: OAUTH_SCOPES.join(" "),
-      code_challenge: challenge,
-      code_challenge_method: "S256",
-      access_type: "offline", // gets refresh_token
-      prompt: "consent", // always show consent so refresh_token is returned
-    });
-
-  // Step 1: get auth code
-  const redirectUrl = await new Promise((resolve) => {
-    chrome.identity.launchWebAuthFlow(
-      { url: authUrl, interactive: true },
-      (url) => {
-        if (chrome.runtime.lastError) {
+    chrome.identity.getAuthToken({ interactive }, (result) => {
+      if (chrome.runtime.lastError || !result) {
+        if (chrome.runtime.lastError && interactive) {
           console.warn(
-            "[Nestpane] Auth flow closed or cancelled.",
+            "[Nestpane] Google sign-in failed or was cancelled.",
             chrome.runtime.lastError.message,
           );
         }
-        resolve(url || null);
-      },
-    );
-  });
-  if (!redirectUrl) return null;
-
-  const code = new URL(redirectUrl).searchParams.get("code");
-  if (!code) return null;
-
-  // Step 2: exchange code for tokens
-  try {
-    const exchangeParams = {
-      client_id: GOOGLE_CLIENT_ID,
-      code,
-      code_verifier: verifier,
-      grant_type: "authorization_code",
-      redirect_uri: redirectUri,
-    };
-    if (GOOGLE_CLIENT_SECRET)
-      exchangeParams.client_secret = GOOGLE_CLIENT_SECRET;
-
-    const r = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(exchangeParams),
+        resolve(null);
+        return;
+      }
+      // MV3 chrome.identity.getAuthToken resolves { token, grantedScopes };
+      // some older typings/environments hand back a bare string — accept both.
+      resolve(typeof result === "string" ? result : result.token || null);
     });
-    if (!r.ok) {
-      const errBody = await r.text().catch(() => "(unreadable)");
-      console.warn("[Nestpane] Token exchange failed:", r.status, errBody);
-      return null;
-    }
-    const d = await r.json();
-    if (d.access_token) {
-      await _saveAccess(d.access_token, d.expires_in || 3500);
-      if (d.refresh_token) await _saveRefresh(d.refresh_token);
-      return d.access_token;
-    }
-  } catch {
-    console.warn("[Nestpane] Auth request failed — network error.");
-  }
-  return null;
+  });
 }
 
-// ── Main getAuthToken: cache → refresh → interactive PKCE ───────────────
-async function getAuthToken(interactive = false) {
-  // 1. Valid cached access token
-  const cached = await _getAccess();
-  if (cached) return cached;
-
-  // 2. Refresh token available → get new access token silently
-  const refreshed = await _refreshAccessToken();
-  if (refreshed) return refreshed;
-
-  // 3. No tokens at all — interactive sign-in only
-  if (!interactive) return null;
-  return await _launchPKCEFlow();
+// Evicts a specific token from Chrome's cache (e.g. after the API rejects it
+// as expired/revoked) so the next getAuthToken() call fetches a fresh one
+// instead of handing back the same bad token again.
+function _forgetToken(token) {
+  return new Promise((resolve) => {
+    if (!IS_CHROME || !chrome.identity || !token) {
+      resolve();
+      return;
+    }
+    chrome.identity.removeCachedAuthToken({ token }, () => resolve());
+  });
 }
 
 // ── Fetch Google user profile ───────────────────────────────────────────
@@ -2466,7 +2442,17 @@ function _e2eB64ToBytes(b64) {
   return bytes;
 }
 
-async function _e2eDeriveKey(passphrase, saltBytes) {
+// OWASP-current PBKDF2-SHA256 iteration count for new backups. Old backups
+// carry their own `iterations` in the envelope (see _e2eDecryptPayload) so
+// they keep decrypting correctly after this constant is raised.
+const E2E_PBKDF2_ITERATIONS = 600000;
+const E2E_MIN_PASSPHRASE_LEN = 12;
+
+function _e2ePassphraseIsWeak(pass) {
+  return !pass || pass.length < E2E_MIN_PASSPHRASE_LEN;
+}
+
+async function _e2eDeriveKey(passphrase, saltBytes, iterations = E2E_PBKDF2_ITERATIONS) {
   const baseKey = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(passphrase),
@@ -2475,7 +2461,7 @@ async function _e2eDeriveKey(passphrase, saltBytes) {
     ["deriveKey"],
   );
   return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt: saltBytes, iterations: 100000, hash: "SHA-256" },
+    { name: "PBKDF2", salt: saltBytes, iterations, hash: "SHA-256" },
     baseKey,
     { name: "AES-GCM", length: 256 },
     false,
@@ -2489,7 +2475,7 @@ async function _e2eDeriveKey(passphrase, saltBytes) {
 async function _e2eEncryptPayload(payload, passphrase) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await _e2eDeriveKey(passphrase, salt);
+  const key = await _e2eDeriveKey(passphrase, salt, E2E_PBKDF2_ITERATIONS);
   const data = new TextEncoder().encode(JSON.stringify(payload));
   const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
   return {
@@ -2498,6 +2484,7 @@ async function _e2eEncryptPayload(payload, passphrase) {
     _savedAt: payload._savedAt,
     salt: _e2eBytesToB64(salt),
     iv: _e2eBytesToB64(iv),
+    iterations: E2E_PBKDF2_ITERATIONS,
     data: _e2eBytesToB64(new Uint8Array(cipher)),
   };
 }
@@ -2506,7 +2493,10 @@ async function _e2eDecryptPayload(envelope, passphrase) {
   const salt = _e2eB64ToBytes(envelope.salt);
   const iv = _e2eB64ToBytes(envelope.iv);
   const data = _e2eB64ToBytes(envelope.data);
-  const key = await _e2eDeriveKey(passphrase, salt);
+  // Envelopes written before this field existed were derived at 100,000
+  // iterations — fall back to that exact value so old backups still decrypt.
+  const iterations = envelope.iterations || 100000;
+  const key = await _e2eDeriveKey(passphrase, salt, iterations);
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
   return JSON.parse(new TextDecoder().decode(plain));
 }
@@ -2757,6 +2747,20 @@ function applyCloudData(cloud) {
 // Remove duplicate entries by normalized URL, keeping the first occurrence.
 // Self-heals any duplicates already sitting in local/cloud storage from
 // earlier id-based merges or renumbered defaults.
+// Drops/normalizes any imported link whose URL isn't a safe http(s) URL —
+// import must go through the same scheme validation as manually adding a
+// link, not just rely on render-time escaping.
+function _sanitizeImportedLinks(arr) {
+  if (!Array.isArray(arr)) return arr;
+  return arr
+    .map((item) => {
+      if (!item || typeof item !== "object" || !item.url) return item;
+      const clean = safeUrl(item.url);
+      return clean ? { ...item, url: clean } : null;
+    })
+    .filter(Boolean);
+}
+
 function _dedupeByUrl(arr) {
   if (!Array.isArray(arr)) return arr;
   const seen = new Set();
@@ -2838,6 +2842,17 @@ function _registerLiveStorageSync() {
   });
 }
 
+// KNOWN LIMITATION: this wholesale-replaces each top-level collection
+// rather than merging by item id. An
+// id-based union merge was considered and deliberately NOT implemented —
+// every delete in this app (habits, reading queue, sessions, events, etc.)
+// is a hard delete with no tombstone, so a naive union would "resurrect"
+// items a concurrent tab just deleted, which is a worse and more confusing
+// failure mode than the rare edit-loss race this would fix. A correct fix
+// needs either per-collection tombstones (like _qaDeleted already does for
+// quick-access) or a real 3-way/CRDT merge — both larger changes than a
+// safe drop-in here. This function still meaningfully narrows the window
+// versus no cross-tab sync at all.
 function _applyLiveStorageChange(changes) {
   if (changes.user) S.user = changes.user.newValue || S.user;
   if (changes.googleUser) S.googleUser = changes.googleUser.newValue || null;
@@ -2949,9 +2964,16 @@ async function _doPush(token) {
   let body;
   if (S.settings.e2e?.enabled) {
     const pass = await _e2eLoadPassphrase();
-    body = pass
-      ? JSON.stringify(await _e2eEncryptPayload(payload, pass))
-      : JSON.stringify(payload);
+    if (!pass) {
+      // Never silently upload plaintext when the user believes E2E is on.
+      setSyncStatus("error");
+      showToast(
+        "Sync paused: E2E encryption is enabled but no passphrase is set. Add one in Settings.",
+        "error",
+      );
+      return;
+    }
+    body = JSON.stringify(await _e2eEncryptPayload(payload, pass));
   } else {
     body = JSON.stringify(payload);
   }
@@ -3007,7 +3029,7 @@ async function _doPush(token) {
     } else {
       const err = await r.json().catch(() => ({}));
       if (r.status === 401) {
-        await _clearTokens();
+        await _forgetToken(token);
         setSyncStatus("needs-auth", S.googleUser?.email || "");
       } else if (r.status === 403 && fileId) {
         // PATCH failed — this file is from a previous OAuth client.
@@ -3084,7 +3106,11 @@ function _showManualSyncBtns(show) {
 
 // ── Main identity check: called on every new tab open ───────────────────
 async function checkGoogleIdentity() {
-  // Lead with stored tokens — works in Brave/Arc/Edge where getProfileUserInfo returns empty.
+  // chrome.identity.getAuthToken() (and Google sign-in generally) only
+  // works in actual Google Chrome — it depends on Chrome's own Google API
+  // keys and profile/sign-in system, which forks like Brave/Edge/Vivaldi
+  // don't support. On those browsers this silently resolves null and the
+  // UI falls through to the normal signed-out state below.
   const token = await getAuthToken(false);
 
   if (!token) {
@@ -3190,9 +3216,31 @@ async function syncWithDriveOnConnect(token) {
 }
 
 // ── Sign in: interactive token request ──────────────────────────────────
+// Requests one or more optional permissions. Must be called from a user
+// gesture (click handler) — Chrome silently denies chrome.permissions.request()
+// calls made outside one. Resolves true if already granted or just granted.
+async function _ensurePermission(names) {
+  if (!IS_CHROME || !chrome.permissions) return true;
+  try {
+    const has = await chrome.permissions.contains({ permissions: names });
+    if (has) return true;
+    return await chrome.permissions.request({ permissions: names });
+  } catch {
+    return false;
+  }
+}
+
 async function signIn() {
-  if (!IS_CHROME || !chrome.identity) {
+  if (!IS_CHROME) {
     openModal("profileModal");
+    return;
+  }
+  // chrome.identity is undefined until the (now-optional) "identity"
+  // permission is granted — request it BEFORE checking for the namespace,
+  // not after, or a fresh install could never pass this check at all.
+  const granted = await _ensurePermission(["identity", "identity.email"]);
+  if (!granted || !chrome.identity) {
+    showToast("Google sign-in needs the identity permission to continue", "error");
     return;
   }
   setSyncStatus("syncing");
@@ -3221,22 +3269,24 @@ async function signIn() {
 }
 
 // ── Sign out: revoke token, clear state ──────────────────────────────────
-async function signOut() {
-  // Get token before clearing cache so we can revoke it
+// Revokes the Google grant server-side and evicts it from Chrome's cache.
+// Shared by signOut() and "Clear All Data" so neither one can leave a live
+// OAuth grant behind while claiming to have signed the user out / wiped
+// everything.
+async function _revokeGoogleAccess() {
   const token = await getAuthToken(false);
-
-  // Clear our storage cache first
-  await _clearTokens();
-
   if (IS_CHROME && chrome.identity && token) {
     // Revoke on Google's servers
-    await fetch(`https://oauth2.googleapis.com/revoke?token=${token}`).catch(
-      () => {},
-    );
+    await fetch(`https://oauth2.googleapis.com/revoke?token=${token}`, {
+      method: "POST",
+    }).catch(() => {});
     // Remove from Chrome's token cache
-    chrome.identity.removeCachedAuthToken({ token }, () => {});
+    await _forgetToken(token);
   }
+}
 
+async function signOut() {
+  await _revokeGoogleAccess();
   S.googleUser = null;
   S.user.googlePicture = null;
   S.user.googleName = null;
@@ -3304,7 +3354,6 @@ function renderAll() {
   renderQuickAccess();
   renderWorkspaceBookmarks();
   renderNotesWidget();
-  renderTasksWidget();
   renderKanbanDash();
   renderNotesView();
   renderTrash();
@@ -3328,7 +3377,6 @@ function setActiveWorkspace(wsId) {
     renderQuickAccess();
     renderWorkspaceBookmarks();
     renderNotesWidget();
-    renderTasksWidget();
     renderKanbanDash();
     renderNotesView();
   };
@@ -3398,7 +3446,7 @@ function _sbItemInner(item, groupId) {
   return `
     <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
       <div class="sb-item sb-link-item" data-sb-item-id="${escH(item.id)}" data-tip="${escH(item.label)}">
-        <a href="${escH(item.url)}" class="sb-link-main" target="_blank" rel="noopener">
+        <a href="${escH(safeUrl(item.url) || "#")}" class="sb-link-main" target="_blank" rel="noopener">
           <img class="sb-fav" src="${favSrc(item.url)}" alt="">
           <span class="sb-item-label">${escH(item.label)}</span>
         </a>
@@ -3799,11 +3847,17 @@ function renderManageWorkspacesList() {
             (data.notes || []).forEach((n) =>
               S.trash.push({ ...n, _type: "note", _deletedAt: Date.now() }),
             );
-            (data.tasks || []).forEach((t) =>
-              S.trash.push({ ...t, _type: "task", _deletedAt: Date.now() }),
+          }
+          const kb = S.kanban[wsId];
+          if (kb) {
+            ["todo", "doing", "done"].forEach((col) =>
+              (kb[col] || []).forEach((card) =>
+                S.trash.push({ id: card.id, text: card.title, done: col === "done", _type: "task", _deletedAt: Date.now() }),
+              ),
             );
           }
           delete S.wsData[wsId];
+          delete S.kanban[wsId];
           S.workspaces = S.workspaces.filter((w) => w.id !== wsId);
           if (S.activeWsId === wsId) S.activeWsId = S.workspaces[0].id;
           save();
@@ -3882,11 +3936,17 @@ function deleteWorkspace(e, wsId) {
         (data.notes || []).forEach((n) =>
           S.trash.push({ ...n, _type: "note", _deletedAt: Date.now() }),
         );
-        (data.tasks || []).forEach((t) =>
-          S.trash.push({ ...t, _type: "task", _deletedAt: Date.now() }),
+      }
+      const kb = S.kanban[wsId];
+      if (kb) {
+        ["todo", "doing", "done"].forEach((col) =>
+          (kb[col] || []).forEach((card) =>
+            S.trash.push({ id: card.id, text: card.title, done: col === "done", _type: "task", _deletedAt: Date.now() }),
+          ),
         );
       }
       delete S.wsData[wsId];
+      delete S.kanban[wsId];
       S.workspaces = S.workspaces.filter((w) => w.id !== wsId);
       if (S.activeWsId === wsId) S.activeWsId = S.workspaces[0].id;
       save();
@@ -3910,7 +3970,7 @@ function exportWorkspace() {
     data: {
       quickAccess: data.quickAccess || [],
       notes: data.notes || [],
-      tasks: data.tasks || [],
+      kanban: S.kanban[ws.id] || { todo: [], doing: [], done: [] },
       importedBookmarks: data.importedBookmarks || [],
       folders: data.folders || [],
     },
@@ -3925,7 +3985,13 @@ function exportWorkspace() {
   showToast(`Exported "${ws.name}"`, "success");
 }
 
+const IMPORT_FILE_MAX_BYTES = 10 * 1024 * 1024; // 10MB — matches the chrome.storage.local quota
+
 function importWorkspaceFile(file) {
+  if (file.size > IMPORT_FILE_MAX_BYTES) {
+    showToast("File too large to import (max 10MB)", "error");
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -3945,15 +4011,21 @@ function importWorkspaceFile(file) {
       S.workspaces.push(ws);
       S.wsData[ws.id] = {
         quickAccess: _dedupeByUrl(
-          Array.isArray(d.data.quickAccess) ? d.data.quickAccess : [],
+          _sanitizeImportedLinks(Array.isArray(d.data.quickAccess) ? d.data.quickAccess : []),
         ),
         notes: Array.isArray(d.data.notes) ? d.data.notes : [],
-        tasks: Array.isArray(d.data.tasks) ? d.data.tasks : [],
+        tasks: Array.isArray(d.data.tasks) ? d.data.tasks : [], // legacy exports only — folded into kanban below
         importedBookmarks: _dedupeByUrl(
-          Array.isArray(d.data.importedBookmarks) ? d.data.importedBookmarks : [],
+          _sanitizeImportedLinks(Array.isArray(d.data.importedBookmarks) ? d.data.importedBookmarks : []),
         ),
         folders: Array.isArray(d.data.folders) ? d.data.folders : [],
       };
+      S.kanban[ws.id] = {
+        todo: Array.isArray(d.data.kanban?.todo) ? d.data.kanban.todo : [],
+        doing: Array.isArray(d.data.kanban?.doing) ? d.data.kanban.doing : [],
+        done: Array.isArray(d.data.kanban?.done) ? d.data.kanban.done : [],
+      };
+      _migrateLegacyTasksIntoKanban(); // folds d.data.tasks (older export format) into the board above
       save();
       setActiveWorkspace(ws.id);
       renderAll();
@@ -4111,7 +4183,7 @@ function openFolderModal(folderId) {
       .map(
         (item) => `
     <div class="folder-modal-row">
-      <a href="${escH(item.url)}" class="folder-modal-item" target="_blank" style="flex:1">
+      <a href="${escH(safeUrl(item.url) || "#")}" class="folder-modal-item" target="_blank" rel="noopener" style="flex:1">
         <img src="${favSrc(item.url)}" alt="">
         <div class="folder-modal-item-info">
           <span class="folder-modal-item-title">${escH(item.title || item.url)}</span>
@@ -4239,7 +4311,7 @@ function renderAllBookmarks(folders) {
           ${f.items
             .map(
               (it) => `
-            <a href="${escH(it.url)}" class="bm-item" target="_self">
+            <a href="${escH(safeUrl(it.url) || "#")}" class="bm-item" target="_self">
               <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(it.title || it.url)}</span>
               <span class="bm-item-url">${escH(getDomain(it.url))}</span>
@@ -5090,7 +5162,7 @@ function openWsBmFolderModal(folderName, items) {
       .map((bm) => {
         const letter = (bm.title || getDomain(bm.url) || "?")[0].toUpperCase();
         return `
-      <a class="bm-card" href="${escH(bm.url)}" target="_self" data-bmid="${escH(bm.id)}" draggable="true">
+      <a class="bm-card" href="${escH(safeUrl(bm.url) || "#")}" target="_self" data-bmid="${escH(bm.id)}" draggable="true">
         <button class="bm-card-menu" data-bmid="${escH(bm.id)}" data-tip="Options">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
         </button>
@@ -5469,7 +5541,7 @@ async function loadHistory(q) {
               (it.title || getDomain(it.url) || "?")[0].toUpperCase(),
             );
             return `<div class="history-item-wrap">
-            <a href="${escH(it.url)}" class="history-item" target="_blank">
+            <a href="${escH(safeUrl(it.url) || "#")}" class="history-item" target="_blank" rel="noopener">
               <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="history-item-title">${escH(it.title || getDomain(it.url) || it.url)}</span>
               <span class="history-item-url">${escH(getDomain(it.url))}</span>
@@ -5615,7 +5687,7 @@ function renderQuickAccess() {
     items
       .map((item) => {
         const domain = getDomain(item.url);
-        return `<a href="${escH(item.url)}" class="qa-card" data-qaid="${item.id}" draggable="true">
+        return `<a href="${escH(safeUrl(item.url) || "#")}" class="qa-card" data-qaid="${item.id}" draggable="true">
       <button class="qa-menu-btn" data-qaid="${item.id}" title="Options">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
       </button>
@@ -5833,7 +5905,10 @@ function _mdRender(text) {
   // Strikethrough
   html = html.replace(/~~(.+?)~~/g, (_, t) => `<del>${t}</del>`);
   // Links [text](url)
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => `<a href="${u}" target="_blank" rel="noopener" class="md-link">${t}</a>`);
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => {
+    const clean = safeUrl(u);
+    return clean ? `<a href="${clean}" target="_blank" rel="noopener" class="md-link">${t}</a>` : t;
+  });
   // Unordered lists
   html = html.replace(/^[\-\*] (.+)$/gm, (_, t) => `<li class="md-li">${t}</li>`);
   html = html.replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul class="md-ul">${m}</ul>`);
@@ -6126,29 +6201,104 @@ function deleteNoteById(id) {
 // ===== KANBAN DASHBOARD WIDGET (Todo-only with checkbox CRUD) =====
 function renderKanbanDash() {
   const container = el("kanbanDashCols");
-  if (!container) return;
-  const kb = getKanban();
-  const todos = kb.todo || [];
+  if (container) {
+    const kb = getKanban();
+    const todos = _sortByReminder(kb.todo || []);
 
-  if (!todos.length) {
-    container.innerHTML = `<div class="kd-empty">No to-dos yet — click + to add one.</div>`;
-    return;
-  }
-
-  container.innerHTML = todos.map(card => `
+    if (!todos.length) {
+      container.innerHTML = `<div class="kd-empty">No to-dos yet — click + to add one.</div>`;
+    } else {
+      container.innerHTML = todos.map(card => `
     <div class="kd-todo-item" data-kid="${card.id}">
       <div class="kd-todo-check" data-kid="${card.id}" title="Mark done"></div>
       <span class="kd-todo-text">${escH(card.title)}</span>
+      ${_reminderBadgeHtml(card)}
       <button class="kd-todo-del" data-kid="${card.id}" title="Delete">✕</button>
     </div>`).join("");
 
-  container.querySelectorAll(".kd-todo-check").forEach(btn => {
+      container.querySelectorAll(".kd-todo-text").forEach(span => {
+        span.addEventListener("click", () => {
+          const id = Number(span.closest(".kd-todo-item").dataset.kid);
+          openKanbanCardModal("todo", id);
+        });
+      });
+
+      container.querySelectorAll(".kd-todo-check").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.dataset.kid);
+          const kb2 = getKanban();
+          const idx = (kb2.todo || []).findIndex(c => c.id === id);
+          if (idx < 0) return;
+          const [card] = kb2.todo.splice(idx, 1);
+          if (!kb2.done) kb2.done = [];
+          kb2.done.unshift(card);
+          save();
+          renderKanbanDash();
+          if (el("view-kanban")?.classList.contains("active")) renderKanban();
+        });
+      });
+
+      container.querySelectorAll(".kd-todo-del").forEach(btn => {
+        btn.addEventListener("click", () => {
+          deleteKanbanCard("todo", Number(btn.dataset.kid));
+        });
+      });
+    }
+  }
+  renderRemindersWidget();
+}
+
+// ===== REMINDERS DASHBOARD WIDGET =====
+// Surfaces every Nestodo card in the current workspace that carries a
+// remindAt timestamp — this IS the "reminder", there's no separate data
+// store for it. Done-column cards are excluded (nothing left to be
+// reminded about).
+function renderRemindersWidget() {
+  const container = el("remindersList");
+  if (!container) return;
+  const kb = getKanban();
+  const upcoming = _sortByReminder(
+    [...(kb.todo || []), ...(kb.doing || [])].filter((c) => c.remindAt),
+  ).slice(0, 8);
+
+  if (!upcoming.length) {
+    container.innerHTML = `<div class="widget-empty-state">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>No reminders set</span></div>`;
+    return;
+  }
+
+  container.innerHTML = upcoming
+    .map((card) => {
+      const { text, overdue } = _formatReminderBadge(card.remindAt);
+      const col = (kb.todo || []).some((c) => c.id === card.id) ? "todo" : "doing";
+      return `
+    <div class="reminder-item${overdue ? " overdue" : ""}" data-rid="${card.id}" data-col="${col}">
+      <div class="reminder-check" data-rid="${card.id}" data-col="${col}" title="Mark done"></div>
+      <div class="reminder-item-body">
+        <span class="reminder-item-text">${escH(card.title)}</span>
+        <span class="reminder-item-time">🔔 ${escH(text)}</span>
+      </div>
+      <button class="reminder-clear-btn" data-rid="${card.id}" data-col="${col}" title="Clear reminder">✕</button>
+    </div>`;
+    })
+    .join("");
+
+  container.querySelectorAll(".reminder-item-body").forEach((body) => {
+    body.addEventListener("click", () => {
+      const item = body.closest(".reminder-item");
+      openKanbanCardModal(item.dataset.col, Number(item.dataset.rid));
+    });
+  });
+
+  container.querySelectorAll(".reminder-check").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.kid);
+      const id = Number(btn.dataset.rid);
+      const col = btn.dataset.col;
       const kb2 = getKanban();
-      const idx = (kb2.todo || []).findIndex(c => c.id === id);
+      const idx = (kb2[col] || []).findIndex((c) => c.id === id);
       if (idx < 0) return;
-      const [card] = kb2.todo.splice(idx, 1);
+      const [card] = kb2[col].splice(idx, 1);
       if (!kb2.done) kb2.done = [];
       kb2.done.unshift(card);
       save();
@@ -6157,11 +6307,16 @@ function renderKanbanDash() {
     });
   });
 
-  container.querySelectorAll(".kd-todo-del").forEach(btn => {
+  container.querySelectorAll(".reminder-clear-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.kid);
+      const id = Number(btn.dataset.rid);
+      const col = btn.dataset.col;
       const kb2 = getKanban();
-      kb2.todo = (kb2.todo || []).filter(c => c.id !== id);
+      const card = (kb2[col] || []).find((c) => c.id === id);
+      if (card) {
+        card.remindAt = null;
+        card.notified = false;
+      }
       save();
       renderKanbanDash();
       if (el("view-kanban")?.classList.contains("active")) renderKanban();
@@ -6192,6 +6347,27 @@ function migrateAddSocials() {
   } else {
     data.quickAccess.push(...toAdd);
   }
+  save();
+}
+
+// One-time: existing users upgrading from the old Kanban Board never had a
+// sidebar entry for it (it was only reachable via the To-Do widget's edit
+// icon). Fresh installs get it from DEFAULT_SIDEBAR instead. Safe to call
+// every boot — no-ops once the item exists.
+function migrateAddNestodoSidebarItem() {
+  const groups = S.settings.sidebar;
+  if (!Array.isArray(groups)) return;
+  const alreadyThere = groups.some((g) =>
+    (g.items || []).some((it) => it.view === "kanban" || it.id === "nestodo"),
+  );
+  if (alreadyThere) return;
+  const personal = groups.find((g) => g.id === "personal") || groups[0];
+  if (!personal) return;
+  personal.items = personal.items || [];
+  const notesIdx = personal.items.findIndex((it) => it.view === "notes");
+  const item = { id: "nestodo", label: "Nestodo", icon: "nestodo", kind: "view", view: "kanban" };
+  if (notesIdx >= 0) personal.items.splice(notesIdx + 1, 0, item);
+  else personal.items.push(item);
   save();
 }
 
@@ -6284,8 +6460,15 @@ function migrateAddWorkspaceContent() {
       data.notes = defaults.notes;
       added = true;
     }
-    if (Array.isArray(data.tasks) && !data.tasks.length && defaults.tasks.length) {
-      data.tasks = defaults.tasks;
+    // Sample tasks now seed the Nestodo board directly (todo/done columns)
+    // instead of the retired flat wsData.tasks list.
+    const kb = _kanbanFor(wsId);
+    const kbEmpty = !kb.todo.length && !kb.doing.length && !kb.done.length;
+    if (kbEmpty && defaults.tasks?.length) {
+      defaults.tasks.forEach((t) => {
+        const card = { id: t.id, title: t.text, desc: "", createdAt: Date.now(), remindAt: null, notified: false };
+        (t.done ? kb.done : kb.todo).push(card);
+      });
       added = true;
     }
   });
@@ -6304,84 +6487,27 @@ function migrateSyncSbLinksToQA() {
 }
 
 // ===== TASKS =====
-function renderTasksWidget() {
-  const tasks = wsTasks();
-  const list = el("tasksList");
-  const chip = el("tasksProgressChip");
-  if (!list) return;
-  if (!tasks.length) {
-    list.innerHTML = `<div class="widget-empty-state">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9,11 12,14 22,4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      <span>No tasks yet</span></div>`;
-    if (chip) {
-      chip.className = "tasks-progress-chip";
-    }
-    return;
-  }
-  const done = tasks.filter((t) => t.done).length;
-  if (chip) {
-    if (done === tasks.length) {
-      chip.textContent = "✓ All done";
-      chip.className = "tasks-progress-chip visible all-done";
-    } else {
-      chip.textContent = `${done}/${tasks.length}`;
-      chip.className = "tasks-progress-chip visible";
-    }
-  }
-  list.innerHTML = tasks
-    .slice(0, 6)
-    .map(
-      (t) => `
-    <div class="task-item ${t.done ? "done" : ""}" data-tid="${t.id}">
-      <div class="task-checkbox" data-tid="${t.id}"></div>
-      <span class="task-text">${escH(t.text)}</span>
-      <button class="task-del-btn" data-tid="${t.id}" data-tip="Delete">✕</button>
-    </div>`,
-    )
-    .join("");
-  list.querySelectorAll(".task-checkbox[data-tid]").forEach((cb) => {
-    cb.addEventListener("click", () => toggleTask(Number(cb.dataset.tid)));
-  });
-  list.querySelectorAll(".task-del-btn[data-tid]").forEach((btn) => {
-    btn.addEventListener("click", () => deleteTask(Number(btn.dataset.tid)));
-  });
-}
-
-function toggleTask(id) {
-  const taskId = Number(id);
-  const t = wsTasks().find((t) => t.id === taskId);
-  if (t) {
-    t.done = !t.done;
-    save();
-    renderTasksWidget();
-  }
-}
-
-function deleteTask(id) {
-  const taskId = Number(id);
-  const data = wsData();
-  const t = data.tasks.find((t) => t.id === taskId);
-  if (t) {
-    S.trash.push({
-      ...t,
-      _type: "task",
-      _wsId: S.activeWsId,
-      _deletedAt: Date.now(),
-    });
-    data.tasks = data.tasks.filter((t) => t.id !== taskId);
-    save();
-    renderTasksWidget();
-    renderTrash();
-    showToast("Task deleted", "success");
-  }
-}
-
+// The old flat per-workspace task list has been folded into the Nestodo
+// board (S.kanban) — this is now just a thin adapter so existing callers
+// (voice capture, AI "Add as Task") land their text on the Nestodo To Do
+// column instead of a separate, no-longer-rendered list.
 function addTask(text) {
-  if (!text.trim()) return;
-  wsTasks().unshift({ id: Date.now(), text: text.trim(), done: false });
+  const title = text.trim();
+  if (!title) return;
+  const kb = getKanban();
+  if (!kb.todo) kb.todo = [];
+  kb.todo.unshift({
+    id: Date.now(),
+    title,
+    desc: "",
+    createdAt: Date.now(),
+    remindAt: null,
+    notified: false,
+  });
   save();
-  renderTasksWidget();
-  showToast("Task added!", "success");
+  renderKanbanDash();
+  if (el("view-kanban")?.classList.contains("active")) renderKanban();
+  showToast("Added to Nestodo!", "success");
 }
 
 function loadHeroQuote() {
@@ -6391,16 +6517,8 @@ function loadHeroQuote() {
     _setHeroQuote(custom.quote, custom.author);
     return;
   }
-  // Show a random fallback immediately, then try the API
-  const fb =
-    FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
+  const fb = HERO_QUOTES[Math.floor(Math.random() * HERO_QUOTES.length)];
   _setHeroQuote(fb.quote, fb.author);
-  fetch("https://motivational-spark-api.vercel.app/api/quotes/random")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => {
-      if (d?.quote) _setHeroQuote(d.quote, d.author);
-    })
-    .catch(() => {});
 }
 
 function _setHeroQuote(quote, author) {
@@ -6414,15 +6532,8 @@ function shuffleHeroQuote() {
   // Clear custom so next load picks random
   S.settings.heroQuote = null;
   save();
-  const fb =
-    FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
+  const fb = HERO_QUOTES[Math.floor(Math.random() * HERO_QUOTES.length)];
   _setHeroQuote(fb.quote, fb.author);
-  fetch("https://motivational-spark-api.vercel.app/api/quotes/random")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => {
-      if (d?.quote) _setHeroQuote(d.quote, d.author);
-    })
-    .catch(() => {});
 }
 
 function enterHeroQuoteEdit() {
@@ -6507,11 +6618,12 @@ async function loadAiBriefing() {
     <div class="skeleton skeleton-text" style="width:88%"></div>
     <div class="skeleton skeleton-text" style="width:60%"></div>
   `;
-  const tasks = wsTasks().filter((t) => !t.done);
+  const kb = getKanban();
+  const tasks = [...(kb.todo || []), ...(kb.doing || [])];
   const taskList =
     tasks
       .slice(0, 5)
-      .map((t) => `- ${t.text}`)
+      .map((t) => `- ${t.title}`)
       .join("\n") || "(none)";
   const weatherCity = el("weatherCity")?.textContent || "";
   const weatherTemp = el("weatherTemp")?.textContent || "";
@@ -6550,7 +6662,7 @@ function _renderAiBriefingSetup() {
   const body = el("aiBriefingBody");
   if (!body) return;
   body.innerHTML = `<div class="ai-briefing-setup">
-    <span>Add your Anthropic API key to enable AI-generated briefings.</span>
+    <span>Add your Anthropic API key to enable AI-generated briefings. Once enabled, your task titles and local weather are sent to Anthropic automatically once per day to write this.</span>
     <button class="edit-btn" id="aiBriefingSetupBtn">Open Settings</button>
   </div>`;
   el("aiBriefingSetupBtn")?.addEventListener("click", openSettings);
@@ -6632,6 +6744,48 @@ async function openSmartOrganizeModal() {
     return;
   }
 
+  // Drop tabs on domains that commonly host sensitive content (banking,
+  // health, adult) before anything is sent to a third-party AI API.
+  const excludedCount = candidates.filter((t) => _isSensitiveDomain(getDomain(t.url))).length;
+  const safeCandidates = candidates.filter((t) => !_isSensitiveDomain(getDomain(t.url)));
+
+  if (!safeCandidates.length) {
+    body.innerHTML = `<div class="organize-empty">All open tabs look like sensitive sites (banking/health/etc.) and were excluded — nothing left to send.</div>`;
+    return;
+  }
+
+  const excludedNote = excludedCount
+    ? `<p class="organize-consent-note">${excludedCount} tab${excludedCount === 1 ? "" : "s"} on likely-sensitive domains (banking/health/etc.) were excluded automatically.</p>`
+    : "";
+  body.innerHTML = `
+    <div class="organize-consent">
+      <p>This sends the <strong>titles and URLs</strong> of ${safeCandidates.length} open tab${safeCandidates.length === 1 ? "" : "s"} to Anthropic's API to decide which workspace each belongs in.</p>
+      ${excludedNote}
+      <div class="organize-consent-actions">
+        <button class="btn-secondary" id="organizeCancelBtn">Cancel</button>
+        <button class="btn-primary" id="organizeConfirmBtn">Send to AI</button>
+      </div>
+    </div>`;
+  el("organizeCancelBtn").addEventListener("click", () => closeModal("smartOrganizeModal"));
+  el("organizeConfirmBtn").addEventListener("click", () => _organizeRunAI(safeCandidates, body));
+}
+
+// A conservative keyword check on the hostname — not exhaustive, but catches
+// the obvious banking/health/adult cases the audit flagged as highest-risk
+// to silently ship to a third party.
+const SENSITIVE_DOMAIN_HINTS = [
+  "bank", "chase", "wellsfargo", "citi", "paypal", "venmo", "creditkarma",
+  "irs.gov", "coinbase", "fidelity", "vanguard", "schwab", "healthcare",
+  "myhealth", "patient", "medicare", "medicaid", "pharmacy", "webmd",
+  "mychart", "planned parenthood", "plannedparenthood",
+  "porn", "xxx", "xvideos", "pornhub", "onlyfans",
+];
+function _isSensitiveDomain(domain) {
+  const d = (domain || "").toLowerCase();
+  return SENSITIVE_DOMAIN_HINTS.some((hint) => d.includes(hint));
+}
+
+async function _organizeRunAI(candidates, body) {
   body.innerHTML = `<div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Asking AI to sort ${candidates.length} tab${candidates.length === 1 ? "" : "s"}…</div>`;
   const wsNames = S.workspaces.map((w) => w.name);
   const list = candidates
@@ -6901,6 +7055,9 @@ function timerPlay() {
   el("timerPlayBtn").innerHTML =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
   applyFocusBlockRules(true);
+  // Fire-and-forget: ask for notifications now (valid gesture context) so
+  // the session-complete alert can fire; harmless if denied.
+  _ensurePermission(["notifications"]);
   T.iv = setInterval(() => {
     if (T.remaining <= 0) {
       clearInterval(T.iv);
@@ -6990,6 +7147,35 @@ function _scheduleHabitNotifications() {
   }, delay);
 }
 
+// ── Nestodo reminder check: fires once per due card while the page is open
+// (no background alarm — matches the habit-notification pattern above, no
+// extra "alarms" permission required). Runs on boot and every 60s.
+function _checkDueReminders() {
+  const now = Date.now();
+  let changed = false;
+  Object.keys(S.kanban || {}).forEach((wsId) => {
+    const kb = S.kanban[wsId];
+    ["todo", "doing"].forEach((col) => {
+      (kb[col] || []).forEach((card) => {
+        if (card.remindAt && !card.notified && card.remindAt <= now) {
+          card.notified = true;
+          changed = true;
+          const ws = S.workspaces.find((w) => w.id === Number(wsId));
+          _notifyUser(`⏰ ${card.title}`, {
+            body: ws ? `Reminder in "${ws.name}"` : "Nestodo reminder",
+            icon: "icons/favicon.png",
+          });
+        }
+      });
+    });
+  });
+  if (changed) {
+    save();
+    renderKanbanDash();
+    if (el("view-kanban")?.classList.contains("active")) renderKanban();
+  }
+}
+
 // ── Web Audio ding on timer completion ──────────────────────────────────
 function _timerAudioDing() {
   try {
@@ -7024,13 +7210,35 @@ function renderTimerStats() {
 // ===== FOCUS MODE — SITE BLOCKING =====
 const FOCUS_RULE_BASE_ID = 9000;
 
+// Chrome enforces a hard ceiling on dynamic rules; fall back to a
+// conservative number on older Chrome versions where the constant isn't
+// exposed yet.
+const FOCUS_RULE_CEILING =
+  chrome?.declarativeNetRequest?.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES || 5000;
+
+// A plain hostname: labels of letters/digits/hyphens separated by dots,
+// final label alphabetic (TLD). Rejects anything that could smuggle DNR
+// wildcard/anchor characters (*, ^, |) or otherwise malformed input into a
+// urlFilter — a single bad rule makes Chrome reject the WHOLE rule batch.
+const FOCUS_DOMAIN_RE = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+
 // Toggle declarativeNetRequest rules that block S.settings.focus.blockedSites.
 // `active` reflects whether a focus session is currently running; blocking
 // only takes effect when the user has also enabled Focus Mode in settings.
+// Returns true on success, false on failure — callers must not claim success
+// without checking this, since a single bad rule fails the entire batch.
 async function applyFocusBlockRules(active) {
-  if (!IS_CHROME || !chrome.declarativeNetRequest) return;
-  const sites = S.settings.focus?.blockedSites || [];
-  const removeRuleIds = sites.map((_, i) => FOCUS_RULE_BASE_ID + i);
+  if (!IS_CHROME || !chrome.declarativeNetRequest) return true;
+  let sites = (S.settings.focus?.blockedSites || []).filter((d) => FOCUS_DOMAIN_RE.test(d));
+  if (sites.length > FOCUS_RULE_CEILING) sites = sites.slice(0, FOCUS_RULE_CEILING);
+  // Remove every rule this feature previously added (not just as many as the
+  // *current* list has) so shrinking the blocklist can't leave stale rules
+  // behind from a longer previous list.
+  const existingRaw = await chrome.declarativeNetRequest.getDynamicRules().catch(() => []);
+  const existing = Array.isArray(existingRaw) ? existingRaw : [];
+  const removeRuleIds = existing
+    .map((r) => r.id)
+    .filter((id) => id >= FOCUS_RULE_BASE_ID && id < FOCUS_RULE_BASE_ID + FOCUS_RULE_CEILING);
   const shouldBlock = active && S.settings.focus?.enabled && sites.length;
   const addRules = shouldBlock
     ? sites.map((domain, i) => ({
@@ -7044,12 +7252,16 @@ async function applyFocusBlockRules(active) {
       }))
     : [];
   try {
+    // removeRuleIds may reference ids that don't currently exist — Chrome
+    // ignores those safely, this just guarantees stale rules are cleared.
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds,
       addRules,
     });
+    return true;
   } catch (e) {
     console.warn("Focus mode: failed to update block rules", e);
+    return false;
   }
 }
 
@@ -7063,14 +7275,19 @@ function openFocusModeModal() {
   openModal("focusModeModal");
 }
 
-function saveFocusModeSettings() {
+async function saveFocusModeSettings() {
   const lines = el("focusModeSites").value.split("\n");
   const sites = [];
   const seen = new Set();
+  let invalidCount = 0;
   lines.forEach((line) => {
     const trimmed = line.trim();
     if (!trimmed) return;
     const domain = getDomain(safeUrl(trimmed) || trimmed) || trimmed;
+    if (!FOCUS_DOMAIN_RE.test(domain)) {
+      invalidCount++;
+      return;
+    }
     if (!seen.has(domain)) {
       seen.add(domain);
       sites.push(domain);
@@ -7082,9 +7299,15 @@ function saveFocusModeSettings() {
   };
   save();
   _syncFocusModeUI();
-  applyFocusBlockRules(T.running);
+  const applied = await applyFocusBlockRules(T.running);
   closeModal("focusModeModal");
-  showToast("Focus mode settings saved", "success");
+  if (!applied) {
+    showToast("Focus mode saved, but blocking rules failed to apply — try again", "error");
+  } else if (invalidCount) {
+    showToast(`Saved — ${invalidCount} entr${invalidCount === 1 ? "y" : "ies"} skipped (not a valid domain)`, "error");
+  } else {
+    showToast("Focus mode settings saved", "success");
+  }
 }
 
 // ===== TRASH =====
@@ -7144,13 +7367,17 @@ function restoreItem(key) {
   const wsId = item._wsId || S.activeWsId;
   if (!S.wsData[wsId])
     S.wsData[wsId] = { quickAccess: [], notes: [], tasks: [] };
-  if (item._type === "task")
-    S.wsData[wsId].tasks.unshift({
+  if (item._type === "task") {
+    const kb = _kanbanFor(wsId);
+    kb.todo.unshift({
       id: item.id || Date.now(),
-      text: item.text,
-      done: false,
+      title: item.text,
+      desc: "",
+      createdAt: item.id || Date.now(),
+      remindAt: null,
+      notified: false,
     });
-  else if (item._type === "note")
+  } else if (item._type === "note")
     S.wsData[wsId].notes.unshift({
       id: item.id || Date.now(),
       title: item.title,
@@ -7240,10 +7467,9 @@ async function renderAnalytics() {
   S.workspaces.forEach((ws) => {
     const d = S.wsData[ws.id] || {};
     totalNotes += (d.notes || []).length;
-    (d.tasks || []).forEach((t) => {
-      if (t.done) totalTasksDone++;
-      else totalTasksPending++;
-    });
+    const kb = S.kanban[ws.id] || {};
+    totalTasksDone += (kb.done || []).length;
+    totalTasksPending += (kb.todo || []).length + (kb.doing || []).length;
     totalQA += (d.quickAccess || []).length;
   });
   const totalTasks = totalTasksDone + totalTasksPending;
@@ -7253,9 +7479,9 @@ async function renderAnalytics() {
   const totalReadingItems = S.readingQueue.length;
   const totalCalEvents = S.calEvents.length;
   const doneReading = S.readingQueue.filter((r) => r.done).length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = _todayKey();
   const habitsCompletedToday = S.habits.filter((h) =>
-    (h.completions || []).includes(today),
+    (h.completedDates || []).includes(today),
   ).length;
 
   const topFolders = [...S.allBookmarks]
@@ -7265,11 +7491,13 @@ async function renderAnalytics() {
 
   const wsRows = S.workspaces.map((ws) => {
     const d = S.wsData[ws.id] || {};
+    const kb = S.kanban[ws.id] || {};
+    const done = (kb.done || []).length;
     return {
       ws,
       notes: (d.notes || []).length,
-      tasks: (d.tasks || []).length,
-      done: (d.tasks || []).filter((t) => t.done).length,
+      tasks: done + (kb.todo || []).length + (kb.doing || []).length,
+      done,
       qa: (d.quickAccess || []).length,
     };
   });
@@ -7301,15 +7529,14 @@ async function renderAnalytics() {
   allNotes.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const recentNotes = allNotes.slice(0, 5);
 
-  // Pending tasks across all workspaces
+  // Pending tasks (Nestodo cards) across all workspaces
   const allPending = [];
-  S.workspaces.forEach((ws) =>
-    (S.wsData[ws.id]?.tasks || [])
-      .filter((t) => !t.done)
-      .forEach((t) =>
-        allPending.push({ ...t, _ws: ws.name, _wsIcon: ws.icon }),
-      ),
-  );
+  S.workspaces.forEach((ws) => {
+    const kb = S.kanban[ws.id] || {};
+    [...(kb.todo || []), ...(kb.doing || [])].forEach((card) =>
+      allPending.push({ text: card.title, _ws: ws.name, _wsIcon: ws.icon }),
+    );
+  });
   const pendingDisplay = allPending.slice(0, 6);
   const now = Date.now();
   const dayMs = 86400000;
@@ -7425,8 +7652,8 @@ async function renderAnalytics() {
             ? S.habits
                 .slice(0, 6)
                 .map((h) => {
-                  const done = (h.completions || []).includes(today);
-                  const streak = (h.completions || []).reduce(
+                  const done = (h.completedDates || []).includes(today);
+                  const streak = (h.completedDates || []).reduce(
                     (s, d, i, arr) => {
                       if (i === 0) return 1;
                       const prev = new Date(arr[i - 1]);
@@ -7434,7 +7661,7 @@ async function renderAnalytics() {
                       const diff = Math.round((cur - prev) / 86400000);
                       return diff === 1 ? s + 1 : 1;
                     },
-                    h.completions?.length ? 1 : 0,
+                    h.completedDates?.length ? 1 : 0,
                   );
                   return `<div class="ins-row">
                 <div class="ins-row-left">
@@ -7607,7 +7834,7 @@ async function renderAnalytics() {
     const days = Array.from({length: 7}, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
-      return d.toISOString().slice(0, 10);
+      return _dateKey(d);
     });
     const vals = days.map((d) => sessions[d] || 0);
     const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", {weekday: "short"}));
@@ -7624,7 +7851,7 @@ async function renderAnalytics() {
     const days = Array.from({length: 7}, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
-      return d.toISOString().slice(0, 10);
+      return _dateKey(d);
     });
     const vals = days.map((day) => habits.filter((h) => (h.days || {})[day]).length);
     const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", {weekday: "short"}));
@@ -7885,6 +8112,7 @@ async function openSettings() {
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
   el("widgetCalendarToggle").checked = S.settings.widgets.calendar !== false;
   el("widgetTodoToggle").checked = S.settings.widgets.todo !== false;
+  el("widgetRemindersToggle").checked = S.settings.widgets.reminders !== false;
   // Highlight active card glow
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
     b.classList.toggle(
@@ -7915,12 +8143,23 @@ async function saveSettings() {
   S.settings.widgets.timer = el("widgetTimerToggle").checked;
   S.settings.widgets.calendar = el("widgetCalendarToggle").checked;
   S.settings.widgets.todo = el("widgetTodoToggle").checked;
+  S.settings.widgets.reminders = el("widgetRemindersToggle").checked;
   S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
   S.settings.e2e = S.settings.e2e || {};
-  S.settings.e2e.enabled = el("e2eToggle").checked;
-  await _e2eSavePassphrase(el("e2ePassphrase").value);
+  const e2eWantsEnabled = el("e2eToggle").checked;
+  const e2ePassInput = el("e2ePassphrase").value;
+  if (e2eWantsEnabled && _e2ePassphraseIsWeak(e2ePassInput)) {
+    el("e2eToggle").checked = S.settings.e2e.enabled || false;
+    showToast(
+      `E2E encryption needs a passphrase of at least ${E2E_MIN_PASSPHRASE_LEN} characters — settings not saved.`,
+      "error",
+    );
+    return;
+  }
+  S.settings.e2e.enabled = e2eWantsEnabled;
+  await _e2eSavePassphrase(e2ePassInput);
   S.settings.ai = S.settings.ai || {};
   S.settings.ai.enabled = el("aiToggle").checked;
   await _aiSaveApiKey(el("aiApiKey").value.trim());
@@ -8012,6 +8251,7 @@ function applyWidgetVisibility() {
   show("widget-timer", w.timer);
   show("widget-calendar", w.calendar);
   show("widget-todo", w.todo);
+  show("widget-reminders", w.reminders);
 }
 
 // Export / Import
@@ -8039,15 +8279,54 @@ function exportData() {
   a.click();
   showToast("Data exported!", "success");
 }
+// Full-backup import touches quickAccess/importedBookmarks across every
+// workspace, plus sidebar link items in settings — sanitize every URL found
+// rather than trusting a backup file's scheme.
+function _sanitizeImportedWsData(wsData) {
+  if (!wsData || typeof wsData !== "object") return wsData;
+  const out = {};
+  for (const [id, wd] of Object.entries(wsData)) {
+    out[id] = {
+      ...wd,
+      quickAccess: _dedupeByUrl(_sanitizeImportedLinks(wd?.quickAccess)),
+      importedBookmarks: _dedupeByUrl(_sanitizeImportedLinks(wd?.importedBookmarks)),
+    };
+  }
+  return out;
+}
+
+function _sanitizeImportedSidebar(sidebar) {
+  if (!Array.isArray(sidebar)) return sidebar;
+  return sidebar.map((group) => ({
+    ...group,
+    items: Array.isArray(group?.items)
+      ? group.items
+          .map((item) => {
+            if (!item || item.kind !== "link" || !item.url) return item;
+            const clean = safeUrl(item.url);
+            return clean ? { ...item, url: clean } : null;
+          })
+          .filter(Boolean)
+      : group?.items,
+  }));
+}
+
 function importData(file) {
+  if (file.size > IMPORT_FILE_MAX_BYTES) {
+    showToast("File too large to import (max 10MB)", "error");
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const d = JSON.parse(e.target.result);
       if (d.workspaces) S.workspaces = d.workspaces;
-      if (d.wsData) S.wsData = d.wsData;
+      if (d.wsData) S.wsData = _sanitizeImportedWsData(d.wsData);
       if (d.user) S.user = d.user;
-      if (d.settings) S.settings = { ...S.settings, ...d.settings };
+      if (d.settings) {
+        S.settings = { ...S.settings, ...d.settings };
+        if (d.settings.sidebar) S.settings.sidebar = _sanitizeImportedSidebar(d.settings.sidebar);
+      }
       if (d.trash) S.trash = d.trash;
       save();
       renderAll();
@@ -8189,11 +8468,17 @@ function _buildCmdResults(q) {
     }
   }
 
-  // Tasks
+  // Tasks (Nestodo cards)
   const taskMatches = [];
   for (const ws of S.workspaces) {
-    for (const t of S.wsData[ws.id]?.tasks || []) {
-      if (_fuzzyMatch(t.text || "", q)) taskMatches.push(t);
+    const kb = S.kanban[ws.id];
+    if (!kb) continue;
+    for (const col of ["todo", "doing", "done"]) {
+      for (const card of kb[col] || []) {
+        if (_fuzzyMatch(card.title || "", q) || _fuzzyMatch(card.desc || "", q)) {
+          taskMatches.push({ id: card.id, text: card.title, done: col === "done" });
+        }
+      }
     }
   }
 
@@ -8246,7 +8531,7 @@ function _renderCmdResults(q) {
     html += bmMatches
       .map(
         (bm) => `
-      <a href="${escH(bm.url)}" class="cmd-result-item" target="_self" data-cmd-item>
+      <a href="${escH(safeUrl(bm.url) || "#")}" class="cmd-result-item" target="_self" data-cmd-item>
         <div class="cmd-favicon-wrap"><img src="${favSrc(bm.url)}" data-img-fallback="fade" alt=""></div>
         <div class="cmd-item-body">
           <div class="cmd-item-title">${escH(bm.title || bm.url)}</div>
@@ -8373,7 +8658,7 @@ function _renderCmdResults(q) {
     .querySelectorAll("[data-task-id]")
     .forEach((el2) => {
       el2.addEventListener("click", () => {
-        navigateTo("home");
+        navigateTo("kanban");
         closeCmdPalette();
       });
     });
@@ -8470,7 +8755,7 @@ async function _cmdSearchAsync(q) {
     html += historyMatches
       .map(
         (h) => `
-      <a href="${escH(h.url)}" class="cmd-result-item" target="_blank" data-cmd-item>
+      <a href="${escH(safeUrl(h.url) || "#")}" class="cmd-result-item" target="_blank" rel="noopener" data-cmd-item>
         <div class="cmd-favicon-wrap"><img src="${favSrc(h.url)}" data-img-fallback="fade" alt=""></div>
         <div class="cmd-item-body">
           <div class="cmd-item-title">${escH(h.title || h.url)}</div>
@@ -8896,7 +9181,7 @@ function renderBmForActiveWorkspace() {
           ${bms
             .map(
               (bm) => `
-            <a href="${escH(bm.url)}" class="bm-item" target="_self">
+            <a href="${escH(safeUrl(bm.url) || "#")}" class="bm-item" target="_self">
               <img src="${favSrc(bm.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(bm.title || bm.url)}</span>
               <span class="bm-item-url">${escH(getDomain(bm.url))}</span>
@@ -9106,9 +9391,12 @@ function setupEventListeners() {
       case "delete-habit":
         deleteHabit(Number(d.habitId));
         break;
-      case "open-reading-url":
-        window.open(d.url, "_blank");
+      case "open-reading-url": {
+        const readingUrl = safeUrl(d.url);
+        if (readingUrl) window.open(readingUrl, "_blank", "noopener,noreferrer");
+        else showToast("This link has an unsupported URL scheme", "error");
         break;
+      }
       case "toggle-reading-done":
         toggleReadingDone(Number(d.id));
         break;
@@ -9302,23 +9590,28 @@ function setupEventListeners() {
   });
   el("clearTasksBtn").addEventListener("click", () => {
     confirm2(
-      "Clear All Tasks?",
-      "All tasks in the current workspace will be moved to Trash.",
+      "Clear All Nestodo?",
+      "All to-dos, in-progress and done cards in the current workspace will be moved to Trash.",
       () => {
-        const data = wsData();
-        (data.tasks || []).forEach((t) =>
-          S.trash.push({
-            ...t,
-            _type: "task",
-            _wsId: S.activeWsId,
-            _deletedAt: Date.now(),
-          }),
-        );
-        data.tasks = [];
+        const kb = getKanban();
+        ["todo", "doing", "done"].forEach((col) => {
+          (kb[col] || []).forEach((card) =>
+            S.trash.push({
+              id: card.id,
+              text: card.title,
+              done: col === "done",
+              _type: "task",
+              _wsId: S.activeWsId,
+              _deletedAt: Date.now(),
+            }),
+          );
+          kb[col] = [];
+        });
         save();
-        renderTasksWidget();
+        renderKanbanDash();
+        if (el("view-kanban")?.classList.contains("active")) renderKanban();
         renderTrash();
-        showToast("Tasks cleared", "success");
+        showToast("Nestodo cleared", "success");
       },
     );
   });
@@ -9349,8 +9642,15 @@ function setupEventListeners() {
   el("clearAllDataBtn").addEventListener("click", () => {
     confirm2(
       "Clear All Data",
-      "This will permanently delete all your notes, tasks, workspaces and settings. This cannot be undone.",
-      () => {
+      "This will permanently delete all your notes, tasks, workspaces and settings, and sign you out of Google (revoking Drive sync access). This cannot be undone.",
+      async () => {
+        await _revokeGoogleAccess();
+        S.googleUser = null;
+        S.user.googlePicture = null;
+        S.user.googleName = null;
+        Drive._fileId = null;
+        Drive._lastSyncAt = 0;
+        clearTimeout(Drive._syncTimer);
         S.workspaces = DEFAULT_WORKSPACES;
         S.activeWsId = 1;
         S.wsData = {};
@@ -9382,6 +9682,8 @@ function setupEventListeners() {
         applyTheme("dark");
         applyAccent("#fe8019");
         applyCardGlow("glow");
+        updateAvatarDisplay();
+        setSyncStatus("signed-out");
         showToast("All data cleared", "success");
       },
     );
@@ -9476,21 +9778,6 @@ function setupEventListeners() {
     renderNotesView();
   });
 
-  // Tasks (widget removed from dashboard — kept for data compat)
-  el("addTaskBtn")?.addEventListener("click", () => openModal("taskModal"));
-  el("saveTaskBtn").addEventListener("click", () => {
-    const t = el("taskInput").value.trim();
-    if (!t) {
-      showToast("Enter a task!", "error");
-      return;
-    }
-    addTask(t);
-    el("taskInput").value = "";
-    closeModal("taskModal");
-  });
-  el("taskInput")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") el("saveTaskBtn").click();
-  });
 
   // Quick Access
   // QA display mode buttons
@@ -9613,7 +9900,7 @@ function setupEventListeners() {
   });
   el("fabAddTask").addEventListener("click", () => {
     closeFab();
-    openModal("taskModal");
+    openKanbanCardModal("todo");
   });
   el("fabAddQuickAccess").addEventListener("click", () => {
     closeFab();
@@ -9852,10 +10139,19 @@ function setupEventListeners() {
     btn.addEventListener("click", () => openKanbanCardModal(btn.dataset.col));
   });
   el("kanbanCardSaveBtn")?.addEventListener("click", saveKanbanCard);
+  el("kanbanCardDeleteBtn")?.addEventListener("click", deleteKanbanCardFromModal);
   el("kanbanCardTitleInput")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") saveKanbanCard();
   });
   el("kanbanAiParseBtn")?.addEventListener("click", _kanbanParseAI);
+  el("kanbanCardRemindToggle")?.addEventListener("change", (e) => {
+    const input = el("kanbanCardRemindInput");
+    if (input) input.style.display = e.target.checked ? "" : "none";
+    if (e.target.checked) _ensurePermission(["notifications"]); // fire-and-forget
+  });
+
+  // ── Reminders widget ────────────────────────────────────────────────────
+  el("remindersOpenBtn")?.addEventListener("click", () => navigateTo("kanban"));
 
   // ── Calendar Widget ─────────────────────────────────────────────────────
   el("calPrevBtn")?.addEventListener("click", () => {
@@ -9928,7 +10224,15 @@ function setupEventListeners() {
   // ── Sync popup toggle ────────────────────────────────────────────────────
   el("syncFooterBtn")?.addEventListener("click", (e) => {
     e.stopPropagation();
-    el("syncCard")?.classList.toggle("popup-open");
+    const card = el("syncCard");
+    if (!card) return;
+    if (!card.classList.contains("popup-open")) {
+      const wrap = el("sbFooterUserWrap") || e.currentTarget;
+      const rect = wrap.getBoundingClientRect();
+      card.style.left = rect.left + "px";
+      card.style.bottom = window.innerHeight - rect.top + 6 + "px";
+    }
+    card.classList.toggle("popup-open");
   });
   document.addEventListener("click", (e) => {
     if (!el("sbFooterUserWrap")?.contains(e.target)) {
@@ -9975,7 +10279,7 @@ function renderHabits() {
         })
         .join("");
       return `<div class="habit-row">
-      <span class="habit-emoji">${h.emoji || "⭐"}</span>
+      <span class="habit-emoji">${escH(h.emoji || "⭐")}</span>
       <span class="habit-name">${escH(h.name)}</span>
       <span class="habit-streak" title="Current streak">${streak}🔥</span>
       <div class="habit-days">${dayBtns}</div>
@@ -9990,8 +10294,13 @@ function renderHabits() {
 function _todayKey() {
   return _dateKey(new Date());
 }
+// Local-calendar-day key (YYYY-MM-DD), matching the Calendar widget's own
+// getFullYear()/getMonth()/getDate() date math. Previously used
+// toISOString(), which keys by UTC — for any non-UTC-0 user that rolls the
+// app's "day" over at a non-midnight local hour every single day, not just
+// at rare DST edges, silently misfiling habit check-ins to the wrong date.
 function _dateKey(d) {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function _habitStreak(h) {
@@ -10034,6 +10343,10 @@ function saveHabit() {
   closeModal("habitModal");
   renderHabits();
   showToast("Habit created!", "success");
+  // Fire-and-forget: ask for notifications now (valid gesture context) so
+  // daily habit reminders can work; harmless if denied, reminders just
+  // won't fire — this action doesn't depend on the outcome.
+  _ensurePermission(["notifications"]);
 }
 
 // ===== FEATURE 2: READING QUEUE =========================================
@@ -10084,9 +10397,10 @@ function deleteReading(id) {
 
 function saveReading() {
   const title = el("readingTitleInput").value.trim();
-  const url = el("readingUrlInput").value.trim();
+  const rawUrl = el("readingUrlInput").value.trim();
+  const url = safeUrl(rawUrl);
   if (!url) {
-    showToast("Enter a URL", "error");
+    showToast("Enter a valid http(s) URL", "error");
     return;
   }
   S.readingQueue.unshift({
@@ -10128,7 +10442,7 @@ function renderSessions() {
           .slice(0, 8)
           .map(
             (t) => `
-          <a href="${escH(t.url)}" class="session-tab" target="_blank" rel="noopener">
+          <a href="${escH(safeUrl(t.url) || "#")}" class="session-tab" target="_blank" rel="noopener">
             <img src="${t.favicon || ""}" alt="" width="14" height="14">
             <span class="session-tab-title">${escH(t.title)}</span>
             <span class="session-tab-url">${escH(t.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</span>
@@ -10287,19 +10601,86 @@ function saveJournalEntry() {
   showToast("Journal saved", "success");
 }
 
-// ===== FEATURE 5: KANBAN BOARD ==========================================
+// ===== FEATURE 5: NESTODO BOARD (formerly "Kanban Board") ===============
 let _kanbanTargetCol = null;
+let _kanbanEditingId = null; // id of the card being edited, or null when adding
 
-function getKanban() {
-  const wsId = S.activeWsId;
+function _kanbanFor(wsId) {
   if (!S.kanban[wsId]) S.kanban[wsId] = { todo: [], doing: [], done: [] };
   return S.kanban[wsId];
+}
+
+function getKanban() {
+  return _kanbanFor(S.activeWsId);
+}
+
+// One-time fold-in (effectively a no-op once wsData[wsId].tasks is empty):
+// the old flat per-workspace task list is retired in favor of the Nestodo
+// board, so any pre-existing tasks are moved into the todo/done columns
+// instead of being silently lost. Called from loadState() and from
+// importWorkspaceFile() for imported workspace JSON that still has the
+// legacy "tasks" field.
+function _migrateLegacyTasksIntoKanban() {
+  let changed = false;
+  Object.keys(S.wsData || {}).forEach((wsId) => {
+    const data = S.wsData[wsId];
+    const legacy = data?.tasks;
+    if (!Array.isArray(legacy) || !legacy.length) return;
+    const kb = _kanbanFor(Number(wsId));
+    legacy.forEach((t, i) => {
+      const card = {
+        id: t.id || Date.now() + i,
+        title: t.text || "(untitled task)",
+        desc: "",
+        createdAt: t.id || Date.now(),
+        remindAt: null,
+        notified: false,
+      };
+      (t.done ? kb.done : kb.todo).push(card);
+    });
+    data.tasks = [];
+    changed = true;
+  });
+  return changed;
+}
+
+// Cards with a remindAt sort soonest-first; everything else keeps insertion order.
+function _sortByReminder(cards) {
+  return [...cards].sort((a, b) => {
+    if (a.remindAt && b.remindAt) return a.remindAt - b.remindAt;
+    if (a.remindAt) return -1;
+    if (b.remindAt) return 1;
+    return 0;
+  });
+}
+
+function _formatReminderBadge(ts) {
+  const d = new Date(ts);
+  const now = Date.now();
+  const overdue = ts < now;
+  const sameYear = d.getFullYear() === new Date(now).getFullYear();
+  const dateStr = d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+  const timeStr = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return { text: `${dateStr}, ${timeStr}`, overdue };
+}
+
+function _reminderBadgeHtml(card) {
+  if (!card.remindAt) return "";
+  const { text, overdue } = _formatReminderBadge(card.remindAt);
+  return `<span class="reminder-badge${overdue ? " overdue" : ""}">🔔 ${escH(text)}</span>`;
 }
 
 function renderKanban() {
   const kb = getKanban();
   ["todo", "doing", "done"].forEach((col) => {
-    const cards = kb[col] || [];
+    const cards = _sortByReminder(kb[col] || []);
     const container = el(`kanban-${col}-cards`);
     const count = el(`kanban-${col}-count`);
     if (count) count.textContent = cards.length;
@@ -10309,11 +10690,19 @@ function renderKanban() {
         (card) => `
       <div class="kanban-card" draggable="true" data-col="${col}" data-id="${card.id}">
         <div class="kanban-card-title">${escH(card.title)}</div>
-        ${card.desc ? `<div class="kanban-card-meta"><span>${escH(card.desc)}</span><button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">✕</button></div>` : `<div class="kanban-card-meta"><span></span><button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">✕</button></div>`}
+        <div class="kanban-card-meta">
+          <span>${card.desc ? escH(card.desc) : ""}</span>
+          <button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">✕</button>
+        </div>
+        ${_reminderBadgeHtml(card)}
       </div>`,
       )
       .join("");
     container.querySelectorAll(".kanban-card").forEach((card) => {
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".kanban-card-del")) return;
+        openKanbanCardModal(card.dataset.col, Number(card.dataset.id));
+      });
       card.addEventListener("dragstart", (e) => {
         S._kanbanDragCard = {
           col: card.dataset.col,
@@ -10353,23 +10742,42 @@ function renderKanban() {
   });
 }
 
-function openKanbanCardModal(col) {
+function openKanbanCardModal(col, cardId = null) {
   _kanbanTargetCol = col;
-  el("kanbanCardModalTitle").textContent =
-    col === "todo"
+  _kanbanEditingId = cardId;
+  const card = cardId != null ? (getKanban()[col] || []).find((c) => c.id === cardId) : null;
+  el("kanbanCardModalTitle").textContent = card
+    ? "Edit Card"
+    : col === "todo"
       ? "Add To-Do"
       : col === "doing"
         ? "Add In-Progress Card"
         : "Add Done Card";
-  el("kanbanCardTitleInput").value = "";
-  el("kanbanCardDescInput").value = "";
+  el("kanbanCardTitleInput").value = card?.title || "";
+  el("kanbanCardDescInput").value = card?.desc || "";
+  const remindToggle = el("kanbanCardRemindToggle");
+  const remindInput = el("kanbanCardRemindInput");
+  if (remindToggle) remindToggle.checked = !!card?.remindAt;
+  if (remindInput) {
+    remindInput.style.display = card?.remindAt ? "" : "none";
+    remindInput.value = card?.remindAt ? _toDatetimeLocal(card.remindAt) : "";
+  }
+  const deleteBtn = el("kanbanCardDeleteBtn");
+  if (deleteBtn) deleteBtn.style.display = card ? "" : "none";
   if (el("kanbanAiInput")) el("kanbanAiInput").value = "";
   if (el("kanbanAiResult")) { el("kanbanAiResult").style.display = "none"; el("kanbanAiResult").innerHTML = ""; }
   openModal("kanbanCardModal");
-  // Show AI section only if AI is enabled
+  // Show AI section only for a fresh card, and only if AI is enabled
   const aiSection = el("kanbanAiSection");
-  if (aiSection) aiSection.style.display = S.settings.ai?.enabled ? "" : "none";
-  setTimeout(() => (S.settings.ai?.enabled ? el("kanbanAiInput")?.focus() : el("kanbanCardTitleInput")?.focus()), 80);
+  if (aiSection) aiSection.style.display = !card && S.settings.ai?.enabled ? "" : "none";
+  el("kanbanCardSaveBtn").textContent = card ? "Save Card" : "Add Card";
+  setTimeout(() => (!card && S.settings.ai?.enabled ? el("kanbanAiInput")?.focus() : el("kanbanCardTitleInput")?.focus()), 80);
+}
+
+function _toDatetimeLocal(ts) {
+  const d = new Date(ts);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 async function _kanbanParseAI() {
@@ -10443,7 +10851,7 @@ Example: [{"title":"Set up database schema","desc":"Create PostgreSQL tables for
       checks.forEach((cb) => {
         const idx = parseInt(cb.id.replace("kait_", ""));
         const t = tasks[idx];
-        if (t) kb[_kanbanTargetCol].push({ id: Date.now() + idx, title: t.title, desc: t.desc || "", createdAt: Date.now() });
+        if (t) kb[_kanbanTargetCol].push({ id: Date.now() + idx, title: t.title, desc: t.desc || "", createdAt: Date.now(), remindAt: null, notified: false });
       });
       save();
       closeModal("kanbanCardModal");
@@ -10476,26 +10884,68 @@ function saveKanbanCard() {
     return;
   }
   const desc = el("kanbanCardDescInput").value.trim();
+  const remindOn = !!el("kanbanCardRemindToggle")?.checked;
+  const remindVal = el("kanbanCardRemindInput")?.value;
+  if (remindOn && !remindVal) {
+    showToast("Pick a date and time for the reminder, or turn it off", "error");
+    return;
+  }
+  const remindAt = remindOn ? new Date(remindVal).getTime() : null;
+  if (remindOn) _ensurePermission(["notifications"]); // fire-and-forget, harmless if denied
+
   const kb = getKanban();
   if (!kb[_kanbanTargetCol]) kb[_kanbanTargetCol] = [];
-  kb[_kanbanTargetCol].push({
-    id: Date.now(),
-    title,
-    desc,
-    createdAt: Date.now(),
-  });
+
+  if (_kanbanEditingId != null) {
+    const card = kb[_kanbanTargetCol].find((c) => c.id === _kanbanEditingId);
+    if (card) {
+      card.title = title;
+      card.desc = desc;
+      if (card.remindAt !== remindAt) card.notified = false;
+      card.remindAt = remindAt;
+    }
+  } else {
+    kb[_kanbanTargetCol].push({
+      id: Date.now(),
+      title,
+      desc,
+      createdAt: Date.now(),
+      remindAt,
+      notified: false,
+    });
+  }
+  _kanbanEditingId = null;
   save();
   closeModal("kanbanCardModal");
   renderKanban();
   renderKanbanDash();
 }
 
+function deleteKanbanCardFromModal() {
+  if (_kanbanEditingId == null) return;
+  deleteKanbanCard(_kanbanTargetCol, _kanbanEditingId);
+  _kanbanEditingId = null;
+  closeModal("kanbanCardModal");
+}
+
 function deleteKanbanCard(col, id) {
   const kb = getKanban();
+  const card = (kb[col] || []).find((c) => c.id === id);
+  if (card) {
+    S.trash.push({
+      id: card.id,
+      text: card.title,
+      done: col === "done",
+      _type: "task",
+      _wsId: S.activeWsId,
+      _deletedAt: Date.now(),
+    });
+  }
   kb[col] = (kb[col] || []).filter((c) => c.id !== id);
   save();
   renderKanban();
   renderKanbanDash();
+  renderTrash();
 }
 
 // ===== HERO WALLPAPER ===================================================
@@ -10597,6 +11047,11 @@ async function fetchRandomWallpaper() {
   img.onload = () => {
     window._heroBgSessionCache = url;
     _applyHeroBgImage(url);
+  };
+  img.onerror = () => {
+    bgEl.style.backgroundImage =
+      "linear-gradient(160deg, #1d2021 0%, #282828 60%, #32302f 100%)";
+    showToast("Couldn't load a new wallpaper — try again", "error");
   };
   img.src = url;
 }
@@ -10795,7 +11250,7 @@ function openCalEventModal(dateStr) {
     ? `Add Event — ${dateStr}`
     : "Add Event";
   el("calEventTitle").value = "";
-  el("calEventDate").value = dateStr || new Date().toISOString().slice(0, 10);
+  el("calEventDate").value = dateStr || _dateKey(new Date());
   el("calEventStatus").textContent = "";
   // Reset schedule type to 'once'
   document
@@ -10838,7 +11293,7 @@ function saveCalEvent() {
 
   const weekday =
     activeType === "weekly" ? Number(el("calEventWeekday").value) : null;
-  const startDate = dateVal || new Date().toISOString().slice(0, 10);
+  const startDate = dateVal || _dateKey(new Date());
 
   S.calEvents.push({
     id: Date.now(),

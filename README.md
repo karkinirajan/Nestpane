@@ -54,7 +54,7 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 |---|---|---|
 | Runtime | Chrome Extension (Manifest V3) | Extension host, permissions, storage |
 | UI | Vanilla HTML, CSS, JavaScript (ES2022) | No framework, no build transpiler |
-| Auth | Google OAuth 2.0 PKCE via `chrome.identity.launchWebAuthFlow` | Sign in with a Web application OAuth client |
+| Auth | `chrome.identity.getAuthToken()` (Chrome Extension-type OAuth client) | Sign in with Google, no client secret — Chrome-only, does not work in Chromium forks |
 | Storage | `chrome.storage.local` | All user data and tokens, local only |
 | Sync | Google Drive REST API v3 (`appdata` scope) | Optional cloud backup |
 | End-to-end encryption | WebCrypto (`crypto.subtle`, PBKDF2 + AES-GCM) | Optional passphrase-based encryption of cloud backups |
@@ -62,7 +62,7 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 | Voice | Web Speech API (`SpeechRecognition`) | Voice quick-capture, transcribed locally by the browser |
 | Site blocking | `chrome.declarativeNetRequest` | Focus mode — blocks chosen sites while a focus session is running |
 | Weather | wttr.in JSON API | No API key required |
-| Quotes | motivational-spark-api.vercel.app | No API key required |
+| Quotes | Bundled static list (`HERO_QUOTES` in `app.js`) | No network request |
 | Fonts | Inter + Playfair Display via Google Fonts | Loaded via `<link>` with preconnect |
 | Icons | Inline SVG | No icon library dependency |
 | Build | Node.js script (`build.js`) + esbuild | Validates sources and manifest, copies static files to `dist/`, minifies JS/CSS |
@@ -146,14 +146,14 @@ This project has no server and no environment variables. All configuration is em
 
 | Config | File | Key | Notes |
 |---|---|---|---|
-| Google OAuth Client ID | `app.js` | `GOOGLE_CLIENT_ID` (line ~8) | Public identifier, safe to commit. There is no `oauth2` block in `manifest.json` — auth runs through `chrome.identity.launchWebAuthFlow`, so the client ID lives in source only |
-| OAuth Scopes | `app.js` | `OAUTH_SCOPES` (line ~2085) | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
+| Google OAuth Client ID | `manifest.json` | `oauth2.client_id` | Public identifier, safe to commit. Chrome Extension-type client — Google issues no client secret for this type at all |
+| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
 | Expected extension ID | `app.js` / `build.js` | `EXPECTED_EXTENSION_ID` / `PUBLISHED_EXTENSION_ID` | The CWS-assigned item ID; a mismatch only logs a warning, it never blocks sign-in |
 | Weather endpoint | `app.js` | wttr.in URL | No key required |
-| Quotes endpoint | `app.js` | motivational-spark-api.vercel.app | No key required |
+| Quotes | Bundled static list (`HERO_QUOTES` in `app.js`) | No network request |
 | Anthropic API key | Settings → AI Assistant (`aiApiKey`) | User-supplied, optional | Entered by each user at runtime, stored only in `chrome.storage.local` on their device — never embedded in source or synced |
 
-> The Google OAuth Client ID is a **public** identifier. It is not a secret. Chrome extensions must embed it in source files. Never commit a `client_secret` — the PKCE flow used here does not require one.
+> The Google OAuth Client ID is a **public** identifier. It is not a secret. There is no `client_secret` anywhere in this project — the Chrome Extension OAuth client type Google issues doesn't have one, by design.
 >
 > The Anthropic API key is **not** a build-time secret — it's entered per-user in Settings to power "Ask AI", the daily briefing, and Smart Organize. Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys). AI features are entirely optional and disabled by default.
 
@@ -161,16 +161,15 @@ This project has no server and no environment variables. All configuration is em
 
 ## Google OAuth Setup
 
-See the step-by-step external configuration guide in [docs/OAUTH_SETUP.md](docs/OAUTH_SETUP.md), or follow the inline instructions in the **Authentication Setup** section below.
-
 ### How the auth flow works
 
-1. User clicks **Sign in with Google** in the sidebar.
-2. `chrome.identity.launchWebAuthFlow` opens Google's OAuth consent screen.
-3. PKCE (Proof Key for Code Exchange) exchanges the auth code for tokens — **no client secret required**.
-4. Access token is stored in `chrome.storage.local` with an expiry timestamp.
-5. Refresh token is stored in `chrome.storage.local` and used for silent re-authentication.
-6. On token expiry, a silent refresh is attempted. If refresh fails, the user sees "Session expired. Sign in again."
+1. User clicks **Sign in with Google** in the sidebar (this also requests the `identity`/`identity.email` optional permissions just-in-time, if not already granted).
+2. `chrome.identity.getAuthToken({interactive: true})` shows Chrome's native account picker/consent UI — no separate tab, no manual OAuth redirect.
+3. Chrome returns an access token and caches it internally — no client secret involved anywhere in this exchange.
+4. Chrome manages token expiry and silent refresh itself; the extension just calls `getAuthToken({interactive: false})` again whenever it needs a token, and gets a valid one back (or `null` if the grant was revoked).
+5. Sign-out (and "Clear All Data") both revoke the grant server-side via `oauth2.googleapis.com/revoke` **and** evict it from Chrome's cache via `chrome.identity.removeCachedAuthToken`.
+
+**Important limitation:** `chrome.identity.getAuthToken()` only works in actual Google Chrome — it depends on Chrome's own Google API keys and profile/sign-in system. It does not work in Brave, Edge, Vivaldi, or other Chromium forks; Google sign-in and Drive sync are Chrome-only features as a result.
 
 ### Setting up your own OAuth Client
 
@@ -179,15 +178,9 @@ If you fork this project, you must create your own Google OAuth client. The clie
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
 2. Enable the **Google Drive API**.
 3. Configure the **OAuth consent screen** (External, add `drive.appdata`, `userinfo.email`, `userinfo.profile` scopes, add yourself as a test user).
-4. Create an **OAuth 2.0 Client ID** → Application type: **Chrome Extension**.
+4. Create an **OAuth 2.0 Client ID** → Application type: **Chrome Extension** (required — this is the only type the code supports; no client secret is issued for it).
 5. Add your extension ID to the **Application ID** field. Your extension ID appears on `chrome://extensions`.
-6. Under **Authorised redirect URIs**, add (trailing slash required):
-
-   ```
-   https://<YOUR_EXTENSION_ID>.chromiumapp.org/
-   ```
-
-7. Copy the Client ID into `app.js` → `GOOGLE_CLIENT_ID` constant (line ~8). This is the only place it is declared; `manifest.json` has no `oauth2` block.
+6. Copy the Client ID into `manifest.json`'s `oauth2.client_id`. No redirect URI setup needed — this client type binds to the extension ID directly, and `getAuthToken()` doesn't use a redirect flow at all.
 
 ### Finding your Extension ID
 
@@ -247,7 +240,7 @@ Verify no errors are reported. This produces `nestpane-v<version>-chrome.zip` in
    - **Category**: Productivity
    - **Screenshots**: 1280×800 or 640×400 px (at least one required)
    - **Privacy policy**: required — host [`privacy.html`](privacy.html) (e.g. via GitHub Pages) and link it here
-4. Complete the **Privacy practices** tab using [docs/CWS_SUBMISSION.md](docs/CWS_SUBMISSION.md) — it has copy-paste permission justifications and data-usage answers for every permission this extension requests.
+4. Complete the **Privacy practices** tab — cross-reference the `permissions`/`optional_permissions`/`host_permissions` arrays in `manifest.json` against what each one is used for (see the permissions table above) when answering CWS's data-usage questions.
 5. Submit for review.
 
 **Step 4 — Update an existing listing**
@@ -266,7 +259,7 @@ Bump `version` in both `manifest.json` and `package.json` (they must match — t
 | `downloads` | Downloads viewer |
 | `storage` | Persist all user data (local storage) |
 | `topSites` | Analytics view — Top Visited Sites card |
-| `identity` | Google OAuth sign-in (`launchWebAuthFlow`) |
+| `identity` | Google OAuth sign-in (`chrome.identity.getAuthToken()`) — optional, requested on first "Sign in with Google" click |
 | `identity.email` | Read signed-in Chrome account email for the sync card |
 | `geolocation` | Auto-detect city for weather widget |
 | `declarativeNetRequest` | Focus Mode — blocks chosen sites while a focus session is active |
@@ -279,7 +272,6 @@ Bump `version` in both `manifest.json` and `package.json` (they must match — t
 | `fonts.googleapis.com` / `fonts.gstatic.com` | Google Fonts (Inter, Playfair Display) |
 | `www.googleapis.com` | Google user profile API + Drive sync |
 | `oauth2.googleapis.com` | Token refresh and revocation |
-| `motivational-spark-api.vercel.app` | Daily motivational quotes |
 | `ipwho.is` | IP-based city detection for weather |
 | `nominatim.openstreetmap.org` | Geocoding city names to coordinates |
 | `picsum.photos` | Wallpaper photos |
@@ -289,14 +281,14 @@ Bump `version` in both `manifest.json` and `package.json` (they must match — t
 
 ## Security Notes
 
-- **Credentials in source.** The OAuth `client_secret` for a Desktop/Web application client is embedded in `app.js`. Per Google's policy, this is acceptable for installed apps — the secret cannot be kept truly private in a client-side extension. Treat it as a low-value credential and rotate it if the extension is compromised.
-- **Tokens never leave the device** except to refresh against Google's token endpoint. They are stored in `chrome.storage.local` only — explicitly excluded from `chrome.storage.sync`.
+- **No client secret anywhere.** Sign-in uses `chrome.identity.getAuthToken()` against a Chrome Extension-type OAuth client, which Google issues no client secret for at all — there's nothing to leak in source.
+- **Access tokens never leave the device.** Chrome caches and silently refreshes them internally via `chrome.identity`; the extension never stores a token or refresh token of its own in `chrome.storage.local`.
 - **All user-generated content is HTML-escaped** via `escH()` before DOM insertion. No `eval`, no `document.write`, no raw `innerHTML` with user input.
 - **URL sanitization.** All user-supplied URLs pass through `safeUrl()` which validates the scheme (http/https only), blocking `javascript:`, `data:`, and other dangerous protocols.
 - **MV3 CSP.** Chrome Extension pages follow Manifest V3's default Content Security Policy which disallows `eval` and external scripts.
 - **AI API key.** If you enable AI features, your Anthropic API key is stored only in `chrome.storage.local` on your device, excluded from both Drive sync and the E2E-encrypted payload, and sent only to `https://api.anthropic.com` with each AI request.
-- **End-to-end encryption.** When enabled, Drive backups are encrypted client-side with AES-GCM using a key derived from your passphrase via PBKDF2. The passphrase itself is never stored or transmitted — if you lose it, encrypted backups cannot be recovered.
-- **Privacy policy.** See [`privacy.html`](privacy.html) for the full data-handling disclosure (required for Chrome Web Store and OAuth consent screen verification — see [docs/CWS_SUBMISSION.md](docs/CWS_SUBMISSION.md)).
+- **End-to-end encryption.** When enabled (12+ character passphrase required), Drive backups are encrypted client-side with AES-GCM using a key derived from your passphrase via PBKDF2 (600,000 iterations). The passphrase is stored locally in `chrome.storage.local` and never transmitted — if you lose it, encrypted backups cannot be recovered.
+- **Privacy policy.** See [`privacy.html`](privacy.html) for the full data-handling disclosure (required for Chrome Web Store and OAuth consent screen verification).
 
 ---
 
@@ -305,9 +297,10 @@ Bump `version` in both `manifest.json` and `package.json` (they must match — t
 | Problem | Solution |
 |---|---|
 | Extension icon is blank or broken | Regenerate `icons/favicon.png`, `icons/icon-16.png`, `icons/icon-48.png` from `icons/favicon.svg` and reload the extension |
-| "Sign in" button does nothing | Confirm your OAuth client's redirect URI includes `https://<extension-id>.chromiumapp.org/` (trailing slash required) |
+| "Sign in" button does nothing, or shows a permission-error toast | The `identity`/`identity.email` optional permission wasn't granted — try again and approve the browser's permission prompt |
+| Sign-in fails immediately every time | Extension ID mismatch — the Chrome Extension OAuth client is bound to one specific extension ID; check `EXPECTED_EXTENSION_ID` in `app.js` against `chrome://extensions` |
 | Sign-in shows "access_denied" | Add your Google account as a Test User on the OAuth consent screen in Google Cloud Console |
-| "Session expired. Sign in again." | Token refresh failed. Click Sign in again to re-authenticate interactively |
+| Sign-in doesn't work at all, on Brave/Edge/Vivaldi/etc. | Expected — `chrome.identity.getAuthToken()` only works in actual Google Chrome, not other Chromium forks |
 | Weather shows "--°C" | Check that `wttr.in` is reachable; verify `host_permissions` in `manifest.json` |
 | Data not syncing | Confirm you are signed in; check that the Drive API is enabled in your Google Cloud project |
 | Popup shows "No workspaces found" | Open a new tab first to initialise extension data, then try the popup |

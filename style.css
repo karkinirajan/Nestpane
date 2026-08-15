@@ -410,13 +410,13 @@ svg { flex-shrink: 0; }
 /* ── SYNC POPUP (anchored above footer user button) ─────── */
 .sb-footer-user-wrap { position: relative; }
 .sb-sync {
-  position: absolute; bottom: calc(100% + 6px); left: 0; right: 0;
+  position: fixed; width: 224px;
   background: var(--surface-2); border: 1px solid var(--border-2);
   border-radius: var(--radius-sm); padding: 10px;
   display: none; flex-direction: column; gap: 8px;
   transition: border-color .2s;
   box-shadow: 0 6px 28px rgba(0,0,0,.45);
-  z-index: 200;
+  z-index: 250;
   animation: sbSyncSlideUp .14s ease;
 }
 @keyframes sbSyncSlideUp {
@@ -885,7 +885,7 @@ svg { flex-shrink: 0; }
   min-height:300px;
 }
 .notes-list { max-height:220px; }
-.tasks-list { max-height:220px; }
+.reminders-list { max-height:220px; }
 .widget {
   background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius);
   padding:16px; display:flex; flex-direction:column; gap:12px; transition:border-color .15s;
@@ -911,21 +911,33 @@ svg { flex-shrink: 0; }
 .note-item-preview { font-size:11px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 .note-pinned-dot { width:5px; height:5px; background:var(--accent); border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
 
-.tasks-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; }
-.tasks-list::-webkit-scrollbar { width:3px; }
-.tasks-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-.task-item { display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-xs); transition:background .1s; }
-.task-item:hover { background:var(--surface-3); }
-.task-checkbox { width:16px; height:16px; border:2px solid var(--border-2); border-radius:4px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s,border-color .15s; cursor:pointer; }
-.task-item.done .task-checkbox { background:var(--accent); border-color:var(--accent); }
-.task-item.done .task-checkbox::after { content:''; display:block; width:4px; height:7px; border:1.5px solid #fff; border-top:none; border-left:none; transform:rotate(45deg) translate(-1px,-1px); }
-.task-text { font-size:12.5px; color:var(--text); flex:1; line-height:1.35; cursor:default; vertical-align:middle; }
-.task-item.done .task-text { color:var(--text-3); text-decoration:line-through; }
-.task-del-btn { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; border-radius:3px; font-size:10px; color:var(--text-3); background:none; border:none; cursor:pointer; transition:color .1s,background .1s; line-height:1; }
-.task-del-btn:hover { color:var(--error); background:var(--error-bg); }
-.tasks-progress-chip { display:none; font-size:11px; font-weight:600; background:var(--accent-bg); color:var(--accent-2); border-radius:var(--radius-pill); padding:2px 7px; }
-.tasks-progress-chip.visible { display:inline-block; }
-.tasks-progress-chip.all-done { background:var(--success-bg); color:var(--success); }
+/* Reminders widget — Nestodo cards that carry a remindAt timestamp */
+.reminders-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; }
+.reminders-list::-webkit-scrollbar { width:3px; }
+.reminders-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.reminder-item { display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-xs); transition:background .1s,border-color .1s; }
+.reminder-item:hover { background:var(--surface-3); }
+.reminder-item.overdue { border-color:rgba(239,68,68,.35); }
+.reminder-check { width:16px; height:16px; border:2px solid var(--border-2); border-radius:4px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s,border-color .15s; cursor:pointer; }
+.reminder-check:hover { border-color:var(--success); background:rgba(142,192,124,.12); }
+.reminder-item-body { min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; cursor:pointer; }
+.reminder-item-text { font-size:12.5px; color:var(--text); line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.reminder-item-time { font-size:10.5px; color:var(--text-3); }
+.reminder-item.overdue .reminder-item-time { color:var(--error); }
+.reminder-clear-btn { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; border-radius:3px; font-size:10px; color:var(--text-3); background:none; border:none; cursor:pointer; transition:color .1s,background .1s; opacity:0; line-height:1; }
+.reminder-item:hover .reminder-clear-btn { opacity:1; }
+.reminder-clear-btn:hover { color:var(--error); background:var(--error-bg); }
+
+/* Reminder badge — shown on Nestodo cards (board + dashboard widget) that have a remindAt */
+.reminder-badge { display:inline-block; margin-top:6px; font-size:10.5px; font-weight:500; color:var(--accent-2); background:var(--accent-bg); border-radius:var(--radius-pill); padding:2px 8px; }
+.reminder-badge.overdue { color:var(--error); background:var(--error-bg); }
+.kd-todo-item .reminder-badge { margin-top:0; flex-shrink:0; }
+
+/* Add/Edit Card modal — reminder field */
+.reminder-field-row { margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+.reminder-toggle-label { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-2); cursor:pointer; }
+.btn-secondary.danger-soft { color:var(--error); border-color:rgba(239,68,68,.2); background:var(--error-bg); }
+.btn-secondary.danger-soft:hover { background:rgba(239,68,68,.2); }
 
 .timer-body { display:flex; align-items:center; gap:16px; }
 .timer-circle-wrap { position:relative; width:90px; height:90px; flex-shrink:0; }
@@ -1522,6 +1534,9 @@ svg { flex-shrink: 0; }
 .organize-item-domain { font-size:11px; color:var(--text-3); flex-shrink:0; }
 .organize-empty { font-size:13px; color:var(--text-3); text-align:center; padding:24px 0; }
 .organize-setup { font-size:13px; color:var(--text-2); line-height:1.6; display:flex; flex-direction:column; gap:10px; align-items:flex-start; }
+.organize-consent { font-size:13px; color:var(--text-2); line-height:1.6; padding:8px 0; }
+.organize-consent-note { font-size:12px; color:var(--text-3); margin-top:6px; }
+.organize-consent-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
 
 /* ── 19. FAB ─────────────────────────────────────────────── */
 .fab { position:fixed; bottom:24px; right:24px; width:48px; height:48px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 4px 18px var(--accent-glow); z-index:150; transition:transform .18s,box-shadow .18s; }
@@ -1988,7 +2003,7 @@ svg { flex-shrink: 0; }
     grid-template-columns: 1fr;
   }
   .widgets-row .widget { min-height: auto; }
-  .notes-list, .tasks-list { max-height: 160px; }
+  .notes-list, .reminders-list { max-height: 160px; }
 }
 
 /* Topbar: hide theme label at narrow widths to prevent overflow */
