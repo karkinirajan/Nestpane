@@ -25,6 +25,7 @@ const REQUIRED_FILES = [
   "popup.html",
   "popup.js",
   "privacy.html",
+  "terms.html",
 ];
 
 const REQUIRED_PERMISSIONS = [
@@ -33,10 +34,17 @@ const REQUIRED_PERMISSIONS = [
   "storage",
   "history",
   "downloads",
-  "identity",
-  "identity.email",
   "declarativeNetRequest",
   "search",
+];
+
+// Sensitive permissions requested just-in-time via chrome.permissions.request()
+// rather than at install — must be in optional_permissions, not permissions.
+const REQUIRED_OPTIONAL_PERMISSIONS = [
+  "identity",
+  "identity.email",
+  "geolocation",
+  "notifications",
 ];
 
 // The real, CWS-assigned ID for this item (confirmed from a rejection email's
@@ -75,6 +83,19 @@ function validate() {
     }
   });
   const manifestPermissions = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+  const manifestOptionalPermissions = Array.isArray(manifest.optional_permissions)
+    ? manifest.optional_permissions
+    : [];
+  const missingOptionalPermissions = REQUIRED_OPTIONAL_PERMISSIONS.filter(
+    (p) => !manifestOptionalPermissions.includes(p),
+  );
+  if (missingOptionalPermissions.length) {
+    console.error(
+      "\n✗ Missing manifest optional_permissions:",
+      missingOptionalPermissions.join(", "),
+    );
+    ok = false;
+  }
   const missingPermissions = REQUIRED_PERMISSIONS.filter((p) => !manifestPermissions.includes(p));
   if (missingPermissions.length) {
     console.error("\n✗ Missing manifest permissions:", missingPermissions.join(", "));
@@ -89,14 +110,14 @@ function validate() {
   // key, not a missing one: fail loudly only on a mismatch, since that's
   // what actually breaks an upload (confirmed by a real CWS rejection).
   // A present+missing key still affects unpacked/local-dev testing, where
-  // the ID is what Google OAuth's redirect URI is built from — that's a
-  // dev-convenience concern, not a packaging blocker, so it's a warning.
+  // the ID is what the Chrome Extension-type OAuth client is bound to —
+  // that's a dev-convenience concern, not a packaging blocker, so it's a warning.
   if (typeof manifest.key !== "string" || !manifest.key.trim()) {
     console.warn("\n⚠ manifest.json has no \"key\" field.");
     console.warn(`  CWS will still publish this update under its existing id (${PUBLISHED_EXTENSION_ID}).`);
     console.warn("  Unpacked/local dev loads will get a different, machine-dependent id instead —");
-    console.warn("  fine for CWS uploads, but Google OAuth redirect testing won't match until the");
-    console.warn("  real public key (Dashboard → Package tab) is added back here.");
+    console.warn("  fine for CWS uploads, but Google sign-in (chrome.identity.getAuthToken) won't work");
+    console.warn("  locally until the real public key (Dashboard → Package tab) is added back here.");
   } else {
     try {
       const id = extensionIdFromKey(manifest.key);

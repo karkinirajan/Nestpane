@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nestpane — a local-first new tab dashboard</title>
+<meta name="description" content="Nestpane replaces your Chrome new tab with a local-first productivity dashboard: bookmarks, notes, tasks, focus timer, and optional Google Drive sync.">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 60px 20px 80px;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .brand img { width: 40px; height: 40px; border-radius: 9px; }
+  h1 { font-size: 32px; margin: 0; }
+  .tagline { font-size: 18px; opacity: 0.8; margin-top: 4px; }
+  .actions { display: flex; gap: 12px; margin: 28px 0 40px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 12px 22px; border-radius: 8px;
+    background: #1a73e8; color: #fff; text-decoration: none; font-weight: 600;
+  }
+  .btn.secondary { background: transparent; border: 1.5px solid currentColor; color: inherit; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 32px 0; }
+  .card { background: #f5f5f5; border: 1px solid #e2e2e2; border-radius: 10px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 6px; font-size: 15px; color: #1a1a1a; }
+  .card p { margin: 0; font-size: 13.5px; color: #1a1a1a; opacity: 0.75; }
+  .about { margin: 32px 0; font-size: 15px; }
+  .about h2 { font-size: 17px; margin: 0 0 8px; }
+  footer { margin-top: 56px; font-size: 13px; opacity: 0.7; }
+  footer a { color: inherit; }
+
+  /* Dark-mode overrides MUST come after the base rules above — same-specificity
+     CSS rules are resolved by source order, so putting this block first (as an
+     earlier version of this file did) let the plain .card/.btn rules below it
+     win regardless of color scheme, which is why the cards read as washed-out
+     light-gray-on-white even in a dark browser/OS theme. */
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e6e6; background: #14161a; }
+    a { color: #8ab4ff; }
+    .btn { background: #8ab4ff; color: #14161a; }
+    .card { background: #1f2227; border-color: #333; }
+    .card h3 { color: #e6e6e6; }
+    .card p { color: #e6e6e6; opacity: 0.75; }
+    .about h2 { color: #e6e6e6; }
+  }
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <img src="favicon.png" alt="Nestpane icon" onerror="this.style.display='none'">
+  <div>
+    <h1>Nestpane</h1>
+  </div>
+</div>
+<p class="tagline">A local-first new tab dashboard — bookmarks, notes, tasks, and focus, without the accounts or the ads.</p>
+
+<div class="about">
+  <h2>What is Nestpane?</h2>
+  <p>
+    Nestpane is a free Google Chrome browser extension. Once installed, it replaces the
+    default blank/search "new tab" page with a personal productivity dashboard: your
+    bookmarks organized into workspaces, a notes editor, a to-do list, a calendar, a
+    Kanban board, a journal, a habit tracker, and a focus timer — all in a single page
+    you already see dozens of times a day.
+  </p>
+  <p>
+    All of this data is stored locally in your own browser by default — Nestpane has no
+    servers of its own and does not require creating an account. Two features are
+    entirely optional and off unless you turn them on: signing in with your Google
+    account to back up your data to a private folder in your own Google Drive, and
+    adding your own Anthropic API key to enable AI-assisted features like a command bar
+    and daily briefing. Full details are in the <a href="privacy.html">Privacy Policy</a>.
+  </p>
+</div>
+
+<div class="actions">
+  <a class="btn" href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener">Get it on Chrome Web Store</a>
+  <a class="btn secondary" href="privacy.html">Privacy Policy</a>
+  <a class="btn secondary" href="terms.html">Terms of Service</a>
+</div>
+
+<div class="features">
+  <div class="card">
+    <h3>Everything, one tab</h3>
+    <p>Bookmarks, notes, tasks, a Kanban board, journal, and habit tracker — organized into workspaces.</p>
+  </div>
+  <div class="card">
+    <h3>Local-first</h3>
+    <p>Your data lives in your browser. No account required, no servers of ours involved.</p>
+  </div>
+  <div class="card">
+    <h3>Optional Drive sync</h3>
+    <p>Sign in with Google to back up to a private, app-only folder in your own Drive — end-to-end encryption available.</p>
+  </div>
+  <div class="card">
+    <h3>Optional AI</h3>
+    <p>Bring your own Anthropic API key to enable an AI command bar, daily briefing, and smart tab organizing.</p>
+  </div>
+</div>
+
+<footer>
+  Built by <a href="https://kneeraazon.com" target="_blank" rel="noopener">kneeraazon</a>.
+  &nbsp;·&nbsp;<a href="privacy.html">Privacy</a>
+  &nbsp;·&nbsp;<a href="terms.html">Terms</a>
+</footer>
+
+</body>
+</html>
