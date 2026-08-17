@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nestpane</title>
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,700&display=swap" rel="stylesheet">
+  <script src="fouc.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Skip to main content (accessibility) -->
+<a href="#mainContent" class="skip-link">Skip to main content</a>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+
+  <!-- Brand + collapse toggle -->
+  <div class="sb-brand">
+    <img class="sb-logo-img" src="icons/favicon.png" alt="Nestpane logo" aria-hidden="true">
+    <span class="sb-brand-name" aria-hidden="true">Nestpane</span>
+    <button class="sb-edit-btn" id="sbEditModeBtn" data-tip="Edit sidebar" aria-label="Edit sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar" aria-controls="sbNav">
+      <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+      <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
+    </button>
+  </div>
+
+  <!-- Scrollable nav -->
+  <div class="sb-nav-wrap">
+    <nav class="sb-nav" id="sbNav" role="menubar" aria-label="Navigation groups">
+
+      <!-- 0. DASHBOARD — standalone, non-deletable -->
+      <a href="#" class="sb-item sb-main-item" data-view="home">
+        <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span class="sb-group-label">Dashboard</span>
+      </a>
+
+      <!-- Data-driven groups render here via renderSidebar() -->
+      <div id="sbGroupsContainer"></div>
+
+    </nav><!-- /sb-nav -->
+
+  </div><!-- /sb-nav-wrap -->
+
+  <!-- SIDEBAR FOOTER -->
+  <div class="sb-footer">
+
+    <!-- User / Sync item -->
+    <div class="sb-footer-user-wrap" id="sbFooterUserWrap">
+      <!-- Popup (the sync card, now anchored above this button) -->
+      <div class="sb-sync" id="syncCard">
+        <div class="sb-sync-top">
+          <div class="sb-sync-icon" id="syncIconEl">
+            <svg id="syncIconCloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+            <svg id="syncIconSpin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="display:none"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+            <svg id="syncIconOk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="display:none"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg id="syncIconErr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="display:none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="sb-sync-body">
+            <strong id="syncTitle">Sync across devices</strong>
+            <p id="syncDesc">Sign in to back up your data.</p>
+          </div>
+        </div>
+        <div class="sb-sync-actions">
+          <button class="sb-sync-btn" id="signInBtn">Sign in with Google</button>
+          <button class="sb-sync-btn sb-sync-btn-sm" id="syncNowBtn" style="display:none">Sync now</button>
+          <div class="sb-sync-manual" id="sbSyncManual" style="display:none">
+            <button class="sb-sync-btn sb-sync-btn-sm sb-sync-push-btn" id="pushCloudBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Push to cloud
+            </button>
+            <button class="sb-sync-btn sb-sync-btn-sm sb-sync-pull-btn" id="pullCloudBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Pull from cloud
+            </button>
+          </div>
+          <span class="sb-sync-ts" id="sbSyncTs"></span>
+        </div>
+      </div>
+      <!-- Trigger button -->
+      <button class="sb-footer-btn sb-footer-user-btn" id="syncFooterBtn" data-tip="Sync status">
+        <div class="sb-ftr-avatar" id="sbFtrAvatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        </div>
+        <div class="sb-ftr-user-info">
+          <span class="sb-ftr-name" id="sbFtrName">Connect Drive</span>
+          <span class="sb-ftr-sub" id="sbFtrSub">Sign in to sync</span>
+        </div>
+        <span class="sb-ftr-dot" id="sbFtrDot"></span>
+      </button>
+    </div>
+
+    <button class="sb-footer-btn" id="settingsBtn" data-tip="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+    <button class="sb-footer-btn" id="analyticsBtn" data-tip="Insights">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Insights</span>
+    </button>
+  </div>
+
+</aside><!-- /sidebar -->
+
+<!-- ===== MAIN ===== -->
+<main class="main" id="app" role="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar" role="banner">
+    <button class="search-trigger" id="searchTriggerBtn" aria-label="Open search palette (press /)">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span class="search-trigger-text">Search everything…</span>
+      <kbd class="search-kbd">/</kbd>
+    </button>
+    <div class="topbar-ws" id="topbarWorkspaces">
+      <div class="topbar-ws-list" id="topbarWorkspacesList"></div>
+      <button class="topbar-ws-btn" id="newWorkspaceTabBtn" data-tip="New Workspace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="topbar-ws-btn" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <button class="topbar-ws-btn" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+      </button>
+      <button id="addWorkspaceBtn" style="display:none"></button>
+    </div>
+    <div class="topbar-actions">
+      <!-- topSettingsBtn kept as no-op stub for JS compat -->
+      <button id="topSettingsBtn" style="display:none" tabindex="-1" aria-hidden="true"></button>
+
+      <div class="topbar-sep"></div>
+
+      <!-- Theme toggle -->
+      <button class="topbar-btn topbar-theme-btn" id="themeBtn" data-tip="Toggle theme" aria-label="Toggle theme">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="themeLabel" class="topbar-theme-label">Dark</span>
+      </button>
+
+      <!-- User avatar -->
+      <button class="topbar-avatar-btn" id="userAvatarBtn" aria-label="Profile">
+        <div class="avatar" id="userAvatar">U</div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hidden file input for wallpaper upload -->
+  <input type="file" id="heroBgUploadInput" accept="image/*" style="display:none">
+
+  <!-- CONTENT -->
+  <div class="content-wrapper" id="mainContent" tabindex="-1">
+
+    <!-- ===== HOME VIEW ===== -->
+    <div id="view-home" class="view active">
+
+      <!-- Hero -->
+      <section class="hero" id="heroSection">
+        <!-- Wallpaper layer -->
+        <div class="hero-bg-img" id="heroBgImg"></div>
+        <div class="hero-overlay"></div>
+        <!-- Wallpaper controls (top-right of hero) -->
+        <div class="hero-wp-controls" id="heroWpControls">
+          <button class="hero-wp-btn" id="refreshWallpaperBtn" title="New photo wallpaper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+          </button>
+          <button class="hero-wp-btn" id="uploadWallpaperBtn" title="Upload image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </button>
+          <button class="hero-wp-btn" id="heroBgColorBtn" title="Solid color">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          </button>
+          <button class="hero-wp-btn hero-wp-btn-reset" id="resetWallpaperBtn" title="Reset to photo" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+        <!-- Quote column (left) -->
+        <div class="hero-quote-col" id="heroQuoteCol">
+          <div class="hero-quote-mark">"</div>
+          <p class="hero-quote-text" id="heroQuoteText" spellcheck="false">Loading…</p>
+          <div class="hero-quote-author" id="heroQuoteAuthor" spellcheck="false">—</div>
+          <div class="hero-quote-actions">
+            <button class="hero-quote-btn" id="shuffleQuoteBtn" title="Random quote">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+              Shuffle
+            </button>
+            <button class="hero-quote-btn" id="editQuoteBtn" title="Write custom quote">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button class="hero-quote-btn hero-quote-save-btn" id="saveQuoteBtn" title="Save" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
+              Save
+            </button>
+          </div>
+        </div>
+
+        <!-- Clock column (center) -->
+        <div class="hero-body">
+          <p class="greeting" id="greetingText">Good evening! 👋</p>
+          <div class="clock-row">
+            <span class="clock" id="clockDisplay">00:00</span>
+            <span class="clock-ampm" id="clockAmPm">AM</span>
+          </div>
+          <p class="date-line" id="dateDisplay">Loading…</p>
+        </div>
+
+        <!-- Weather column (right) -->
+        <div class="weather-widget" id="weatherWidget" tabindex="0">
+          <button type="button" class="weather-current" aria-label="Change weather location">
+            <span class="weather-icon" id="weatherIcon">⛅</span>
+            <div class="weather-body">
+              <span class="weather-temp" id="weatherTemp">--°C</span>
+              <span class="weather-desc" id="weatherDesc"></span>
+              <div class="weather-loc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="9" height="9"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span id="weatherCity">Detecting…</span>
+              </div>
+            </div>
+          </button>
+          <div class="weather-divider"></div>
+          <div class="weather-forecast" id="weatherForecast">
+            <div class="weather-forecast-day"><span class="wf-day">—</span><span class="wf-icon">—</span><span class="wf-hi">—</span><span class="wf-lo">—</span></div>
+            <div class="weather-forecast-day"><span class="wf-day">—</span><span class="wf-icon">—</span><span class="wf-hi">—</span><span class="wf-lo">—</span></div>
+            <div class="weather-forecast-day"><span class="wf-day">—</span><span class="wf-icon">—</span><span class="wf-hi">—</span><span class="wf-lo">—</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- hidden legacy workspace tabs (kept for JS compatibility) -->
+      <div id="workspaceTabs" style="display:none"></div>
+
+      <!-- Home Body -->
+      <div class="home-content">
+
+        <!-- Workspace Bookmarks -->
+        <section class="section" id="wsBmSection" style="display:none">
+          <div class="section-title-row">
+            <h2 class="section-title">Bookmarks</h2>
+            <button class="edit-btn" id="addWsBmBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
+          </div>
+          <div id="wsBmGrid"></div>
+        </section>
+
+        <!-- Quick Access + To-Do (two columns) -->
+        <section class="section qa-todo-row">
+
+          <!-- Left: Quick Access -->
+          <div class="qa-dash-col">
+            <div class="section-title-row" style="margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <h2 class="section-title">Quick Access</h2>
+                <div class="qa-mode-btns" id="qaModeBtns">
+                  <button class="qa-mode-btn active" data-mode="icon" title="Icon only">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                  </button>
+                  <button class="qa-mode-btn" data-mode="icon-name" title="Icon + name">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="5" width="6" height="6" rx="1"/><line x1="12" y1="6" x2="21" y2="6"/><line x1="12" y1="10" x2="19" y2="10"/><rect x="3" y="14" width="6" height="6" rx="1"/><line x1="12" y1="15" x2="21" y2="15"/><line x1="12" y1="19" x2="19" y2="19"/></svg>
+                  </button>
+                  <button class="qa-mode-btn" data-mode="icon-name-desc" title="Icon + name + URL">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="11" x2="21" y2="11"/><line x1="3" y1="16" x2="15" y2="16"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="quick-access-grid" id="quickAccessGrid" data-qa-mode="icon"></div>
+          </div>
+
+          <!-- Right: To-Do from Kanban -->
+          <div class="kanban-dash-wrap" id="widget-todo">
+            <div class="section-title-row" style="margin-bottom:10px">
+              <h2 class="section-title">To Do</h2>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="widget-action-btn" id="kanbanDashAddBtn" data-tip="Add to-do">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="edit-btn" id="kanbanDashOpenBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
+                  Nestodo
+                </button>
+              </div>
+            </div>
+            <div class="kd-todo-list" id="kanbanDashCols"></div>
+          </div>
+
+        </section>
+
+        <!-- AI Daily Briefing -->
+        <section class="section ai-briefing-section" id="aiBriefingSection" style="display:none">
+          <div class="section-title-row">
+            <h2 class="section-title" style="display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
+              Daily Briefing
+            </h2>
+            <button class="edit-btn" id="refreshBriefingBtn" data-tip="Regenerate briefing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              Refresh
+            </button>
+          </div>
+          <div class="ai-briefing-body" id="aiBriefingBody">
+            <div class="skeleton skeleton-text" style="width:95%"></div>
+            <div class="skeleton skeleton-text" style="width:88%"></div>
+            <div class="skeleton skeleton-text" style="width:60%"></div>
+          </div>
+        </section>
+
+        <!-- Widgets — pinned to bottom -->
+        <div class="widgets-row" id="widgetsRow">
+
+          <!-- Calendar widget -->
+          <div class="widget calendar-widget" id="widget-calendar">
+            <div class="widget-top-row">
+              <span class="widget-label">Calendar</span>
+              <button class="widget-action-btn" id="addCalEventBtn" data-tip="Add event">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <div class="cal-header">
+              <button class="cal-nav-btn" id="calPrevBtn" aria-label="Previous month">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="cal-month-label" id="calMonthLabel">—</span>
+              <button class="cal-nav-btn" id="calNextBtn" aria-label="Next month">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+            <div class="cal-events-list" id="calEventsList"></div>
+          </div>
+
+          <!-- Notes widget -->
+          <div class="widget notes-widget" id="widget-notes">
+            <div class="widget-top-row">
+              <span class="widget-label">Notes</span>
+              <button class="widget-action-btn" id="addNoteBtn" data-tip="New note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <div class="notes-list" id="notesList"></div>
+          </div>
+
+          <!-- Reminders widget -->
+          <div class="widget reminders-widget" id="widget-reminders">
+            <div class="widget-top-row">
+              <span class="widget-label">Reminders</span>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="widget-action-btn" id="remindersAddBtn" data-tip="Add reminder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="edit-btn" id="remindersOpenBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
+                  Nestodo
+                </button>
+              </div>
+            </div>
+            <div class="reminders-list" id="remindersList"></div>
+          </div>
+
+          <!-- Focus Timer widget -->
+          <div class="widget timer-widget" id="widget-timer">
+            <div class="widget-top-row">
+              <span class="widget-label">Focus Timer</span>
+              <div class="timer-presets">
+                <button class="preset-btn active" data-min="25" data-type="focus">25m</button>
+                <button class="preset-btn" data-min="15" data-type="focus">15m</button>
+                <button class="preset-btn" data-min="5" data-type="focus">5m</button>
+                <button class="preset-btn timer-break-btn" data-min="5" data-type="short" title="Short break">☕</button>
+                <button class="preset-btn timer-break-btn" data-min="15" data-type="long" title="Long break">🌿</button>
+                <button class="timer-focus-btn" id="focusModeBtn" aria-label="Focus mode settings" data-tip="Block distracting sites while focused">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="timer-mode-badge" id="timerModeBadge" style="display:none"></div>
+            <div class="timer-body">
+              <div class="timer-circle-wrap">
+                <svg class="timer-svg" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="var(--border-2)" stroke-width="5"/>
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="5"
+                    stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"
+                    id="timerProgress" transform="rotate(-90,50,50)"/>
+                </svg>
+                <div class="timer-display"><span id="timerDisplay">25:00</span></div>
+              </div>
+              <div class="timer-controls">
+                <button class="timer-btn timer-reset-btn" id="timerResetBtn" aria-label="Reset timer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                </button>
+                <button class="timer-btn timer-play-btn" id="timerPlayBtn" aria-label="Start timer">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="timer-stats" id="timerStats">
+              <span class="timer-stat" id="timerSessionCount">0 sessions</span>
+              <span class="timer-stat-sep">·</span>
+              <span class="timer-stat" id="timerFocusTotal">0m today</span>
+            </div>
+          </div>
+
+        </div><!-- /widgets-row -->
+      </div><!-- /home-content -->
+    </div><!-- /view-home -->
+
+    <!-- ===== BOOKMARKS VIEW ===== -->
+    <div id="view-bookmarks" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Bookmarks</h1>
+        </div>
+        <div class="view-header-right">
+          <label for="bookmarkSearch" class="sr-only">Search bookmarks</label>
+          <input type="text" id="bookmarkSearch" class="view-search" placeholder="Search bookmarks…">
+          <button class="btn-secondary" id="addBookmarkBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Bookmark
+          </button>
+          <button class="btn-secondary" id="addFolderBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Folder
+          </button>
+        </div>
+      </div>
+      <div class="bm-ws-tabs" id="bmWsTabs"></div>
+      <div class="bm-toolbar" id="bmToolbar">
+        <div class="bm-folder-filters" id="bmFolderFilters"></div>
+        <div class="bm-sort-group">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="color:var(--text-3);flex-shrink:0"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          <select id="bmSortSelect" class="bm-sort-select">
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="most">Most visited</option>
+          </select>
+        </div>
+      </div>
+      <div class="view-loading" id="bookmarksLoading" style="display:none">
+        <div class="spinner"></div><span>Loading bookmarks…</span>
+      </div>
+      <div id="allBookmarksList" class="bookmarks-list-full"></div>
+    </div>
+
+    <!-- ===== HISTORY VIEW ===== -->
+    <div id="view-history" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>History</h1>
+        </div>
+        <div class="view-header-right">
+          <label for="historySearch" class="sr-only">Search history</label>
+          <input type="text" id="historySearch" class="view-search" placeholder="Search history…">
+          <button class="btn-danger-sm history-clear-all-btn" id="historyClearAllBtn">Clear All</button>
+        </div>
+      </div>
+      <div class="view-loading" id="historyLoading">
+        <div class="spinner"></div><span>Loading history…</span>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+
+    <!-- ===== DOWNLOADS VIEW ===== -->
+    <div id="view-downloads" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Downloads</h1>
+        </div>
+      </div>
+      <div class="view-loading" id="downloadsLoading">
+        <div class="spinner"></div><span>Loading downloads…</span>
+      </div>
+      <div id="downloadsList" class="downloads-list"></div>
+    </div>
+
+    <!-- ===== NOTES VIEW ===== -->
+    <div id="view-notes" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Notes</h1>
+        </div>
+        <button class="btn-primary" id="addNoteViewBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Note
+        </button>
+      </div>
+      <div class="notes-view-toolbar">
+        <div class="notes-search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <label for="notesViewSearch" class="sr-only">Search notes</label>
+          <input type="text" id="notesViewSearch" class="notes-view-search" placeholder="Search notes…">
+        </div>
+        <div class="notes-tag-filters" id="notesTagFilters"></div>
+      </div>
+      <div id="notesViewList" class="notes-view-list"></div>
+    </div>
+
+    <!-- ===== TRASH VIEW ===== -->
+    <div id="view-trash" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Trash</h1>
+        </div>
+        <button class="btn-danger" id="emptyTrashBtn">Empty Trash</button>
+      </div>
+      <div id="trashList" class="trash-list"></div>
+    </div>
+
+    <!-- ===== INSIGHTS VIEW ===== -->
+    <div id="view-analytics" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" id="analyticsBackBtn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Insights</h1>
+        </div>
+      </div>
+      <div id="analyticsContent" class="insights-board"></div>
+    </div>
+
+    <!-- ===== READING QUEUE VIEW ===== -->
+    <div id="view-reading" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Reading Queue</h1>
+        </div>
+        <div class="view-header-right">
+          <button class="btn-primary" id="addReadingBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add URL
+          </button>
+        </div>
+      </div>
+      <div id="readingList" class="reading-list"></div>
+    </div>
+
+    <!-- ===== TAB SESSIONS VIEW ===== -->
+    <div id="view-sessions" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Tab Sessions</h1>
+        </div>
+        <div class="view-header-right">
+          <button class="btn-primary" id="saveSessionBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Current Tabs
+          </button>
+        </div>
+      </div>
+      <div id="sessionsList" class="sessions-list"></div>
+    </div>
+
+    <!-- ===== DAILY JOURNAL VIEW ===== -->
+    <div id="view-journal" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Journal</h1>
+        </div>
+        <div class="view-header-right">
+          <button class="btn-primary" id="saveJournalBtn">Save Entry</button>
+        </div>
+      </div>
+      <div class="journal-layout" id="journalLayout">
+        <div class="journal-cal" id="journalCal">
+          <div class="journal-cal-header">
+            <button class="journal-cal-nav" id="journalPrevMonth">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="journal-cal-month" id="journalCalMonth">April 2026</span>
+            <button class="journal-cal-nav" id="journalNextMonth">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="journal-cal-grid" id="journalCalGrid"></div>
+        </div>
+        <div class="journal-editor">
+          <div class="journal-editor-date" id="journalEditorDate">Today</div>
+          <div class="journal-mood-row">
+            <span class="journal-mood-label" id="journalMoodLabel">Mood:</span>
+            <div class="journal-mood-btns" id="journalMoodBtns" role="group" aria-labelledby="journalMoodLabel">
+              <button type="button" class="journal-mood-btn" data-mood="😄" aria-label="Great" aria-pressed="false">😄</button>
+              <button type="button" class="journal-mood-btn" data-mood="🙂" aria-label="Good" aria-pressed="false">🙂</button>
+              <button type="button" class="journal-mood-btn" data-mood="😐" aria-label="Neutral" aria-pressed="false">😐</button>
+              <button type="button" class="journal-mood-btn" data-mood="😞" aria-label="Bad" aria-pressed="false">😞</button>
+              <button type="button" class="journal-mood-btn" data-mood="😢" aria-label="Terrible" aria-pressed="false">😢</button>
+            </div>
+          </div>
+          <label class="sr-only" for="journalTextarea">Journal entry</label>
+          <textarea class="journal-textarea" id="journalTextarea" placeholder="Write your thoughts for the day…"></textarea>
+          <div class="journal-footer">
+            <span class="journal-word-count" id="journalWordCount">0 words</span>
+            <button class="btn-primary" id="saveJournalBtn2">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== HABITS VIEW ===== -->
+    <div id="view-habits" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Habit Tracker</h1>
+        </div>
+        <div class="view-header-right">
+          <button class="btn-primary" id="addHabitBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Habit
+          </button>
+        </div>
+      </div>
+      <div id="habitsList" class="habits-list"></div>
+    </div>
+
+    <!-- ===== KANBAN VIEW ===== -->
+    <div id="view-kanban" class="view">
+      <div class="view-header">
+        <div class="view-header-left">
+          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1>Nestodo</h1>
+        </div>
+      </div>
+      <div class="kanban-board" id="kanbanBoard">
+        <div class="kanban-col col-todo" id="kanban-todo">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">To Do</span>
+            <span class="kanban-col-count" id="kanban-todo-count">0</span>
+          </div>
+          <div class="kanban-cards" id="kanban-todo-cards"></div>
+          <button class="kanban-add-card" data-col="todo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add card
+          </button>
+        </div>
+        <div class="kanban-col col-doing" id="kanban-doing">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">In Progress</span>
+            <span class="kanban-col-count" id="kanban-doing-count">0</span>
+          </div>
+          <div class="kanban-cards" id="kanban-doing-cards"></div>
+          <button class="kanban-add-card" data-col="doing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add card
+          </button>
+        </div>
+        <div class="kanban-col col-done" id="kanban-done">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">Done</span>
+            <span class="kanban-col-count" id="kanban-done-count">0</span>
+          </div>
+          <div class="kanban-cards" id="kanban-done-cards"></div>
+          <button class="kanban-add-card" data-col="done">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add card
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-wrapper -->
+</main><!-- /main -->
+
+<!-- ===== SETTINGS PANEL ===== -->
+<div class="settings-overlay" id="settingsOverlay"></div>
+<aside class="settings-panel" id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPanelTitle">
+  <div class="settings-header">
+    <h2 id="settingsPanelTitle">Settings</h2>
+    <button class="modal-close" id="closeSettingsBtn" aria-label="Close settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="settings-body">
+
+    <div class="settings-section">
+      <div class="settings-section-title">Profile</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span>Display Name</span>
+          <small>Shown in greeting</small>
+        </div>
+        <input type="text" id="settingsName" class="settings-input" placeholder="Your name">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Avatar Color</span></div>
+        <div class="color-swatches" id="avatarColors">
+          <div class="color-swatch active" data-color="#6366f1" style="background:#6366f1"></div>
+          <div class="color-swatch" data-color="#2563eb" style="background:#2563eb"></div>
+          <div class="color-swatch" data-color="#059669" style="background:#059669"></div>
+          <div class="color-swatch" data-color="#d97706" style="background:#d97706"></div>
+          <div class="color-swatch" data-color="#dc2626" style="background:#dc2626"></div>
+          <div class="color-swatch" data-color="#db2777" style="background:#db2777"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Appearance</div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Theme</div>
+        <div class="theme-grid" id="themeGrid">
+          <button class="theme-card active" data-theme="dark" title="Gruvbox Dark">
+            <span class="theme-card-swatches"><span style="background:#1d2021"></span><span style="background:#282828"></span><span style="background:#fe8019"></span></span>
+            <span>Dark</span>
+          </button>
+          <button class="theme-card" data-theme="light" title="Gruvbox Light">
+            <span class="theme-card-swatches"><span style="background:#fbf1c7"></span><span style="background:#f9f5d7"></span><span style="background:#af3a03"></span></span>
+            <span>Light</span>
+          </button>
+        </div>
+      </div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Accent Color</div>
+        <div class="color-swatches" id="accentColors">
+          <div class="color-swatch active" data-color="#fe8019" style="background:#fe8019"></div>
+          <div class="color-swatch" data-color="#fb4934" style="background:#fb4934"></div>
+          <div class="color-swatch" data-color="#b8bb26" style="background:#b8bb26"></div>
+          <div class="color-swatch" data-color="#fabd2f" style="background:#fabd2f"></div>
+          <div class="color-swatch" data-color="#83a598" style="background:#83a598"></div>
+          <div class="color-swatch" data-color="#d3869b" style="background:#d3869b"></div>
+          <div class="color-swatch" data-color="#8ec07c" style="background:#8ec07c"></div>
+          <div class="color-swatch" data-color="#6366f1" style="background:#6366f1"></div>
+          <div class="color-swatch" data-color="#2563eb" style="background:#2563eb"></div>
+          <div class="color-swatch" data-color="#059669" style="background:#059669"></div>
+          <div class="color-swatch" data-color="#d97706" style="background:#d97706"></div>
+          <div class="color-swatch" data-color="#dc2626" style="background:#dc2626"></div>
+          <div class="color-swatch" data-color="#db2777" style="background:#db2777"></div>
+          <input type="color" class="color-swatch accent-color-custom-input" id="accentColorCustomInput" value="#fe8019" title="Pick any color">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Clock &amp; Date</div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Clock Format</span></div>
+        <div class="toggle-group">
+          <button class="toggle-opt active" data-format="12" id="clock12Btn">12h</button>
+          <button class="toggle-opt" data-format="24" id="clock24Btn">24h</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Show Seconds</span></div>
+        <label class="switch">
+          <input type="checkbox" id="showSecondsToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Card Hover Effect</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span>Glow Animation</span>
+          <small>Cards, folders &amp; quick access</small>
+        </div>
+        <div class="toggle-group" id="cardGlowGroup">
+          <button class="toggle-opt" data-glow="off">Off</button>
+          <button class="toggle-opt active" data-glow="glow">Glow</button>
+          <button class="toggle-opt" data-glow="neon">Neon</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Widgets</div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Calendar Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetCalendarToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Notes Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetNotesToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>To-Do Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetTodoToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Reminders Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetRemindersToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Focus Timer Widget</span></div>
+        <label class="switch"><input type="checkbox" id="widgetTimerToggle" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Keyboard Shortcuts</div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Open Search</span><small>Default: /</small></div>
+        <input type="text" id="kbSearch" class="settings-input settings-input-sm" value="/" maxlength="20" placeholder="/">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Toggle Focus Timer</span><small>Default: Alt+T</small></div>
+        <input type="text" id="kbTimer" class="settings-input settings-input-sm" value="Alt+T" maxlength="20" placeholder="Alt+T">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>New Quick Note</span><small>Default: Alt+N</small></div>
+        <input type="text" id="kbNote" class="settings-input settings-input-sm" value="Alt+N" maxlength="20" placeholder="Alt+N">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Open Nestodo</span><small>Default: Alt+K</small></div>
+        <input type="text" id="kbTask" class="settings-input settings-input-sm" value="Alt+K" maxlength="20" placeholder="Alt+K">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label"><span>Switch Workspace 1–9</span><small>Always: Alt+1 … Alt+9</small></div>
+        <span class="settings-label-note">Built-in</span>
+      </div>
+      <button class="settings-action-btn" id="saveShortcutsBtn">Save Shortcuts</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">AI Assistant</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span>Enable AI Features</span>
+          <small>Powers the command bar's "Ask AI", daily briefing, and smart organize</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="aiToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Anthropic API Key</div>
+        <input type="password" id="aiApiKey" class="settings-input" style="width:100%" placeholder="sk-ant-…" autocomplete="off">
+        <small style="color:var(--text-3);font-size:11px;line-height:1.5">Stored only on this device and never synced. Get a key at <a class="credit-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</small>
+        <button class="settings-action-btn" id="testAiKeyBtn" style="margin-top:8px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+          Test Connection
+        </button>
+        <small id="aiTestStatus" style="font-size:11px;line-height:1.5"></small>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Security</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span>Encrypt Cloud Backups</span>
+          <small>End-to-end encryption with your passphrase</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="e2eToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Sync Passphrase</div>
+        <input type="password" id="e2ePassphrase" class="settings-input" style="width:100%" placeholder="Enter a strong passphrase" autocomplete="new-password">
+        <small style="color:var(--text-3);font-size:11px;line-height:1.5">Stored only on this device and never uploaded. Use the exact same passphrase on every device you sync with — if you lose it, encrypted backups cannot be recovered.</small>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Data Management</div>
+      <div class="settings-row-block">
+        <div class="settings-sub-label">Export / Import</div>
+        <button class="settings-action-btn" id="exportDataBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export All Data
+        </button>
+        <button class="settings-action-btn" id="importDataBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Data
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none">
+        <div class="settings-sub-label" style="margin-top:8px">Workspaces</div>
+        <button class="settings-action-btn" id="exportWorkspaceBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Current Workspace
+        </button>
+        <button class="settings-action-btn" id="importWorkspaceBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Workspace from File
+        </button>
+        <input type="file" id="importWorkspaceFileInput" accept=".json" style="display:none">
+        <div class="settings-sub-label" style="margin-top:8px">Clear Specific Data</div>
+        <button class="settings-action-btn danger-soft" id="clearNotesBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Clear All Notes (current workspace)
+        </button>
+        <button class="settings-action-btn danger-soft" id="clearTasksBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Clear All Nestodo (current workspace)
+        </button>
+        <button class="settings-action-btn danger-soft" id="clearQuickAccessBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Clear Quick Access (current workspace)
+        </button>
+        <button class="settings-action-btn danger-soft" id="clearTrashBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Empty Trash
+        </button>
+        <div class="settings-sub-label" style="margin-top:8px">Danger Zone</div>
+        <button class="settings-action-btn danger" id="clearAllDataBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Clear ALL Data (cannot be undone)
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">About</div>
+      <div class="settings-about">
+        <div class="about-logo"><img src="icons/favicon.png" alt="Nestpane logo" width="32" height="32" style="border-radius:6px;object-fit:contain"></div>
+        <div>
+          <div style="font-weight:700;font-size:15px">Nestpane</div>
+          <div style="color:var(--text-2);font-size:12px" id="aboutVersion">Version 1.3.0</div>
+          <div style="color:var(--text-2);font-size:12px;margin-top:4px">Your new tab, your way</div>
+        </div>
+      </div>
+      <div class="owner-credit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Built by <a class="credit-link" href="https://kneeraazon.com" target="_blank" rel="noopener">kneeraazon</a>
+      </div>
+      <div class="owner-credit" style="margin-top:4px">
+        <a class="credit-link" href="https://nestpane.netlify.app/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+        &nbsp;·&nbsp;
+        <a class="credit-link" href="https://nestpane.netlify.app/terms.html" target="_blank" rel="noopener">Terms of Service</a>
+      </div>
+    </div>
+
+    <div style="padding:0 0 20px">
+      <button class="btn-primary" id="saveSettingsBtn" style="width:100%">Save Settings</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Command Palette -->
+<div id="cmdPaletteOverlay" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div id="cmdPalette">
+    <div class="cmd-search-row">
+      <svg class="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <label for="cmdInput" class="sr-only">Search everything</label>
+      <input id="cmdInput" class="cmd-input" placeholder="Search bookmarks, notes, tasks, history, tabs…" autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="cmdResults">
+      <kbd class="cmd-esc-badge" id="cmdEscBadge" aria-hidden="true">ESC</kbd>
+    </div>
+    <div class="cmd-results" id="cmdResults" role="listbox" aria-label="Search results"></div>
+    <div class="cmd-footer" aria-hidden="true">
+      <span class="cmd-hint"><kbd>↑↓</kbd> navigate</span>
+      <span class="cmd-hint"><kbd>↵</kbd> open</span>
+      <span class="cmd-hint"><kbd>ESC</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" data-tip="Quick Add" aria-label="Quick add">
+  <svg class="fab-icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  <svg class="fab-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+</button>
+<div class="fab-menu" id="fabMenu">
+  <button class="fab-menu-item" id="fabAddNote">
+    <span class="fab-item-icon fab-item-icon--note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </span>
+    <span class="fab-item-label">New Note</span>
+  </button>
+  <button class="fab-menu-item" id="fabAddTask">
+    <span class="fab-item-icon fab-item-icon--task">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </span>
+    <span class="fab-item-label">New Task</span>
+  </button>
+  <button class="fab-menu-item" id="fabAddQuickAccess">
+    <span class="fab-item-icon fab-item-icon--link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    </span>
+    <span class="fab-item-label">Quick Access</span>
+  </button>
+  <button class="fab-menu-item" id="fabAddBookmark">
+    <span class="fab-item-icon fab-item-icon--bookmark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </span>
+    <span class="fab-item-label">Add Bookmark</span>
+  </button>
+  <button class="fab-menu-item" id="fabVoiceCapture">
+    <span class="fab-item-icon fab-item-icon--voice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </span>
+    <span class="fab-item-label">Voice Capture</span>
+  </button>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Workspace Modal -->
+<div class="modal-overlay" id="workspaceModal" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="workspaceModalTitle">New Workspace</h3>
+      <button class="modal-close" data-modal="workspaceModal" aria-label="Close workspace dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="workspaceName">Name</label>
+      <input type="text" id="workspaceName" placeholder="e.g. Personal, Work…" class="modal-input" autocomplete="off">
+      <label id="wsIconLabel">Icon</label>
+      <div class="emoji-picker" id="emojiPicker" role="radiogroup" aria-labelledby="wsIconLabel">
+        <span data-emoji="🏠" role="radio" aria-label="Home" tabindex="0">🏠</span><span data-emoji="💼" role="radio" aria-label="Work" tabindex="0">💼</span>
+        <span data-emoji="📚" role="radio" aria-label="Study" tabindex="0">📚</span><span data-emoji="🗂️" role="radio" aria-label="Files" tabindex="0">🗂️</span>
+        <span data-emoji="💡" role="radio" aria-label="Ideas" tabindex="0">💡</span><span data-emoji="🎮" role="radio" aria-label="Gaming" tabindex="0">🎮</span>
+        <span data-emoji="🎨" role="radio" aria-label="Art" tabindex="0">🎨</span><span data-emoji="🔬" role="radio" aria-label="Science" tabindex="0">🔬</span>
+        <span data-emoji="🚀" role="radio" aria-label="Launch" tabindex="0">🚀</span><span data-emoji="💰" role="radio" aria-label="Finance" tabindex="0">💰</span>
+        <span data-emoji="🌍" role="radio" aria-label="World" tabindex="0">🌍</span><span data-emoji="🎵" role="radio" aria-label="Music" tabindex="0">🎵</span>
+      </div>
+      <input type="hidden" id="selectedEmoji" value="🏠">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="workspaceModal">Cancel</button>
+      <button class="btn-primary" id="saveWorkspaceBtn">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Note Modal -->
+<div class="modal-overlay" id="noteModal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle">
+  <div class="modal note-editor-modal">
+    <div class="note-editor-topbar">
+      <button class="note-pin-btn" id="notePinBtn" aria-label="Pin note" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>
+        <span id="notePinLabel" aria-hidden="true">Pin</span>
+      </button>
+      <span class="note-editor-mode-label" id="noteModalTitle">New Note</span>
+      <button class="modal-close" data-modal="noteModal" aria-label="Close note editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="note-editor-body">
+      <div class="note-md-toolbar">
+        <input type="text" id="noteTitle" placeholder="Untitled" class="note-editor-title-input" autocomplete="off">
+        <button class="note-md-toggle" id="noteMdToggle" data-tip="Toggle markdown preview" aria-label="Toggle markdown preview" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          Preview
+        </button>
+      </div>
+      <textarea id="noteContent" placeholder="Start writing… (supports **bold**, *italic*, # heading, `code`, - lists, [link](url))" class="note-editor-content"></textarea>
+      <div id="noteMdPreview" class="note-md-preview" style="display:none"></div>
+    </div>
+    <div class="note-editor-footer">
+      <div class="note-tags-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="note-tags-icon" width="11" height="11"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <div class="note-tags-list" id="noteTagsList"></div>
+        <input type="text" id="noteTagInput" class="note-tag-input" placeholder="Add tag…" maxlength="20">
+      </div>
+      <div class="note-editor-bottom">
+        <span class="note-word-count" id="noteWordCount">0 words</span>
+        <div class="note-editor-actions">
+          <button class="btn-danger-sm" id="deleteNoteBtn" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Delete
+          </button>
+          <button class="btn-secondary" data-modal="noteModal">Cancel</button>
+          <button class="btn-primary" id="saveNoteBtn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Access Modal -->
+<div class="modal-overlay" id="quickAccessModal" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="qaModalTitle">Add Quick Access</h3>
+      <button class="modal-close" data-modal="quickAccessModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="qaName">Name</label>
+      <input type="text" id="qaName" placeholder="e.g. Gmail" class="modal-input">
+      <label for="qaUrl">URL</label>
+      <input type="url" id="qaUrl" placeholder="https://gmail.com" class="modal-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="quickAccessModal">Cancel</button>
+      <button class="btn-primary" id="saveQuickAccessBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Focus Mode Modal -->
+<div class="modal-overlay" id="focusModeModal" role="dialog" aria-modal="true" aria-labelledby="focusModeModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="focusModeModalTitle">Focus Mode</h3>
+      <button class="modal-close" data-modal="focusModeModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-row" style="padding:0">
+        <div class="settings-label">
+          <span>Block sites while timer runs</span>
+          <small>Blocked sites are unreachable until you pause or finish</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="focusModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <label for="focusModeSites">Blocked sites (one per line)</label>
+      <textarea id="focusModeSites" class="modal-input" rows="6" placeholder="youtube.com&#10;twitter.com&#10;reddit.com" style="resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="focusModeModal">Cancel</button>
+      <button class="btn-primary" id="saveFocusModeBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="profileModalTitle">Your Profile</h3>
+      <button class="modal-close" data-modal="profileModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="profileGoogleInfo" style="display:none" class="google-profile-info"></div>
+      <label for="profileName">Display Name</label>
+      <input type="text" id="profileName" placeholder="Your name" class="modal-input">
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-logout" id="logoutBtn" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign out
+      </button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn-secondary" data-modal="profileModal">Cancel</button>
+        <button class="btn-primary" id="saveProfileBtn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Folder Detail Modal -->
+<div class="modal-overlay" id="folderModal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="folderModalIcon" style="font-size:20px">📁</span>
+        <h3 id="folderModalTitle">Folder</h3>
+        <span id="folderModalCount" style="font-size:12px;color:var(--text-2)"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <div id="folderModalActions" style="display:flex;gap:4px"></div>
+        <button class="modal-close" data-modal="folderModal" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding:12px 16px;max-height:520px;overflow-y:auto">
+      <div id="folderModalItems" class="folder-modal-items"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Hero Background Color Modal -->
+<div class="modal-overlay" id="heroColorModal" role="dialog" aria-modal="true" aria-labelledby="heroColorModalTitle">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-header">
+      <h3 id="heroColorModalTitle">Solid Color Background</h3>
+      <button class="modal-close" data-modal="heroColorModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="hero-color-palette" id="heroColorPalette">
+        <div class="hero-color-custom-row">
+          <span class="hero-color-custom-label">Custom</span>
+          <input type="color" class="hero-color-custom-input" id="heroColorCustomInput" value="#1d2021" title="Pick any color">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="confirmTitle">Confirm</h3>
+      <button class="modal-close" data-modal="confirmModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMessage" style="color:var(--text-2);font-size:14px;line-height:1.6"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="confirmModal">Cancel</button>
+      <button class="btn-danger" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic single-field rename/add prompt — replaces window.prompt() so
+     these flows match the rest of the app's custom modal styling. -->
+<div class="modal-overlay" id="sbPromptModal" role="dialog" aria-modal="true" aria-labelledby="sbPromptTitle">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <h3 id="sbPromptTitle">Rename</h3>
+      <button class="modal-close" data-modal="sbPromptModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="sbPromptInput" class="modal-input" maxlength="40">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="sbPromptModal">Cancel</button>
+      <button class="btn-primary" id="sbPromptSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Weather Location Modal -->
+<div class="modal-overlay" id="weatherLocationModal" role="dialog" aria-modal="true" aria-labelledby="weatherLocationTitle">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="weatherLocationTitle">Set Weather Location</h3>
+      <button class="modal-close" data-modal="weatherLocationModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="weatherLocationInput">City Name</label>
+      <div style="display:flex;gap:7px">
+        <input type="text" id="weatherLocationInput" placeholder="e.g. Dhaka, London, New York…" class="modal-input" style="flex:1" autocomplete="off">
+        <button class="btn-primary" id="detectLocationBtn" data-tip="Detect my location" style="flex-shrink:0;padding:8px 12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg>
+        </button>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-2)">Use the GPS button to auto-detect.</div>
+      <div id="weatherLocationStatus" style="font-size:12px;color:var(--accent-2);min-height:16px;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-secondary" id="reDetectWeatherBtn" style="font-size:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        Re-detect
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-secondary" data-modal="weatherLocationModal">Cancel</button>
+        <button class="btn-primary" id="saveWeatherLocationBtn">Set Location</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bookmark Add/Edit Modal -->
+<div class="modal-overlay" id="bookmarkEditModal" role="dialog" aria-modal="true" aria-labelledby="bookmarkEditModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="bookmarkEditModalTitle">Add Bookmark</h3>
+      <button class="modal-close" data-modal="bookmarkEditModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="bmEditName">Title</label>
+      <input type="text" id="bmEditName" placeholder="Bookmark title" class="modal-input">
+      <label for="qaUrl">URL</label>
+      <input type="url" id="bmEditUrl" placeholder="https://example.com" class="modal-input">
+      <label for="bmEditFolder">Folder</label>
+      <select id="bmEditFolder" class="modal-input modal-select"></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger-sm" id="bmEditDeleteBtn" style="display:none;margin-right:auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Delete
+      </button>
+      <button class="btn-secondary" data-modal="bookmarkEditModal">Cancel</button>
+      <button class="btn-primary" id="bmEditSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Folder Add/Edit Modal -->
+<div class="modal-overlay" id="folderEditModal" role="dialog" aria-modal="true" aria-labelledby="folderEditModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="folderEditModalTitle">New Folder</h3>
+      <button class="modal-close" data-modal="folderEditModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="folderEditName">Folder Name</label>
+      <input type="text" id="folderEditName" placeholder="e.g. Work, Design, Dev…" class="modal-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="folderEditModal">Cancel</button>
+      <button class="btn-primary" id="folderEditSaveBtn">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workspace Bookmark Chooser -->
+<div class="modal-overlay" id="wsBmChooserModal" role="dialog" aria-modal="true" aria-labelledby="wsBmChooserTitle">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <h3 id="wsBmChooserTitle">Add to Workspace</h3>
+      <button class="modal-close" data-modal="wsBmChooserModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="ws-bm-chooser-grid">
+        <button class="ws-bm-chooser-tile" id="chooserFolderBtn">
+          <div class="qa-add-icon" style="font-size:20px">📁</div>
+          <span>New Folder</span>
+        </button>
+        <button class="ws-bm-chooser-tile" id="chooserBookmarkBtn">
+          <div class="qa-add-icon" style="font-size:20px">🔖</div>
+          <span>New Bookmark</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Workspace Folder Create/Edit Modal -->
+<div class="modal-overlay" id="wsFolderEditModal" role="dialog" aria-modal="true" aria-labelledby="wsFolderEditTitle">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="wsFolderEditTitle">New Folder</h3>
+      <button class="modal-close" data-modal="wsFolderEditModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="wsFolderEditNameInput">Folder Name</label>
+      <input type="text" id="wsFolderEditNameInput" placeholder="e.g. Work, Design, Dev…" class="modal-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="wsFolderEditModal">Cancel</button>
+      <button class="btn-primary" id="wsFolderEditSaveBtn">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workspace Bookmark Add/Edit Modal -->
+<div class="modal-overlay" id="wsBookmarkEditModal" role="dialog" aria-modal="true" aria-labelledby="wsBookmarkEditTitle">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 id="wsBookmarkEditTitle">Add Bookmark</h3>
+      <button class="modal-close" data-modal="wsBookmarkEditModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="wsBmEditTitle">Title</label>
+      <input type="text" id="wsBmEditTitle" placeholder="e.g. Google" class="modal-input">
+      <label for="qaUrl">URL</label>
+      <input type="url" id="wsBmEditUrl" placeholder="https://google.com" class="modal-input">
+      <label>Folder</label>
+      <div class="csel-wrap" id="wsBmFolderWrap">
+        <button type="button" class="csel-btn" id="wsBmFolderBtn">
+          <span id="wsBmFolderLabel">Select folder…</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="csel-dropdown" id="wsBmFolderDropdown"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger-sm" id="wsBmEditDeleteBtn" style="display:none;margin-right:auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Delete
+      </button>
+      <button class="btn-secondary" data-modal="wsBookmarkEditModal">Cancel</button>
+      <button class="btn-primary" id="wsBmEditSaveBtn">Add Bookmark</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Workspaces Modal -->
+<div class="modal-overlay" id="manageWorkspacesModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Manage Workspaces</h3>
+      <button class="modal-close" data-modal="manageWorkspacesModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:8px 12px">
+      <div id="manageWsList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="manageWsAddBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Workspace
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Smart Organize Modal -->
+<div class="modal-overlay" id="smartOrganizeModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>Smart Organize</h3>
+      <button class="modal-close" data-modal="smartOrganizeModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="organizeModalBody" style="max-height:55vh"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="smartOrganizeModal">Cancel</button>
+      <button class="btn-primary" id="applyOrganizeBtn" style="display:none">Add to Workspaces</button>
+    </div>
+  </div>
+</div>
+
+<!-- Voice Capture Modal -->
+<div class="modal-overlay" id="voiceCaptureModal" role="dialog" aria-modal="true" aria-labelledby="voiceCaptureTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="voiceCaptureTitle">Voice Capture</h3>
+      <button class="modal-close" data-modal="voiceCaptureModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="voice-capture-body">
+        <button class="voice-mic-btn" id="voiceMicBtn" aria-label="Toggle voice recording" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <div class="voice-status" id="voiceStatus">Tap the mic to start speaking</div>
+        <label class="sr-only" for="voiceTranscript">Transcript</label>
+        <textarea id="voiceTranscript" class="voice-transcript" rows="4" placeholder="Your speech will appear here — you can edit it before saving."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer voice-capture-actions">
+      <button class="btn-secondary" id="voiceSaveNoteBtn">Save as Note</button>
+      <button class="btn-secondary" id="voiceSaveTaskBtn">Add as Task</button>
+      <button class="btn-primary" id="voiceSaveJournalBtn">Add to Journal</button>
+    </div>
+  </div>
+</div>
+
+<!-- QA Replace Modal -->
+<div class="modal-overlay" id="qaReplaceModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-header">
+      <h3>Quick Access Full</h3>
+      <button class="modal-close" data-modal="qaReplaceModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="gap:6px">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:4px">Select an item to replace with <strong id="qaReplaceNewName"></strong>:</p>
+      <div id="qaReplaceList" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="qaReplaceModal">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD SIDEBAR LINK MODAL ===== -->
+<div class="modal-overlay" id="sbAddLinkModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="sbAddLinkTitle">Add Link</h3>
+      <button class="modal-close" data-modal="sbAddLinkModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="sb-view-picker" id="sbAddLinkViewPicker"></div>
+      <label for="qaName">Name</label>
+      <input type="text" id="sbAddLinkName" class="modal-input" placeholder="e.g. ChatGPT">
+      <label for="qaUrl">URL</label>
+      <input type="url" id="sbAddLinkUrl" class="modal-input" placeholder="https://…">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="sbAddLinkModal">Cancel</button>
+      <button class="btn-primary" id="sbAddLinkSaveBtn">Add Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HABIT MODAL ===== -->
+<div class="modal-overlay" id="habitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>New Habit</h3>
+      <button class="modal-close" data-modal="habitModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <label>Habit Name</label>
+      <input type="text" id="habitNameInput" class="modal-input" placeholder="e.g. Read 30 minutes">
+      <label>Emoji</label>
+      <input type="text" id="habitEmojiInput" class="modal-input" placeholder="📚" maxlength="4" style="width:80px">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="habitModal">Cancel</button>
+      <button class="btn-primary" id="habitSaveBtn">Create Habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== READING QUEUE MODAL ===== -->
+<div class="modal-overlay" id="readingModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add to Reading Queue</h3>
+      <button class="modal-close" data-modal="readingModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <label>Title</label>
+      <input type="text" id="readingTitleInput" class="modal-input" placeholder="Article title">
+      <label for="qaUrl">URL</label>
+      <input type="url" id="readingUrlInput" class="modal-input" placeholder="https://…">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="readingModal">Cancel</button>
+      <button class="btn-primary" id="readingSaveBtn">Add to Queue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KANBAN ADD CARD MODAL ===== -->
+<div class="modal-overlay" id="kanbanCardModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="kanbanCardModalTitle">Add Card</h3>
+      <button class="modal-close" data-modal="kanbanCardModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- AI parse mode -->
+      <div id="kanbanAiSection">
+        <div class="kanban-ai-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <span>Describe tasks in plain text — AI will parse them into cards</span>
+        </div>
+        <textarea id="kanbanAiInput" class="modal-input kanban-ai-textarea" rows="4" placeholder="e.g. Build login page with email validation. Set up Postgres database schema. Write unit tests for the auth module. Deploy to staging."></textarea>
+        <button class="kanban-ai-parse-btn" id="kanbanAiParseBtn" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Parse with AI
+        </button>
+        <div id="kanbanAiResult" class="kanban-ai-result" style="display:none"></div>
+        <div class="kanban-ai-or"><span>or add manually</span></div>
+      </div>
+      <!-- Manual mode -->
+      <label>Card Title</label>
+      <input type="text" id="kanbanCardTitleInput" class="modal-input" placeholder="e.g. Fix login bug">
+      <label>Notes (optional)</label>
+      <textarea id="kanbanCardDescInput" class="modal-input" rows="2" placeholder="Details…" style="resize:vertical"></textarea>
+      <div class="reminder-field-row">
+        <label class="reminder-toggle-label">
+          <input type="checkbox" id="kanbanCardRemindToggle">
+          <span>🔔 Remind me</span>
+        </label>
+        <input type="datetime-local" id="kanbanCardRemindInput" class="modal-input" style="display:none">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary danger-soft" id="kanbanCardDeleteBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" data-modal="kanbanCardModal">Cancel</button>
+      <button class="btn-primary" id="kanbanCardSaveBtn">Add Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD/EDIT REMINDER MODAL (standalone — not a Nestodo card) ===== -->
+<div class="modal-overlay" id="reminderModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="reminderModalTitle">Add Reminder</h3>
+      <button class="modal-close" data-modal="reminderModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <label>Reminder</label>
+      <input type="text" id="reminderTitleInput" class="modal-input" placeholder="e.g. Call the vet">
+      <label>Date &amp; time</label>
+      <input type="datetime-local" id="reminderTimeInput" class="modal-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary danger-soft" id="reminderDeleteBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" data-modal="reminderModal">Cancel</button>
+      <button class="btn-primary" id="reminderSaveBtn">Add Reminder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar Event / Schedule Modal -->
+<div class="modal-overlay" id="calEventModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="calEventModalTitle">Add Event</h3>
+      <button class="modal-close" data-modal="calEventModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label>Event Title</label>
+      <input type="text" id="calEventTitle" placeholder="e.g. Team standup, Review session…" class="modal-input">
+      <label style="margin-top:10px">Schedule Type</label>
+      <div class="schedule-type-row">
+        <button class="schedule-type-btn active" data-stype="once">One-time</button>
+        <button class="schedule-type-btn" data-stype="daily">Daily</button>
+        <button class="schedule-type-btn" data-stype="weekly">Weekly</button>
+        <button class="schedule-type-btn" data-stype="custom">Custom days</button>
+      </div>
+      <div class="schedule-options">
+        <!-- Once: just a date -->
+        <div class="schedule-field visible" id="sfOnce">
+          <label>Date</label>
+          <input type="date" id="calEventDate" class="modal-input">
+        </div>
+        <!-- Daily: no extra input needed -->
+        <div class="schedule-field" id="sfDaily">
+          <div style="font-size:12px;color:var(--text-3)">Repeats every day starting from today.</div>
+        </div>
+        <!-- Weekly: pick day of week -->
+        <div class="schedule-field" id="sfWeekly">
+          <label>Day of week</label>
+          <select id="calEventWeekday" class="modal-input modal-select">
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+            <option value="0">Sunday</option>
+          </select>
+        </div>
+        <!-- Custom: every N days (≥ 6) -->
+        <div class="schedule-field" id="sfCustom">
+          <label>Every how many days? <span style="color:var(--text-3);font-weight:400">(min 6)</span></label>
+          <input type="number" id="calEventCustomDays" class="modal-input" min="6" value="7" placeholder="e.g. 14">
+        </div>
+      </div>
+      <div id="calEventStatus" style="font-size:12px;color:var(--error);min-height:16px;margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-modal="calEventModal">Cancel</button>
+      <button class="btn-primary" id="saveCalEventBtn">Add Event</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
