@@ -16,17 +16,17 @@ function init() {
   // ── Combobox factory ──────────────────────────────────────────────────────
   function makeCombo({ triggerId, valId, dropId, listId, placeholder, onSelect }) {
     const trigger = el(triggerId);
-    const valEl   = el(valId);
-    const drop    = el(dropId);
-    const list    = el(listId);
-    let selected  = null;
+    const valEl = el(valId);
+    const drop = el(dropId);
+    const list = el(listId);
+    let selected = null;
 
     if (!trigger || !valEl || !drop || !list) {
-      return { setItems() {}, getValue() { return null; }, reset() {}, close() {} };
+      return { setItems() { }, getValue() { return null; }, reset() { }, close() { } };
     }
 
-    const open   = () => { trigger.classList.add('open');    drop.classList.add('open'); };
-    const close  = () => { trigger.classList.remove('open'); drop.classList.remove('open'); };
+    const open = () => { trigger.classList.add('open'); drop.classList.add('open'); };
+    const close = () => { trigger.classList.remove('open'); drop.classList.remove('open'); };
     const isOpen = () => drop.classList.contains('open');
 
     trigger.addEventListener('click', e => { e.stopPropagation(); isOpen() ? close() : open(); });
@@ -96,15 +96,15 @@ function init() {
     const t = el('toast');
     if (!t) return;
     t.textContent = msg;
-    t.className   = 'toast ' + type + ' show';
+    t.className = 'toast ' + type + ' show';
   }
 
   // ── Populate folder combobox ──────────────────────────────────────────────
   function populateFolders(wsId) {
-    const data   = wsData[wsId] || {};
-    const named  = (data.folders || []).map(f => f.name || f);
+    const data = wsData[wsId] || {};
+    const named = (data.folders || []).map(f => f.name || f);
     const fromBm = (data.importedBookmarks || []).map(b => b.folderName).filter(Boolean);
-    const all    = [...new Set([...named, ...fromBm])];
+    const all = [...new Set([...named, ...fromBm])];
     folderCombo.setItems(all.map(name => ({ value: name, label: name })));
   }
 
@@ -128,7 +128,7 @@ function init() {
     const tasksEl = el('dashTasksVal');
     const tasksSub = el('dashTasksSub');
     if (tasksEl) tasksEl.textContent = `${doneTasks}/${totalTasks}`;
-    if (tasksSub) tasksSub.textContent = totalTasks ? `${Math.round(doneTasks/totalTasks*100)}% done` : 'no tasks';
+    if (tasksSub) tasksSub.textContent = totalTasks ? `${Math.round(doneTasks / totalTasks * 100)}% done` : 'no tasks';
 
     // Habits
     const habits = st.habits || [];
@@ -163,22 +163,22 @@ function init() {
     new Promise(res => chrome.tabs.query({ active: true, currentWindow: true }, res)),
     new Promise(res => chrome.storage.local.get(['workspaces', 'wsData'], res)),
   ]).then(([[tab], stored]) => {
-    const mainForm   = el('mainForm');
-    const pageTitle  = el('pageTitle');
-    const pageUrl    = el('pageUrl');
+    const mainForm = el('mainForm');
+    const pageTitle = el('pageTitle');
+    const pageUrl = el('pageUrl');
     const titleInput = el('titleInput');
-    const pageFav    = el('pageFavicon');
-    const saveBtn    = el('saveBtn');
+    const pageFav = el('pageFavicon');
+    const saveBtn = el('saveBtn');
 
     // Guard: if popup closed before promise resolved
     if (!mainForm) return;
 
     if (tab) {
-      currentUrl   = tab.url || '';
+      currentUrl = tab.url || '';
       currentTitle = tab.title || currentUrl;
-      if (pageTitle)  pageTitle.textContent = currentTitle;
-      if (pageUrl)    pageUrl.textContent   = currentUrl;
-      if (titleInput) titleInput.value      = currentTitle;
+      if (pageTitle) pageTitle.textContent = currentTitle;
+      if (pageUrl) pageUrl.textContent = currentUrl;
+      if (titleInput) titleInput.value = currentTitle;
 
       if (tab.favIconUrl && pageFav) {
         const img = document.createElement('img');
@@ -195,7 +195,7 @@ function init() {
     }
 
     workspaces = stored.workspaces || [];
-    wsData     = stored.wsData     || {};
+    wsData = stored.wsData || {};
 
     if (!workspaces.length) {
       mainForm.innerHTML = '<div class="empty">No workspaces found.<br>Open a new tab to set up Nestpane first.</div>';
@@ -212,18 +212,18 @@ function init() {
   });
 
   // ── Destination toggle ────────────────────────────────────────────────────
-  const destQuick  = el('destQuick');
+  const destQuick = el('destQuick');
   const destFolder = el('destFolder');
-  const folderRow  = el('folderRow');
+  const folderRow = el('folderRow');
   const newFolderRow = el('newFolderRow');
   const newFolderBtn = el('newFolderBtn');
 
   if (destQuick) destQuick.addEventListener('click', () => {
     destMode = 'quick';
     destQuick.classList.add('active');
-    if (destFolder)    destFolder.classList.remove('active');
-    if (folderRow)     folderRow.style.display = 'none';
-    if (newFolderRow)  newFolderRow.style.display = 'none';
+    if (destFolder) destFolder.classList.remove('active');
+    if (folderRow) folderRow.style.display = 'none';
+    if (newFolderRow) newFolderRow.style.display = 'none';
     creatingNewFolder = false;
     if (newFolderBtn) { newFolderBtn.textContent = '+'; newFolderBtn.classList.remove('active'); }
   });
@@ -231,14 +231,14 @@ function init() {
   if (destFolder) destFolder.addEventListener('click', () => {
     destMode = 'folder';
     destFolder.classList.add('active');
-    if (destQuick)  destQuick.classList.remove('active');
-    if (folderRow)  folderRow.style.display = 'flex';
+    if (destQuick) destQuick.classList.remove('active');
+    if (folderRow) folderRow.style.display = 'flex';
   });
 
   // ── New folder toggle ─────────────────────────────────────────────────────
   if (newFolderBtn) newFolderBtn.addEventListener('click', () => {
     creatingNewFolder = !creatingNewFolder;
-    if (newFolderRow)  newFolderRow.style.display = creatingNewFolder ? 'block' : 'none';
+    if (newFolderRow) newFolderRow.style.display = creatingNewFolder ? 'block' : 'none';
     newFolderBtn.textContent = creatingNewFolder ? '×' : '+';
     newFolderBtn.classList.toggle('active', creatingNewFolder);
     const inp = el('newFolderInput');
@@ -250,7 +250,7 @@ function init() {
   if (saveBtn) saveBtn.addEventListener('click', async () => {
     const titleInput = el('titleInput');
     const title = (titleInput ? titleInput.value.trim() : '') || currentTitle;
-    const wsId  = selectedWsId;
+    const wsId = selectedWsId;
 
     if (!title || !currentUrl) { showToast('Missing title or URL.', 'err'); return; }
     if (currentUrl.startsWith('chrome://') || currentUrl.startsWith('chrome-extension://')) {
@@ -258,7 +258,7 @@ function init() {
     }
     if (!wsId) { showToast('Select a workspace.', 'err'); return; }
 
-    if (!wsData[wsId]) wsData[wsId] = { quickAccess:[], notes:[], tasks:[], folders:[], importedBookmarks:[] };
+    if (!wsData[wsId]) wsData[wsId] = { quickAccess: [], notes: [], tasks: [], folders: [], importedBookmarks: [] };
     const data = wsData[wsId];
 
     if (destMode === 'quick') {
