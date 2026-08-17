@@ -1122,6 +1122,7 @@ svg { flex-shrink: 0; }
 .trash-item-type.task-type { background:var(--success-bg); color:var(--success); }
 .trash-item-type.qa-type { background:rgba(245,158,11,.1); color:var(--warning); }
 .trash-item-type.sbgroup-type { background:var(--surface-3); color:var(--text-2); }
+.trash-item-type.reminder-type { background:rgba(139,180,255,.12); color:#8ab4ff; }
 .trash-item-name { flex:1; font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .restore-btn { padding:4px 10px; border:1px solid var(--border-2); border-radius:var(--radius-xs); font-size:12px; color:var(--text-2); transition:all .1s; flex-shrink:0; }
 .restore-btn:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }

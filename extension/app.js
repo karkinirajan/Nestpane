@@ -1462,6 +1462,7 @@ let S = {
   tabSessions: [],
   journal: {},
   kanban: {},
+  reminders: {},
   _kanbanDragCard: null,
   _kanbanDragCol: null,
   _sbAddLinkGroup: null,
@@ -1558,6 +1559,7 @@ async function loadState() {
     "tabSessions",
     "journal",
     "kanban",
+    "reminders",
     "calEvents",
     "_savedAt",
     "googleUser",
@@ -1660,6 +1662,7 @@ async function loadState() {
   S.tabSessions = Array.isArray(d.tabSessions) ? d.tabSessions : [];
   S.journal = d.journal && typeof d.journal === "object" ? d.journal : {};
   S.kanban = d.kanban && typeof d.kanban === "object" ? d.kanban : {};
+  S.reminders = d.reminders && typeof d.reminders === "object" ? d.reminders : {};
   if (_migrateLegacyTasksIntoKanban()) save();
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
@@ -1708,6 +1711,7 @@ function save() {
     tabSessions: S.tabSessions,
     journal: S.journal,
     kanban: S.kanban,
+    reminders: S.reminders,
     calEvents: S.calEvents,
     _savedAt: S._savedAt,
     _focusSessions: S._focusSessions || {},
@@ -2671,6 +2675,7 @@ function buildDrivePayload() {
     tabSessions: S.tabSessions,
     journal: S.journal,
     kanban: S.kanban,
+    reminders: S.reminders,
     calEvents: S.calEvents,
     weatherLocation: S.weatherLocation,
     trash: S.trash,
@@ -2716,6 +2721,8 @@ function applyCloudData(cloud) {
       : S.journal;
   S.kanban =
     cloud.kanban && typeof cloud.kanban === "object" ? cloud.kanban : S.kanban;
+  S.reminders =
+    cloud.reminders && typeof cloud.reminders === "object" ? cloud.reminders : S.reminders;
   S.calEvents = Array.isArray(cloud.calEvents) ? cloud.calEvents : S.calEvents;
   S.trash = Array.isArray(cloud.trash) ? cloud.trash : S.trash;
   if (cloud.weatherLocation !== undefined)
@@ -2805,6 +2812,7 @@ async function _persistLocalState() {
     tabSessions: S.tabSessions,
     journal: S.journal,
     kanban: S.kanban,
+    reminders: S.reminders,
     calEvents: S.calEvents,
     weatherLocation: S.weatherLocation,
     trash: S.trash,
@@ -2878,6 +2886,7 @@ function _applyLiveStorageChange(changes) {
   if (changes.tabSessions) S.tabSessions = changes.tabSessions.newValue || [];
   if (changes.journal) S.journal = changes.journal.newValue || {};
   if (changes.kanban) S.kanban = changes.kanban.newValue || {};
+  if (changes.reminders) S.reminders = changes.reminders.newValue || {};
   if (changes.calEvents) S.calEvents = changes.calEvents.newValue || [];
   if (changes._focusSessions) S._focusSessions = changes._focusSessions.newValue || {};
   if (changes._focusMinutes) S._focusMinutes = changes._focusMinutes.newValue || {};
@@ -3856,8 +3865,12 @@ function renderManageWorkspacesList() {
               ),
             );
           }
+          (S.reminders[wsId] || []).forEach((r) =>
+            S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _deletedAt: Date.now() }),
+          );
           delete S.wsData[wsId];
           delete S.kanban[wsId];
+          delete S.reminders[wsId];
           S.workspaces = S.workspaces.filter((w) => w.id !== wsId);
           if (S.activeWsId === wsId) S.activeWsId = S.workspaces[0].id;
           save();
@@ -3945,8 +3958,12 @@ function deleteWorkspace(e, wsId) {
           ),
         );
       }
+      (S.reminders[wsId] || []).forEach((r) =>
+        S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _deletedAt: Date.now() }),
+      );
       delete S.wsData[wsId];
       delete S.kanban[wsId];
+      delete S.reminders[wsId];
       S.workspaces = S.workspaces.filter((w) => w.id !== wsId);
       if (S.activeWsId === wsId) S.activeWsId = S.workspaces[0].id;
       save();
@@ -6248,18 +6265,29 @@ function renderKanbanDash() {
   renderRemindersWidget();
 }
 
-// ===== REMINDERS DASHBOARD WIDGET =====
-// Surfaces every Nestodo card in the current workspace that carries a
-// remindAt timestamp — this IS the "reminder", there's no separate data
-// store for it. Done-column cards are excluded (nothing left to be
-// reminded about).
+// ===== REMINDERS =====
+// Reminders are their own first-class list (S.reminders), independent of
+// the Nestodo board — but a Nestodo card can ALSO carry a remindAt (set via
+// the Add/Edit Card modal), which shows up here too. The widget merges both
+// sources into one upcoming view; each kind edits through its own modal.
+function _remindersFor(wsId) {
+  if (!S.reminders[wsId]) S.reminders[wsId] = [];
+  return S.reminders[wsId];
+}
+
+function getReminders() {
+  return _remindersFor(S.activeWsId);
+}
+
 function renderRemindersWidget() {
   const container = el("remindersList");
   if (!container) return;
   const kb = getKanban();
-  const upcoming = _sortByReminder(
-    [...(kb.todo || []), ...(kb.doing || [])].filter((c) => c.remindAt),
-  ).slice(0, 8);
+  const cardReminders = [...(kb.todo || []), ...(kb.doing || [])]
+    .filter((c) => c.remindAt)
+    .map((c) => ({ kind: "card", id: c.id, col: (kb.todo || []).some((x) => x.id === c.id) ? "todo" : "doing", title: c.title, remindAt: c.remindAt }));
+  const standalone = getReminders().map((r) => ({ kind: "standalone", id: r.id, title: r.title, remindAt: r.remindAt }));
+  const upcoming = _sortByReminder([...cardReminders, ...standalone]).slice(0, 8);
 
   if (!upcoming.length) {
     container.innerHTML = `<div class="widget-empty-state">
@@ -6269,17 +6297,16 @@ function renderRemindersWidget() {
   }
 
   container.innerHTML = upcoming
-    .map((card) => {
-      const { text, overdue } = _formatReminderBadge(card.remindAt);
-      const col = (kb.todo || []).some((c) => c.id === card.id) ? "todo" : "doing";
+    .map((item) => {
+      const { text, overdue } = _formatReminderBadge(item.remindAt);
       return `
-    <div class="reminder-item${overdue ? " overdue" : ""}" data-rid="${card.id}" data-col="${col}">
-      <div class="reminder-check" data-rid="${card.id}" data-col="${col}" title="Mark done"></div>
+    <div class="reminder-item${overdue ? " overdue" : ""}" data-rid="${item.id}" data-kind="${item.kind}" data-col="${item.col || ""}">
+      <div class="reminder-check" data-rid="${item.id}" data-kind="${item.kind}" data-col="${item.col || ""}" title="Mark done"></div>
       <div class="reminder-item-body">
-        <span class="reminder-item-text">${escH(card.title)}</span>
-        <span class="reminder-item-time">🔔 ${escH(text)}</span>
+        <span class="reminder-item-text">${escH(item.title)}</span>
+        <span class="reminder-item-time">🔔 ${escH(text)}${item.kind === "card" ? " · Nestodo" : ""}</span>
       </div>
-      <button class="reminder-clear-btn" data-rid="${card.id}" data-col="${col}" title="Clear reminder">✕</button>
+      <button class="reminder-clear-btn" data-rid="${item.id}" data-kind="${item.kind}" data-col="${item.col || ""}" title="${item.kind === "card" ? "Clear reminder" : "Delete reminder"}">✕</button>
     </div>`;
     })
     .join("");
@@ -6287,41 +6314,108 @@ function renderRemindersWidget() {
   container.querySelectorAll(".reminder-item-body").forEach((body) => {
     body.addEventListener("click", () => {
       const item = body.closest(".reminder-item");
-      openKanbanCardModal(item.dataset.col, Number(item.dataset.rid));
+      if (item.dataset.kind === "card") openKanbanCardModal(item.dataset.col, Number(item.dataset.rid));
+      else openReminderModal(Number(item.dataset.rid));
     });
   });
 
   container.querySelectorAll(".reminder-check").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.rid);
-      const col = btn.dataset.col;
-      const kb2 = getKanban();
-      const idx = (kb2[col] || []).findIndex((c) => c.id === id);
-      if (idx < 0) return;
-      const [card] = kb2[col].splice(idx, 1);
-      if (!kb2.done) kb2.done = [];
-      kb2.done.unshift(card);
-      save();
-      renderKanbanDash();
-      if (el("view-kanban")?.classList.contains("active")) renderKanban();
+      if (btn.dataset.kind === "card") {
+        const col = btn.dataset.col;
+        const kb2 = getKanban();
+        const idx = (kb2[col] || []).findIndex((c) => c.id === id);
+        if (idx < 0) return;
+        const [card] = kb2[col].splice(idx, 1);
+        if (!kb2.done) kb2.done = [];
+        kb2.done.unshift(card);
+        save();
+        renderKanbanDash();
+        if (el("view-kanban")?.classList.contains("active")) renderKanban();
+      } else {
+        deleteReminder(id); // "done" for a standalone reminder = dismiss it
+      }
     });
   });
 
   container.querySelectorAll(".reminder-clear-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.rid);
-      const col = btn.dataset.col;
-      const kb2 = getKanban();
-      const card = (kb2[col] || []).find((c) => c.id === id);
-      if (card) {
-        card.remindAt = null;
-        card.notified = false;
+      if (btn.dataset.kind === "card") {
+        const col = btn.dataset.col;
+        const kb2 = getKanban();
+        const card = (kb2[col] || []).find((c) => c.id === id);
+        if (card) {
+          card.remindAt = null;
+          card.notified = false;
+        }
+        save();
+        renderKanbanDash();
+        if (el("view-kanban")?.classList.contains("active")) renderKanban();
+      } else {
+        deleteReminder(id);
       }
-      save();
-      renderKanbanDash();
-      if (el("view-kanban")?.classList.contains("active")) renderKanban();
     });
   });
+}
+
+let _reminderEditingId = null;
+
+function openReminderModal(id = null) {
+  _reminderEditingId = id;
+  const reminder = id != null ? getReminders().find((r) => r.id === id) : null;
+  el("reminderModalTitle").textContent = reminder ? "Edit Reminder" : "Add Reminder";
+  el("reminderTitleInput").value = reminder?.title || "";
+  el("reminderTimeInput").value = reminder ? _toDatetimeLocal(reminder.remindAt) : "";
+  const deleteBtn = el("reminderDeleteBtn");
+  if (deleteBtn) deleteBtn.style.display = reminder ? "" : "none";
+  el("reminderSaveBtn").textContent = reminder ? "Save Reminder" : "Add Reminder";
+  openModal("reminderModal");
+  setTimeout(() => el("reminderTitleInput")?.focus(), 80);
+}
+
+function saveReminder() {
+  const title = el("reminderTitleInput").value.trim();
+  if (!title) {
+    showToast("Enter a reminder title", "error");
+    return;
+  }
+  const timeVal = el("reminderTimeInput").value;
+  if (!timeVal) {
+    showToast("Pick a date and time for the reminder", "error");
+    return;
+  }
+  const remindAt = new Date(timeVal).getTime();
+  _ensurePermission(["notifications"]); // fire-and-forget, harmless if denied
+
+  const list = getReminders();
+  if (_reminderEditingId != null) {
+    const r = list.find((r) => r.id === _reminderEditingId);
+    if (r) {
+      r.title = title;
+      if (r.remindAt !== remindAt) r.notified = false;
+      r.remindAt = remindAt;
+    }
+  } else {
+    list.push({ id: Date.now(), title, remindAt, notified: false, createdAt: Date.now() });
+  }
+  _reminderEditingId = null;
+  save();
+  closeModal("reminderModal");
+  renderRemindersWidget();
+}
+
+function deleteReminder(id) {
+  const list = getReminders();
+  const r = list.find((r) => r.id === id);
+  if (r) {
+    S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _wsId: S.activeWsId, _deletedAt: Date.now() });
+  }
+  S.reminders[S.activeWsId] = list.filter((r) => r.id !== id);
+  save();
+  renderRemindersWidget();
+  renderTrash();
 }
 
 // ===== MIGRATION: add Socials items to existing users' Quick Access =====
@@ -7169,9 +7263,22 @@ function _checkDueReminders() {
       });
     });
   });
+  Object.keys(S.reminders || {}).forEach((wsId) => {
+    (S.reminders[wsId] || []).forEach((r) => {
+      if (r.remindAt && !r.notified && r.remindAt <= now) {
+        r.notified = true;
+        changed = true;
+        const ws = S.workspaces.find((w) => w.id === Number(wsId));
+        _notifyUser(`⏰ ${r.title}`, {
+          body: ws ? `Reminder in "${ws.name}"` : "Reminder",
+          icon: "icons/favicon.png",
+        });
+      }
+    });
+  });
   if (changed) {
     save();
-    renderKanbanDash();
+    renderKanbanDash(); // also refreshes the reminders widget internally
     if (el("view-kanban")?.classList.contains("active")) renderKanban();
   }
 }
@@ -7327,20 +7434,24 @@ function renderTrash() {
       const icon =
         item._type === "task"
           ? "✅"
-          : item._type === "quickAccess"
-            ? "⚡"
-            : item._type === "sidebarGroup"
-              ? "🗂️"
-              : "📝";
+          : item._type === "reminder"
+            ? "🔔"
+            : item._type === "quickAccess"
+              ? "⚡"
+              : item._type === "sidebarGroup"
+                ? "🗂️"
+                : "📝";
       const key = item.id || item._deletedAt;
       const typeClass =
         item._type === "task"
           ? "task-type"
-          : item._type === "quickAccess"
-            ? "qa-type"
-            : item._type === "sidebarGroup"
-              ? "sbgroup-type"
-              : "note-type";
+          : item._type === "reminder"
+            ? "reminder-type"
+            : item._type === "quickAccess"
+              ? "qa-type"
+              : item._type === "sidebarGroup"
+                ? "sbgroup-type"
+                : "note-type";
       return `<div class="trash-item">
       <span>${icon}</span>
       <span class="trash-item-name">${escH(name)}</span>
@@ -7376,6 +7487,14 @@ function restoreItem(key) {
       createdAt: item.id || Date.now(),
       remindAt: null,
       notified: false,
+    });
+  } else if (item._type === "reminder") {
+    _remindersFor(wsId).unshift({
+      id: item.id || Date.now(),
+      title: item.text,
+      remindAt: item.remindAt || Date.now(),
+      notified: false,
+      createdAt: item.id || Date.now(),
     });
   } else if (item._type === "note")
     S.wsData[wsId].notes.unshift({
@@ -9677,6 +9796,7 @@ function setupEventListeners() {
         S.tabSessions = [];
         S.journal = {};
         S.kanban = {};
+        S.reminders = {};
         save();
         renderAll();
         applyTheme("dark");
@@ -10152,6 +10272,17 @@ function setupEventListeners() {
 
   // ── Reminders widget ────────────────────────────────────────────────────
   el("remindersOpenBtn")?.addEventListener("click", () => navigateTo("kanban"));
+  el("remindersAddBtn")?.addEventListener("click", () => openReminderModal());
+  el("reminderSaveBtn")?.addEventListener("click", saveReminder);
+  el("reminderDeleteBtn")?.addEventListener("click", () => {
+    if (_reminderEditingId == null) return;
+    deleteReminder(_reminderEditingId);
+    _reminderEditingId = null;
+    closeModal("reminderModal");
+  });
+  el("reminderTitleInput")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveReminder();
+  });
 
   // ── Calendar Widget ─────────────────────────────────────────────────────
   el("calPrevBtn")?.addEventListener("click", () => {
@@ -11331,8 +11462,6 @@ window.toggleBmFolder = toggleBmFolder;
 window.closeModal = closeModal;
 window.openNoteEdit = openNoteEdit;
 window.deleteNoteById = deleteNoteById;
-window.toggleTask = toggleTask;
-window.deleteTask = deleteTask;
 window.removeQA = removeQA;
 window.restoreItem = restoreItem;
 window.hideSearch = hideSearch;

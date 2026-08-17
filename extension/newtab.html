@@ -353,10 +353,15 @@
           <div class="widget reminders-widget" id="widget-reminders">
             <div class="widget-top-row">
               <span class="widget-label">Reminders</span>
-              <button class="edit-btn" id="remindersOpenBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
-                Nestodo
-              </button>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="widget-action-btn" id="remindersAddBtn" data-tip="Add reminder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="edit-btn" id="remindersOpenBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
+                  Nestodo
+                </button>
+              </div>
             </div>
             <div class="reminders-list" id="remindersList"></div>
           </div>
@@ -1599,6 +1604,27 @@
       <button class="btn-secondary danger-soft" id="kanbanCardDeleteBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" data-modal="kanbanCardModal">Cancel</button>
       <button class="btn-primary" id="kanbanCardSaveBtn">Add Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD/EDIT REMINDER MODAL (standalone — not a Nestodo card) ===== -->
+<div class="modal-overlay" id="reminderModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="reminderModalTitle">Add Reminder</h3>
+      <button class="modal-close" data-modal="reminderModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <label>Reminder</label>
+      <input type="text" id="reminderTitleInput" class="modal-input" placeholder="e.g. Call the vet">
+      <label>Date &amp; time</label>
+      <input type="datetime-local" id="reminderTimeInput" class="modal-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary danger-soft" id="reminderDeleteBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" data-modal="reminderModal">Cancel</button>
+      <button class="btn-primary" id="reminderSaveBtn">Add Reminder</button>
     </div>
   </div>
 </div>
