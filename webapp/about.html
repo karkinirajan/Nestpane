@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About — NestPane</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F0F0F;
+            color: #E0E0E0;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+
+<body class="grid-bg antialiased">
+
+    <!-- Navigation -->
+    <nav id="top" class="fixed top-0 w-full z-50 backdrop-blur-lg bg-[#0F0F0F]/70 border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-3 group">
+                <img src="logo.svg" alt="NestPane logo" class="w-10 h-10 transition-transform group-hover:scale-105 shadow-md shadow-[#FF6B00]/30 rounded-xl" />
+                <span class="text-xl font-display font-bold tracking-[-0.02em]">
+                    <span class="text-white">Nest</span><span class="text-[#FF6B00]">Pane</span>
+                </span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+                <a href="index.html" class="hover:text-white transition-colors">Home</a>
+                <a href="about.html" class="text-white">About</a>
+                <a href="privacy.html" class="hover:text-white transition-colors">Privacy</a>
+                <a href="terms.html" class="hover:text-white transition-colors">Terms</a>
+            </div>
+            <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
+                class="hidden md:inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-200 transition-colors">Add
+                to Chrome</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="pt-40 pb-16 px-6 text-center">
+        <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">Our Mission</h1>
+        <p class="text-lg text-gray-400 max-w-2xl mx-auto">We believe the browser new tab screen is prime real estate.
+            Instead of wasting it on a blank page or a search bar, we wanted to create a space that feels like home.</p>
+    </header>
+
+    <!-- Content -->
+    <section class="py-16 px-6">
+        <div class="max-w-3xl mx-auto space-y-12 text-lg text-gray-300 leading-relaxed">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-4">Why NestPane?</h2>
+                <p>NestPane was born out of frustration with cluttered, ad-heavy new tab extensions. We wanted a
+                    dashboard that is lightning fast, beautiful to look at, and strictly private. Your data never leaves
+                    your browser.</p>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-4">The Design</h2>
+                <p>Our branding revolves around the concept of a "Nest" (a cozy, organized home base) and a "Pane" (a
+                    window or glass panel). The mosaic 'NP' logo represents building blocks—modular, customizable, and
+                    structured. We use a deep charcoal background to reduce eye strain, with vibrant orange accents to
+                    keep the energy high.</p>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-4">Open Source & Free</h2>
+                <p>We are committed to keeping the core NestPane experience free forever. We rely on community support
+                    and feedback to push updates that matter to you.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-white/5 mt-16">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-3">
+                <img src="logo.svg" alt="NestPane logo" class="w-9 h-9 rounded-lg shadow-md shadow-[#FF6B00]/30" />
+                <span class="text-lg font-display font-bold tracking-[-0.02em]"><span
+                        class="text-white">Nest</span><span class="text-[#FF6B00]">Pane</span></span>
+            </div>
+            <div class="flex gap-6 text-sm text-gray-500">
+                <a href="about.html" class="hover:text-white transition-colors">About</a>
+                <a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a>
+            </div>
+            <p class="text-sm text-gray-500">© 2023 NestPane. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
