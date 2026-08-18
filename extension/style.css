@@ -43,7 +43,7 @@
   --radius-sm:   8px;
   --radius-xs:   6px;
   --radius-pill: 999px;
-  --sb-w:        224px;
+  --sb-w:        237px; /* 224px + ~6% */
   --sb-wc:       58px;
   --sb-trans:    260ms cubic-bezier(.4,0,.2,1);
   --topbar-h:    52px;
@@ -232,13 +232,19 @@ svg { flex-shrink: 0; }
 /* Collapse toggle button inside brand */
 .sb-collapse-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; flex-shrink: 0;
+  width: 30px; height: 30px; flex-shrink: 0;
   border-radius: var(--radius-xs); border: none; background: none;
   color: var(--text-3); cursor: pointer;
   transition: background .1s, color .1s;
   margin-left: auto;
 }
 .sb-collapse-btn:hover { background: var(--surface-2); color: var(--text); }
+.sb-collapse-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Collapsed state: the toggle is the only visible way to get the sidebar
+   back — keep it brighter than the muted default so it stays discoverable
+   at a glance instead of blending into the other icon-only buttons. */
+.sidebar-collapsed .sb-collapse-btn { color: var(--text-2); }
+.sidebar-collapsed .sb-collapse-btn:hover { color: var(--accent-2); background: var(--accent-bg); }
 /* Collapsed: stack the logo above a full-width toggle row, matching the
    size/shape of other collapsed sidebar group buttons (.sb-group-btn). */
 .sidebar-collapsed .sb-brand {
@@ -342,6 +348,7 @@ svg { flex-shrink: 0; }
   position: relative;
 }
 .sb-item svg { width:14px; height:14px; flex-shrink:0; }
+.sb-ws-emoji { width:14px; height:14px; flex-shrink:0; font-size:13px; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
 .sb-item:hover { background: var(--surface-2); color: var(--text); }
 .sb-item.active {
   background: var(--accent-bg); color: var(--accent-2); font-weight: 500;
@@ -398,14 +405,6 @@ svg { flex-shrink: 0; }
 
 /* ── 7. SIDEBAR FOLDERS — removed ───────────────────────── */
 .sb-folders,.sb-folders-head,.sidebar-folders-wrap,.sidebar-folder-item,.sb-icon-btn { display:none; }
-
-.workspace-sidebar-item {
-  display:flex; align-items:center; gap:9px; padding:6px 12px 6px 30px;
-  cursor:pointer; font-size:12.5px; color:var(--text-2); transition:background .1s,color .1s;
-}
-.workspace-sidebar-item:hover { background:var(--surface-2); color:var(--text); }
-.workspace-sidebar-item.active { background:var(--accent-bg); color:var(--accent-2); font-weight:500; }
-.ws-icon { font-size:14px; }
 
 /* ── SYNC POPUP (anchored above footer user button) ─────── */
 .sb-footer-user-wrap { position: relative; }
@@ -516,19 +515,8 @@ svg { flex-shrink: 0; }
   background:var(--surface-2); border:1px solid var(--border-2); border-radius:4px; padding:1px 5px; flex-shrink:0;
 }
 
-/* Workspace switcher (topbar) */
+/* Topbar action cluster (Smart Organize button) */
 .topbar-ws { display: flex; align-items: center; gap: 4px; margin-left: 14px; }
-.topbar-ws-list { display: flex; align-items: center; gap: 3px; }
-.topbar-ws-pill {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: var(--radius-pill);
-  background: none; border: none; color: var(--text-3);
-  font-size: 12.5px; font-weight: 600; cursor: pointer;
-  transition: background .12s, color .12s;
-}
-.topbar-ws-pill:hover { background: var(--surface-2); color: var(--text-2); }
-.topbar-ws-pill.active { background: var(--accent-bg); color: var(--accent-2); }
-.topbar-ws-icon { font-size: 13px; line-height: 1; }
 .topbar-ws-btn {
   display: flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; border-radius: var(--radius-xs);
@@ -536,7 +524,6 @@ svg { flex-shrink: 0; }
   transition: background .1s, color .1s;
 }
 .topbar-ws-btn:hover { background: var(--surface-2); color: var(--text); }
-@media (max-width: 900px) { .topbar-ws-name { display: none; } }
 
 .topbar-actions { display:flex; align-items:center; gap:4px; margin-left:auto; }
 .topbar-btn {
@@ -848,7 +835,7 @@ svg { flex-shrink: 0; }
 .qa-menu-btn:hover { background:var(--surface-3); color:var(--text); }
 .qa-card:hover .qa-menu-btn { display:flex; }
 
-/* ── 13. WORKSPACE BOOKMARKS ─────────────────────────────── */
+/* ── 13. BOOKMARKS ────────────────────────────────────────── */
 .folder-card {
   background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius);
   padding:14px 14px 10px; cursor:pointer; transition:border-color .15s,transform .12s,box-shadow .15s;
@@ -892,6 +879,8 @@ svg { flex-shrink: 0; }
 }
 .widget:hover { border-color:var(--border-2); }
 .widget-top-row { display:flex; align-items:center; justify-content:space-between; }
+.widget-title { display:flex; align-items:center; gap:6px; min-width:0; }
+.widget-icon { flex-shrink:0; color:var(--text-3); }
 .widget-label { font-size: var(--ty-overline); font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
 .widget-top-actions { display:flex; align-items:center; gap:6px; }
 .widget-action-btn {
@@ -1359,6 +1348,14 @@ svg { flex-shrink: 0; }
 .modal { background:var(--surface); border:1.5px solid var(--border-2); border-radius:var(--radius); width:100%; max-width:460px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.4); animation:modalIn .18s cubic-bezier(.4,0,.2,1); }
 @keyframes modalIn { from { opacity:0; transform:scale(.95) translateY(8px); } to { opacity:1; transform:none; } }
 .modal-lg { max-width:600px; }
+/* Substantially larger than the standard widget modal footprint — for
+   content that needs real breathing room (the Nestodo board's 3 columns). */
+.modal-xl { max-width:min(1240px, 94vw); width:94vw; height:min(760px, 88vh); max-height:88vh; }
+.modal-body-flush { padding:0; display:flex; flex-direction:column; min-height:0; flex:1; }
+/* Nestodo's Add/Edit Card modal opens *from inside* the Nestodo modal — give
+   the container a lower z-index so any normal modal opened on top of it
+   (add card, reminders) always paints above it regardless of DOM order. */
+#nestodoModal { z-index:290; }
 .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
 .modal-header h3 { font-size: var(--ty-title-lg); font-weight: var(--fw-bold); color: var(--text); letter-spacing: -0.01em; }
 .modal-close { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-xs); color:var(--text-3); transition:background .1s,color .1s; }
@@ -1456,18 +1453,12 @@ svg { flex-shrink: 0; }
 .ws-bm-chooser-tile { display:flex; flex-direction:column; align-items:center; gap:8px; padding:18px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius); font-size:13px; color:var(--text-2); cursor:pointer; transition:all .12s; }
 .ws-bm-chooser-tile:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
 
-.manage-ws-row { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:var(--radius-xs); transition:background .1s; }
-.manage-ws-row:hover { background:var(--surface-2); }
-.manage-ws-drag { color:var(--text-3); cursor:grab; font-size:15px; user-select:none; }
-.manage-ws-icon { font-size:16px; }
-.manage-ws-name { flex:1; font-size:13px; font-weight:500; color:var(--text); }
-.manage-ws-actions { display:flex; gap:5px; }
-.manage-ws-edit,.manage-ws-delete { display:flex; align-items:center; gap:4px; padding:5px 9px; border-radius:var(--radius-xs); font-size:12px; font-weight:500; border:1px solid var(--border); color:var(--text-2); transition:all .1s; }
-.manage-ws-edit:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
-.manage-ws-delete { border-color:rgba(239,68,68,.2); color:var(--error); background:var(--error-bg); }
-.manage-ws-delete:hover { background:rgba(239,68,68,.2); }
-.ws-dragging { opacity:.4; }
-.ws-drag-over { border:1.5px dashed var(--accent); border-radius:var(--radius-xs); }
+/* Shared "dotted square" drag handle — used for sidebar groups and sidebar items */
+.sb-drag-handle { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; color:var(--text-3); cursor:grab; user-select:none; border-radius:3px; transition:color .1s,background .1s; }
+.sb-drag-handle:hover { color:var(--text-2); background:var(--surface-3); }
+.sb-drag-handle:active { cursor:grabbing; }
+.drag-active { opacity:.4; }
+.drag-over { border:1.5px dashed var(--accent); border-radius:var(--radius-xs); }
 
 .google-profile-info { display:flex; align-items:center; gap:10px; padding:10px; background:var(--surface-2); border-radius:var(--radius-xs); margin-bottom:4px; }
 .avatar-google-img { width:26px; height:26px; border-radius:50%; object-fit:cover; }
@@ -1631,9 +1622,6 @@ svg { flex-shrink: 0; }
 .bm-ctx-item.danger { color:var(--error); }
 .bm-ctx-item.danger:hover { background:var(--error-bg); }
 .bm-ctx-sep { height:1px; background:var(--border); margin:3px 0; }
-.bm-ctx-ws-header { display:flex; align-items:center; gap:8px; padding:6px 10px; font-size:12.5px; color:var(--text-2); border-radius:var(--radius-xs); transition:background .1s; }
-.bm-ctx-ws-header:hover { background:var(--surface-2); }
-.bm-ctx-ws-icon { font-size:14px; }
 
 /* ── 23. ANIMATIONS ──────────────────────────────────────── */
 @keyframes wsContentOut { to { opacity:0; transform:translateY(6px); } }
@@ -1867,11 +1855,19 @@ svg { flex-shrink: 0; }
 .journal-word-count { font-size:12px; color:var(--text-3); }
 
 /* ── 30. KANBAN BOARD ────────────────────────────────────── */
-.kanban-board { display:flex; gap:14px; padding:0 22px 22px; flex:1; min-height:0; overflow-x:auto; align-items:stretch; }
+.kanban-board { display:flex; gap:14px; padding:16px 22px 22px; flex:1; min-height:0; overflow-x:auto; align-items:stretch; }
 .kanban-col {
   flex:1 1 250px; min-width:220px; display:flex; flex-direction:column;
   background:var(--surface-2); border-radius:var(--radius); padding:12px;
   border:1.5px solid var(--border); gap:0;
+}
+/* Inside the Nestodo modal: below ~820px viewport, .modal-xl's 94vw no
+   longer leaves room for 3 columns at their 220px floor (including the
+   768px tablet breakpoint), so stack instead of forcing horizontal scroll
+   inside a dialog. */
+@media (max-width: 820px) {
+  .kanban-board { flex-direction:column; overflow-x:hidden; overflow-y:auto; }
+  .kanban-col { min-width:0; max-height:280px; flex:0 0 auto; }
 }
 .kanban-cards { display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; min-height:60px; padding-bottom:4px; }
 .kanban-cards::-webkit-scrollbar { width:3px; }
@@ -1948,6 +1944,26 @@ svg { flex-shrink: 0; }
 .cal-event-text { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cal-event-del { font-size:10px; color:var(--text-3); cursor:pointer; padding:1px 3px; border-radius:2px; background:none; border:none; transition:color .1s; }
 .cal-event-del:hover { color:var(--error); }
+.cal-event-dot.google { background:#4285f4; }
+.cal-event-src { font-size:9px; font-weight:700; color:#4285f4; background:rgba(66,133,244,.14); border-radius:3px; padding:1px 4px; flex-shrink:0; }
+.cal-events-status { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; font-size:11px; color:var(--text-3); padding:8px 4px; text-align:center; }
+.cal-events-status-error { color:var(--error); }
+.cal-events-retry-btn { font-size:10.5px; font-weight:600; color:var(--accent-2); background:var(--accent-bg); border:1px solid transparent; border-radius:var(--radius-xs); padding:2px 8px; transition:background .1s; }
+.cal-events-retry-btn:hover { background:var(--accent-subtle); }
+
+/* Google Calendar sync-status button — small icon whose color/state reflects
+   S._gcalStatus, following the same idea as the sidebar's Drive sync icon. */
+.spinner-sm { width:13px; height:13px; border-width:1.5px; }
+.cal-gsync-btn {
+  width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+  border-radius:var(--radius-xs); border:1px solid var(--border); transition:background .1s,color .1s,border-color .1s;
+  color:var(--text-3); background:none;
+}
+.cal-gsync-btn:hover { background:var(--surface-2); color:var(--text-2); }
+.cal-gsync-btn.gcal-connected { color:#4285f4; border-color:rgba(66,133,244,.3); background:rgba(66,133,244,.08); }
+.cal-gsync-btn.gcal-unauthorized { color:var(--warning); border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.08); }
+.cal-gsync-btn.gcal-error { color:var(--error); border-color:rgba(239,68,68,.25); background:var(--error-bg); }
+.cal-gsync-btn.gcal-offline { color:var(--text-3); border-style:dashed; }
 
 /* ── 39. SCHEDULE MODAL ──────────────────────────────────── */
 .schedule-type-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }

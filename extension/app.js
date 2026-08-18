@@ -399,6 +399,7 @@ const SB_ICONS = {
   habits: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   link: '<path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 6"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.4a5 5 0 0 0 7.07 7.07L14 18"/>',
   nestodo: '<rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/>',
+  workspaces: '<polygon points="12 2 22 8.5 12 15 2 8.5 12 2"/><polyline points="2 15.5 12 22 22 15.5"/>',
 };
 
 // Default sidebar shown on a fresh install. Kept lean on purpose — Google/
@@ -442,837 +443,198 @@ const SIDEBAR_ADDABLE_VIEWS = [
 ];
 
 // ===== DEFAULT DATA =====
-const DEFAULT_WORKSPACES = [
-  { id: 1, name: "Home", icon: "🏠" },
-  { id: 2, name: "AI", icon: "🤖" },
-  { id: 3, name: "Dev", icon: "💻" },
+// Fresh installs get one flat starter set — no more per-workspace fixtures
+// (workspaces were removed as a feature; this is what "Home" used to seed).
+const DEFAULT_QUICK_ACCESS = [
+    { id: 101, name: "Gmail",           url: "https://mail.google.com" },
+    { id: 102, name: "Google Calendar", url: "https://calendar.google.com" },
+    { id: 103, name: "Google Drive",    url: "https://drive.google.com" },
+    { id: 104, name: "YouTube",         url: "https://youtube.com" },
+    { id: 105, name: "Google Maps",     url: "https://maps.google.com" },
+    { id: 106, name: "Amazon",          url: "https://amazon.com" },
+    { id: 107, name: "Wikipedia",       url: "https://wikipedia.org" },
+    { id: 108, name: "Reddit",          url: "https://reddit.com" },
+    { id: 109, name: "LinkedIn",        url: "https://linkedin.com/feed" },
+    { id: 110, name: "Netflix",         url: "https://netflix.com" },
 ];
 
-const DEFAULT_WS_DATA = (id) => {
-  if (id === 1)
-    return {
-      quickAccess: [
-        { id: 101, name: "Gmail",           url: "https://mail.google.com" },
-        { id: 102, name: "Google Calendar", url: "https://calendar.google.com" },
-        { id: 103, name: "Google Drive",    url: "https://drive.google.com" },
-        { id: 104, name: "YouTube",         url: "https://youtube.com" },
-        { id: 105, name: "Google Maps",     url: "https://maps.google.com" },
-        { id: 106, name: "Amazon",          url: "https://amazon.com" },
-        { id: 107, name: "Wikipedia",       url: "https://wikipedia.org" },
-        { id: 108, name: "Reddit",          url: "https://reddit.com" },
-        { id: 109, name: "LinkedIn",        url: "https://linkedin.com/feed" },
-        { id: 110, name: "Netflix",         url: "https://netflix.com" },
-      ],
-      notes: [],
-      tasks: [
-        { id: 2001, text: "Review and merge open pull requests", done: false },
-        {
-          id: 2002,
-          text: "Update project dependencies to latest stable versions",
-          done: false,
-        },
-        {
-          id: 2003,
-          text: "Write unit tests for the authentication module",
-          done: false,
-        },
-        { id: 2004, text: "Send weekly status report to the team", done: true },
-        {
-          id: 2005,
-          text: "Fix navigation layout bug on mobile viewport",
-          done: false,
-        },
-        {
-          id: 2006,
-          text: "Document design system color tokens in Notion",
-          done: true,
-        },
-      ],
-      folders: [{ name: "Google" }, { name: "Social Media" }],
-      importedBookmarks: [
-        // Google Services
-        {
-          id: "ws1_001",
-          title: "Google",
-          url: "https://google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_002",
-          title: "Gmail",
-          url: "https://mail.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_003",
-          title: "YouTube",
-          url: "https://youtube.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_004",
-          title: "Google Drive",
-          url: "https://drive.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_005",
-          title: "Google Maps",
-          url: "https://maps.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_006",
-          title: "Google Photos",
-          url: "https://photos.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_007",
-          title: "Google Docs",
-          url: "https://docs.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_008",
-          title: "Google Sheets",
-          url: "https://sheets.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_009",
-          title: "Google Slides",
-          url: "https://slides.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_010",
-          title: "Google Calendar",
-          url: "https://calendar.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_011",
-          title: "Google Meet",
-          url: "https://meet.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_012",
-          title: "Google Translate",
-          url: "https://translate.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_013",
-          title: "Google News",
-          url: "https://news.google.com",
-          folderName: "Google",
-        },
-        {
-          id: "ws1_014",
-          title: "Google Forms",
-          url: "https://forms.google.com",
-          folderName: "Google",
-        },
-        // Social Media
-        {
-          id: "ws1_101",
-          title: "Facebook",
-          url: "https://facebook.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_102",
-          title: "X (Twitter)",
-          url: "https://x.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_103",
-          title: "Instagram",
-          url: "https://instagram.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_104",
-          title: "LinkedIn",
-          url: "https://linkedin.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_105",
-          title: "Reddit",
-          url: "https://reddit.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_106",
-          title: "TikTok",
-          url: "https://tiktok.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_107",
-          title: "Pinterest",
-          url: "https://pinterest.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_108",
-          title: "WhatsApp Web",
-          url: "https://web.whatsapp.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_109",
-          title: "Telegram Web",
-          url: "https://web.telegram.org",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_110",
-          title: "Discord",
-          url: "https://discord.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_111",
-          title: "Snapchat",
-          url: "https://snapchat.com",
-          folderName: "Social Media",
-        },
-        {
-          id: "ws1_112",
-          title: "Threads",
-          url: "https://threads.net",
-          folderName: "Social Media",
-        },
-      ],
-    };
-  if (id === 2)
-    return {
-      quickAccess: [
-        // Chatbots
-        { id: 201, name: "Claude", url: "https://claude.ai" },
-        { id: 202, name: "ChatGPT", url: "https://chat.openai.com" },
-        { id: 203, name: "Gemini", url: "https://gemini.google.com" },
-        { id: 204, name: "Perplexity", url: "https://perplexity.ai" },
-        { id: 205, name: "Grok", url: "https://grok.com" },
-        { id: 206, name: "DeepSeek", url: "https://chat.deepseek.com" },
-        // AI dev
-        { id: 207, name: "Cursor", url: "https://cursor.com" },
-        { id: 208, name: "Bolt", url: "https://bolt.new" },
-        { id: 209, name: "Copilot", url: "https://copilot.microsoft.com" },
-        { id: 210, name: "v0", url: "https://v0.dev" },
-        { id: 211, name: "Hugging Face", url: "https://huggingface.co" },
-        { id: 212, name: "Pieces", url: "https://pieces.app" },
-        { id: 213, name: "Exa", url: "https://exa.ai" },
-        // Creative AI
-        { id: 214, name: "ElevenLabs", url: "https://elevenlabs.io" },
-        { id: 215, name: "Leonardo", url: "https://leonardo.ai" },
-        { id: 216, name: "Pika", url: "https://pika.art" },
-        { id: 217, name: "Midjourney", url: "https://midjourney.com" },
-        { id: 218, name: "Runway", url: "https://runwayml.com" },
-        // Automation
-        { id: 219, name: "n8n", url: "https://n8n.io" },
-      ],
-      notes: [
-        {
-          id: 2101,
-          title: "Prompt Engineering Tips",
-          content:
-            "Be specific about format, audience, and constraints.\nGive examples (few-shot) for tricky output formats.\nAsk the model to think step-by-step before answering for reasoning tasks.\nIterate: refine the prompt based on what the first response gets wrong.",
-          tags: ["ai", "prompts"],
-          pinned: true,
-          createdAt: Date.now() - 86400000 * 4,
-        },
-        {
-          id: 2102,
-          title: "Useful AI Tools by Category",
-          content:
-            "Chat: Claude, ChatGPT, Gemini, Perplexity\nCoding: Cursor, Copilot, v0, Bolt\nImage: Midjourney, Leonardo, Stable Diffusion\nVideo & audio: Runway, Pika, ElevenLabs\nResearch: Hugging Face, Exa",
-          tags: ["ai", "tools"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 3,
-        },
-        {
-          id: 2103,
-          title: "Model Comparison Notes",
-          content:
-            "Claude — strong at long-context reasoning and writing tone.\nGPT-4 — broad general knowledge, large plugin ecosystem.\nGemini — tight Google Workspace integration.\nDeepSeek — strong reasoning at a low cost, good for batch jobs.",
-          tags: ["ai", "research"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 2,
-        },
-        {
-          id: 2104,
-          title: "Automation Ideas with n8n",
-          content:
-            "1. Summarize new emails and post a digest to Slack.\n2. Watch RSS feeds and draft social posts with an LLM.\n3. Auto-tag and file incoming invoices.\n4. Sync new Notion tasks to the Kanban board.",
-          tags: ["ai", "automation"],
-          pinned: false,
-          createdAt: Date.now() - 86400000,
-        },
-        {
-          id: 2105,
-          title: "AI Image Generation Prompts",
-          content:
-            "Cinematic portrait, golden hour, 85mm lens, shallow depth of field, soft rim light.\nIsometric app icon, flat colors, subtle gradient, rounded corners, minimal shadow.\nCozy workspace illustration, warm palette, Gruvbox-inspired colors.",
-          tags: ["ai", "creative"],
-          pinned: false,
-          createdAt: Date.now() - 3600000 * 6,
-        },
-        {
-          id: 2106,
-          title: "RAG Project Notes",
-          content:
-            "Chunk size ~500 tokens with 50-token overlap worked best for docs.\nUse hybrid search (keyword + embeddings) for better recall.\nCache embeddings — re-embedding on every request is wasteful.\nNext: try re-ranking results before passing to the model.",
-          tags: ["ai", "dev"],
-          pinned: false,
-          createdAt: Date.now() - 1800000,
-        },
-      ],
-      tasks: [
-        {
-          id: 2201,
-          text: "Test new prompt templates for the writing assistant",
-          done: false,
-        },
-        {
-          id: 2202,
-          text: "Compare Claude, GPT-4, and Gemini on the same benchmark task",
-          done: false,
-        },
-        {
-          id: 2203,
-          text: "Set up an n8n workflow for a daily AI news digest",
-          done: false,
-        },
-        {
-          id: 2204,
-          text: "Fine-tune a small classifier on Hugging Face",
-          done: true,
-        },
-        {
-          id: 2205,
-          text: "Organize saved AI image generation prompts into folders",
-          done: false,
-        },
-        {
-          id: 2206,
-          text: "Write a blog post about effective prompt engineering",
-          done: true,
-        },
-      ],
-      folders: [
-        { name: "AI Chatbots" },
-        { name: "AI Image & Video" },
-        { name: "AI Audio" },
-        { name: "AI Dev Tools" },
-      ],
-      importedBookmarks: [
-        // AI Chatbots
-        {
-          id: "ws2_001",
-          title: "ChatGPT",
-          url: "https://chat.openai.com",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_002",
-          title: "Claude",
-          url: "https://claude.ai",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_003",
-          title: "Gemini",
-          url: "https://gemini.google.com",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_004",
-          title: "Perplexity",
-          url: "https://perplexity.ai",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_005",
-          title: "Microsoft Copilot",
-          url: "https://copilot.microsoft.com",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_006",
-          title: "Grok",
-          url: "https://grok.com",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_007",
-          title: "DeepSeek",
-          url: "https://chat.deepseek.com",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_008",
-          title: "Mistral Le Chat",
-          url: "https://chat.mistral.ai",
-          folderName: "AI Chatbots",
-        },
-        {
-          id: "ws2_009",
-          title: "Meta AI",
-          url: "https://meta.ai",
-          folderName: "AI Chatbots",
-        },
-        // AI Image & Video
-        {
-          id: "ws2_101",
-          title: "Midjourney",
-          url: "https://midjourney.com",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_102",
-          title: "DALL-E (ChatGPT)",
-          url: "https://chat.openai.com",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_103",
-          title: "Stable Diffusion",
-          url: "https://stability.ai",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_104",
-          title: "Runway",
-          url: "https://runwayml.com",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_105",
-          title: "Leonardo AI",
-          url: "https://leonardo.ai",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_106",
-          title: "Adobe Firefly",
-          url: "https://firefly.adobe.com",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_107",
-          title: "Ideogram",
-          url: "https://ideogram.ai",
-          folderName: "AI Image & Video",
-        },
-        {
-          id: "ws2_108",
-          title: "Kling AI",
-          url: "https://klingai.com",
-          folderName: "AI Image & Video",
-        },
-        // AI Audio
-        {
-          id: "ws2_201",
-          title: "ElevenLabs",
-          url: "https://elevenlabs.io",
-          folderName: "AI Audio",
-        },
-        {
-          id: "ws2_202",
-          title: "Suno",
-          url: "https://suno.com",
-          folderName: "AI Audio",
-        },
-        {
-          id: "ws2_203",
-          title: "Udio",
-          url: "https://udio.com",
-          folderName: "AI Audio",
-        },
-        {
-          id: "ws2_204",
-          title: "Murf AI",
-          url: "https://murf.ai",
-          folderName: "AI Audio",
-        },
-        {
-          id: "ws2_205",
-          title: "Descript",
-          url: "https://descript.com",
-          folderName: "AI Audio",
-        },
-        // AI Dev Tools
-        {
-          id: "ws2_301",
-          title: "Cursor",
-          url: "https://cursor.com",
-          folderName: "AI Dev Tools",
-        },
-        {
-          id: "ws2_302",
-          title: "GitHub Copilot",
-          url: "https://github.com/features/copilot",
-          folderName: "AI Dev Tools",
-        },
-        {
-          id: "ws2_303",
-          title: "Codeium",
-          url: "https://codeium.com",
-          folderName: "AI Dev Tools",
-        },
-        {
-          id: "ws2_304",
-          title: "Windsurf",
-          url: "https://codeium.com/windsurf",
-          folderName: "AI Dev Tools",
-        },
-        {
-          id: "ws2_305",
-          title: "Replit AI",
-          url: "https://replit.com",
-          folderName: "AI Dev Tools",
-        },
-        {
-          id: "ws2_306",
-          title: "v0 by Vercel",
-          url: "https://v0.dev",
-          folderName: "AI Dev Tools",
-        },
-        {
-          id: "ws2_307",
-          title: "Hugging Face",
-          url: "https://huggingface.co",
-          folderName: "AI Dev Tools",
-        },
-      ],
-    };
-  if (id === 3)
-    return {
-      quickAccess: [
-        // Platforms & hosting
-        { id: 301, name: "GitHub", url: "https://github.com" },
-        { id: 302, name: "Vercel", url: "https://vercel.com" },
-        { id: 303, name: "Supabase", url: "https://supabase.com" },
-        { id: 304, name: "Cloudflare", url: "https://cloudflare.com" },
-        { id: 305, name: "Docker Hub", url: "https://hub.docker.com" },
-        { id: 306, name: "Railway", url: "https://railway.app" },
-        // Python ecosystem
-        { id: 307, name: "Python", url: "https://python.org" },
-        { id: 308, name: "Django", url: "https://djangoproject.com" },
-        { id: 309, name: "DRF", url: "https://www.django-rest-framework.org" },
-        { id: 310, name: "FastAPI", url: "https://fastapi.tiangolo.com" },
-        { id: 311, name: "Flask", url: "https://flask.palletsprojects.com" },
-        { id: 312, name: "PyPI", url: "https://pypi.org" },
-        // Other languages
-        { id: 313, name: "Rust", url: "https://rust-lang.org" },
-        { id: 314, name: "crates.io", url: "https://crates.io" },
-        // JS/TS ecosystem
-        { id: 315, name: "React", url: "https://react.dev" },
-        { id: 316, name: "Next.js", url: "https://nextjs.org" },
-        { id: 317, name: "Tailwind", url: "https://tailwindcss.com" },
-        { id: 318, name: "npm", url: "https://npmjs.com" },
-        // Tools
-        { id: 319, name: "Linear", url: "https://linear.app" },
-        { id: 320, name: "Stripe", url: "https://stripe.com" },
-        { id: 321, name: "Postman", url: "https://postman.com" },
-        { id: 322, name: "Stack Overflow", url: "https://stackoverflow.com" },
-        { id: 323, name: "DevDocs", url: "https://devdocs.io" },
-        { id: 324, name: "DEV.to", url: "https://dev.to" },
-      ],
-      notes: [
-        {
-          id: 3101,
-          title: "Git Workflow Cheatsheet",
-          content:
-            "Feature branches off main: feature/<short-name>\nRebase before opening a PR to keep history linear.\nSquash merge for small fixes, regular merge for multi-commit features.\nTag releases as vMAJOR.MINOR.PATCH and write a short changelog entry.",
-          tags: ["dev", "git"],
-          pinned: true,
-          createdAt: Date.now() - 86400000 * 4,
-        },
-        {
-          id: 3102,
-          title: "API Design Checklist",
-          content:
-            "Use plural nouns for resources (/users, /projects).\nVersion the API (/v1/...) from day one.\nReturn consistent error shapes: { error: { code, message } }.\nPaginate list endpoints with cursor or page params.\nDocument auth requirements per endpoint.",
-          tags: ["dev", "backend"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 3,
-        },
-        {
-          id: 3103,
-          title: "Code Review Guidelines",
-          content:
-            "Keep PRs small — under ~400 lines where possible.\nLeave comments as questions, not commands.\nApprove with nits if the only issues are style/naming.\nBlock only for correctness, security, or maintainability concerns.",
-          tags: ["dev", "process"],
-          pinned: false,
-          createdAt: Date.now() - 86400000 * 2,
-        },
-        {
-          id: 3104,
-          title: "Deployment Runbook",
-          content:
-            "1. Run full test suite and lint.\n2. Tag release and push to remote.\n3. Deploy to staging, smoke test critical flows.\n4. Promote to production, watch error rates for 15 min.\n5. Roll back via previous deployment if errors spike.",
-          tags: ["dev", "devops"],
-          pinned: false,
-          createdAt: Date.now() - 86400000,
-        },
-        {
-          id: 3105,
-          title: "Useful CLI Snippets",
-          content:
-            "git log --oneline --graph --all\ndocker compose up -d --build\nlsof -i :3000   # find process on a port\nfind . -name '*.log' -mtime +7 -delete",
-          tags: ["dev", "cli"],
-          pinned: false,
-          createdAt: Date.now() - 3600000 * 6,
-        },
-        {
-          id: 3106,
-          title: "Bug Triage Notes",
-          content:
-            "Reproduce first, then label severity (P0–P3).\nP0/P1: fix or hotfix same day.\nAlways add a regression test alongside the fix.\nLink the fixing commit/PR back to the issue.",
-          tags: ["dev", "bugs"],
-          pinned: false,
-          createdAt: Date.now() - 1800000,
-        },
-      ],
-      tasks: [
-        {
-          id: 3201,
-          text: "Set up CI pipeline for automated testing",
-          done: false,
-        },
-        {
-          id: 3202,
-          text: "Refactor auth module to use JWT refresh tokens",
-          done: false,
-        },
-        {
-          id: 3203,
-          text: "Write API documentation for the v2 endpoints",
-          done: false,
-        },
-        {
-          id: 3204,
-          text: "Investigate memory leak in the background worker",
-          done: false,
-        },
-        {
-          id: 3205,
-          text: "Upgrade dependencies and resolve breaking changes",
-          done: true,
-        },
-        {
-          id: 3206,
-          text: "Add error monitoring and alerting (Sentry)",
-          done: true,
-        },
-      ],
-      folders: [
-        { name: "Code & Repos" },
-        { name: "Docs & Reference" },
-        { name: "Dev Platforms" },
-        { name: "Design" },
-      ],
-      importedBookmarks: [
-        // Code & Repos
-        {
-          id: "ws3_001",
-          title: "GitHub",
-          url: "https://github.com",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_002",
-          title: "GitLab",
-          url: "https://gitlab.com",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_003",
-          title: "Bitbucket",
-          url: "https://bitbucket.org",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_004",
-          title: "CodePen",
-          url: "https://codepen.io",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_005",
-          title: "StackBlitz",
-          url: "https://stackblitz.com",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_006",
-          title: "Replit",
-          url: "https://replit.com",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_007",
-          title: "JSFiddle",
-          url: "https://jsfiddle.net",
-          folderName: "Code & Repos",
-        },
-        {
-          id: "ws3_008",
-          title: "npm",
-          url: "https://npmjs.com",
-          folderName: "Code & Repos",
-        },
-        // Docs & Reference
-        {
-          id: "ws3_101",
-          title: "MDN Web Docs",
-          url: "https://developer.mozilla.org",
-          folderName: "Docs & Reference",
-        },
-        {
-          id: "ws3_102",
-          title: "DevDocs",
-          url: "https://devdocs.io",
-          folderName: "Docs & Reference",
-        },
-        {
-          id: "ws3_103",
-          title: "Stack Overflow",
-          url: "https://stackoverflow.com",
-          folderName: "Docs & Reference",
-        },
-        {
-          id: "ws3_104",
-          title: "W3Schools",
-          url: "https://w3schools.com",
-          folderName: "Docs & Reference",
-        },
-        {
-          id: "ws3_105",
-          title: "Can I Use",
-          url: "https://caniuse.com",
-          folderName: "Docs & Reference",
-        },
-        {
-          id: "ws3_106",
-          title: "CSS-Tricks",
-          url: "https://css-tricks.com",
-          folderName: "Docs & Reference",
-        },
-        {
-          id: "ws3_107",
-          title: "web.dev",
-          url: "https://web.dev",
-          folderName: "Docs & Reference",
-        },
-        // Dev Platforms
-        {
-          id: "ws3_201",
-          title: "Vercel",
-          url: "https://vercel.com",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_202",
-          title: "Netlify",
-          url: "https://netlify.com",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_203",
-          title: "Railway",
-          url: "https://railway.app",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_204",
-          title: "Supabase",
-          url: "https://supabase.com",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_205",
-          title: "Firebase",
-          url: "https://firebase.google.com",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_206",
-          title: "Render",
-          url: "https://render.com",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_207",
-          title: "Cloudflare",
-          url: "https://cloudflare.com",
-          folderName: "Dev Platforms",
-        },
-        {
-          id: "ws3_208",
-          title: "Postman",
-          url: "https://postman.com",
-          folderName: "Dev Platforms",
-        },
-        // Design
-        {
-          id: "ws3_301",
-          title: "Figma",
-          url: "https://figma.com",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_302",
-          title: "Dribbble",
-          url: "https://dribbble.com",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_303",
-          title: "Behance",
-          url: "https://behance.net",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_304",
-          title: "Tailwind CSS",
-          url: "https://tailwindcss.com",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_305",
-          title: "Google Fonts",
-          url: "https://fonts.google.com",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_306",
-          title: "Font Awesome",
-          url: "https://fontawesome.com",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_307",
-          title: "Coolors",
-          url: "https://coolors.co",
-          folderName: "Design",
-        },
-        {
-          id: "ws3_308",
-          title: "Lucide Icons",
-          url: "https://lucide.dev",
-          folderName: "Design",
-        },
-      ],
-    };
-  return { quickAccess: [], notes: [], tasks: [], importedBookmarks: [] };
+const DEFAULT_FOLDERS = [{ name: "Google" }, { name: "Social Media" }];
+
+const DEFAULT_IMPORTED_BOOKMARKS = [
+    // Google Services
+    {
+      id: "ws1_001",
+      title: "Google",
+      url: "https://google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_002",
+      title: "Gmail",
+      url: "https://mail.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_003",
+      title: "YouTube",
+      url: "https://youtube.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_004",
+      title: "Google Drive",
+      url: "https://drive.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_005",
+      title: "Google Maps",
+      url: "https://maps.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_006",
+      title: "Google Photos",
+      url: "https://photos.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_007",
+      title: "Google Docs",
+      url: "https://docs.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_008",
+      title: "Google Sheets",
+      url: "https://sheets.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_009",
+      title: "Google Slides",
+      url: "https://slides.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_010",
+      title: "Google Calendar",
+      url: "https://calendar.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_011",
+      title: "Google Meet",
+      url: "https://meet.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_012",
+      title: "Google Translate",
+      url: "https://translate.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_013",
+      title: "Google News",
+      url: "https://news.google.com",
+      folderName: "Google",
+    },
+    {
+      id: "ws1_014",
+      title: "Google Forms",
+      url: "https://forms.google.com",
+      folderName: "Google",
+    },
+    // Social Media
+    {
+      id: "ws1_101",
+      title: "Facebook",
+      url: "https://facebook.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_102",
+      title: "X (Twitter)",
+      url: "https://x.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_103",
+      title: "Instagram",
+      url: "https://instagram.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_104",
+      title: "LinkedIn",
+      url: "https://linkedin.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_105",
+      title: "Reddit",
+      url: "https://reddit.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_106",
+      title: "TikTok",
+      url: "https://tiktok.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_107",
+      title: "Pinterest",
+      url: "https://pinterest.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_108",
+      title: "WhatsApp Web",
+      url: "https://web.whatsapp.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_109",
+      title: "Telegram Web",
+      url: "https://web.telegram.org",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_110",
+      title: "Discord",
+      url: "https://discord.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_111",
+      title: "Snapchat",
+      url: "https://snapchat.com",
+      folderName: "Social Media",
+    },
+    {
+      id: "ws1_112",
+      title: "Threads",
+      url: "https://threads.net",
+      folderName: "Social Media",
+    },
+];
+
+// Same shape/ids _migrateLegacyTasksIntoKanban used to produce at runtime —
+// now baked in directly since there is only ever one board to seed.
+const DEFAULT_KANBAN = {
+  todo: [
+    { id: 2001, title: "Review and merge open pull requests", desc: "", createdAt: 2001, remindAt: null, notified: false },
+    { id: 2002, title: "Update project dependencies to latest stable versions", desc: "", createdAt: 2002, remindAt: null, notified: false },
+    { id: 2003, title: "Write unit tests for the authentication module", desc: "", createdAt: 2003, remindAt: null, notified: false },
+    { id: 2005, title: "Fix navigation layout bug on mobile viewport", desc: "", createdAt: 2005, remindAt: null, notified: false },
+  ],
+  doing: [],
+  done: [
+    { id: 2004, title: "Send weekly status report to the team", desc: "", createdAt: 2004, remindAt: null, notified: false },
+    { id: 2006, title: "Document design system color tokens in Notion", desc: "", createdAt: 2006, remindAt: null, notified: false },
+  ],
 };
 
 // Bundled quote list — this used to be topped up from a personal Vercel
@@ -1352,9 +714,12 @@ let S = {
     googlePicture: null,
     googleName: null,
   },
-  workspaces: [],
-  activeWsId: 1,
-  wsData: {}, // {[wsId]: {quickAccess,notes,tasks}}
+  quickAccess: [],
+  notes: [],
+  folders: [],
+  importedBookmarks: [],
+  kanban: { todo: [], doing: [], done: [] },
+  reminders: [],
   trash: [],
   settings: {
     theme: "dark",
@@ -1362,11 +727,14 @@ let S = {
     clockFormat: "12",
     showSeconds: true,
     cardGlow: "glow",
+    // Fresh-install defaults: Quick Access has no visibility toggle (always
+    // shown) and Calendar/Reminders are the only other widgets on by
+    // default — Timer/Notes/To-Do stay available but opt-in via Settings.
     widgets: {
-      notes: true,
-      timer: true,
+      notes: false,
+      timer: false,
       calendar: true,
-      todo: true,
+      todo: false,
       reminders: true,
     },
     sidebarCollapsed: false,
@@ -1420,11 +788,11 @@ let S = {
         { id: 5002, name: "Readwise", url: "https://readwise.io" },
         { id: 5003, name: "Raindrop", url: "https://raindrop.io" },
         // Generic replacements for the former "Hamro Patro" / "Upwork" seeds.
-        // migrateSyncSbLinksToQA() mirrors every sbLinks group into Home's
-        // Quick Access on boot, so personal-preference entries here land on a
-        // fresh install's dashboard regardless of DEFAULT_WS_DATA(1). New ids
-        // (not 5004/5005) so _topUpSbGroup can never top an existing user's
-        // saved list up into two entries sharing one id.
+        // migrateSyncSbLinksToQA() mirrors every sbLinks group into Quick
+        // Access on boot, so personal-preference entries here land on a
+        // fresh install's dashboard regardless of DEFAULT_QUICK_ACCESS. New
+        // ids (not 5004/5005) so _topUpSbGroup can never top an existing
+        // user's saved list up into two entries sharing one id.
         { id: 5011, name: "Dropbox", url: "https://dropbox.com" },
         { id: 5012, name: "Canva", url: "https://canva.com" },
         { id: 5006, name: "Luma", url: "https://lu.ma" },
@@ -1461,14 +829,21 @@ let S = {
   readingQueue: [],
   tabSessions: [],
   journal: {},
-  kanban: {},
-  reminders: {},
   _kanbanDragCard: null,
   _kanbanDragCol: null,
   _sbAddLinkGroup: null,
   _kanbanTargetCol: null,
   calEvents: [], // { id, title, date, type, weekday, customDays }
   _calMonth: null, // { year, month } — currently viewed month
+  // Google Calendar (read-only) — local cache only, deliberately NOT part of
+  // the Drive backup payload: Google Calendar is already the source of
+  // truth, so backing it up a second time would just be redundant bloat.
+  // Persisted to chrome.storage.local so cached events still show on next
+  // boot before the live refetch completes (the "offline" requirement).
+  googleCalEvents: [], // { id, title, date, allDay, link }
+  _gcalLastSync: 0,
+  _gcalStatus: "idle", // idle | loading | connected | unauthorized | error | offline
+  _gcalError: null,
   _qaDeleted: new Set(), // normalized URLs of explicitly-deleted QA items (tombstones)
   _cloudResetDone: false, // one-time cloud wipe+reupload has run on this install
   _freshInstall: false, // set by loadState(): storage was empty before this boot (session-only, never persisted)
@@ -1486,9 +861,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   migrateAddSocials();
   migrateSidebarToDataModel();
   migrateAddNestodoSidebarItem();
+  migrateRemoveWorkspacesSidebarGroup();
   renderSidebar();
   migrateSyncSbLinksToQA();
-  migrateAddWorkspaceContent();
   initClock();
   updateGreeting();
   autoDetectWeather();
@@ -1519,17 +894,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.addEventListener("keydown", (e) => {
     const inInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
-    const kb = S.settings.shortcuts || {};
-    const searchKey = kb.search || "/";
-    const timerKey = kb.timer || "";
-    const noteKey = kb.note || "";
-    const taskKey = kb.task || "";
+    // S.settings.shortcuts stays unset until the user visits Settings and
+    // hits Save, so fall back to the same defaults shown in that form —
+    // but only when the user has never saved a config at all. Once they
+    // have, an empty field there is a deliberate "disable this shortcut"
+    // and must stay disabled rather than reverting to the default.
+    const kb = S.settings.shortcuts;
+    const searchKey = kb ? kb.search ?? "/" : "/";
+    const timerKey = kb ? kb.timer ?? "" : "Alt+T";
+    const noteKey = kb ? kb.note ?? "" : "Alt+N";
+    const taskKey = kb ? kb.task ?? "" : "Alt+K";
 
     if (!inInput) {
-      if (_kbMatch(e, searchKey)) { e.preventDefault(); openCmdPalette(); return; }
-      if (timerKey && _kbMatch(e, timerKey)) { e.preventDefault(); navigateTo("timer"); return; }
+      if (searchKey && _kbMatch(e, searchKey)) { e.preventDefault(); openCmdPalette(); return; }
+      if (timerKey && _kbMatch(e, timerKey)) { e.preventDefault(); timerPlay(); return; }
       if (noteKey && _kbMatch(e, noteKey)) { e.preventDefault(); navigateTo("notes"); return; }
-      if (taskKey && _kbMatch(e, taskKey)) { e.preventDefault(); navigateTo("kanban"); return; }
+      if (taskKey && _kbMatch(e, taskKey)) { e.preventDefault(); openNestodoModal(); return; }
     }
     if (e.key === "Escape") {
       if (el("cmdPaletteOverlay").classList.contains("open")) {
@@ -1544,16 +924,98 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ===== PERSIST =====
-// wsData goes to local storage (large, can contain hundreds of bookmarks).
+// One-time flatten: older saves/backups stored bookmarks, notes, quick
+// access, Nestodo, and reminders per-workspace. Workspaces were removed as
+// a feature — this merges everything from every workspace into one flat
+// set, so upgrading never loses data. Used by both loadState() (local
+// storage) and applyCloudData() (a Drive backup that predates the removal).
+function _flattenLegacyWorkspaceData(raw) {
+  const workspaces = Array.isArray(raw.workspaces) ? raw.workspaces : [];
+  const wsData = raw.wsData && typeof raw.wsData === "object" ? raw.wsData : {};
+  // kanban/reminders share a storage key with the post-migration flat shape
+  // (an object with todo/doing/done, vs. a plain array respectively) — if
+  // this ever runs a second time after they've already been written in the
+  // new shape (e.g. the legacy workspaces/wsData cleanup lagging behind a
+  // save on a later load), reading them as an empty legacy map would wipe
+  // the data instead of leaving it alone.
+  const kanbanAlreadyFlat =
+    raw.kanban && typeof raw.kanban === "object" && !Array.isArray(raw.kanban) &&
+    ("todo" in raw.kanban || "doing" in raw.kanban || "done" in raw.kanban);
+  const remindersAlreadyFlat = Array.isArray(raw.reminders);
+  const legacyKanban = !kanbanAlreadyFlat && raw.kanban && typeof raw.kanban === "object" ? raw.kanban : {};
+  const legacyReminders = !remindersAlreadyFlat && raw.reminders && typeof raw.reminders === "object" ? raw.reminders : {};
+  const wsIds = workspaces.length
+    ? workspaces.map((w) => Number(w.id))
+    : [...new Set([...Object.keys(wsData), ...Object.keys(legacyKanban), ...Object.keys(legacyReminders)].map(Number))];
+
+  let quickAccess = [], notes = [], folders = [], importedBookmarks = [];
+  let reminders = remindersAlreadyFlat ? [...raw.reminders] : [];
+  const kanban = kanbanAlreadyFlat
+    ? {
+        todo: Array.isArray(raw.kanban.todo) ? [...raw.kanban.todo] : [],
+        doing: Array.isArray(raw.kanban.doing) ? [...raw.kanban.doing] : [],
+        done: Array.isArray(raw.kanban.done) ? [...raw.kanban.done] : [],
+      }
+    : { todo: [], doing: [], done: [] };
+
+  wsIds.forEach((id) => {
+    const wd = wsData[id];
+    if (wd) {
+      quickAccess = quickAccess.concat(Array.isArray(wd.quickAccess) ? wd.quickAccess : []);
+      notes = notes.concat(Array.isArray(wd.notes) ? wd.notes : []);
+      folders = folders.concat(Array.isArray(wd.folders) ? wd.folders : []);
+      importedBookmarks = importedBookmarks.concat(Array.isArray(wd.importedBookmarks) ? wd.importedBookmarks : []);
+    }
+    if (!kanbanAlreadyFlat) {
+      const kb = legacyKanban[id];
+      if (kb) {
+        kanban.todo = kanban.todo.concat(Array.isArray(kb.todo) ? kb.todo : []);
+        kanban.doing = kanban.doing.concat(Array.isArray(kb.doing) ? kb.doing : []);
+        kanban.done = kanban.done.concat(Array.isArray(kb.done) ? kb.done : []);
+      }
+    }
+    if (!remindersAlreadyFlat) {
+      reminders = reminders.concat(Array.isArray(legacyReminders[id]) ? legacyReminders[id] : []);
+    }
+  });
+
+  quickAccess = _dedupeByUrl(quickAccess);
+  importedBookmarks = _dedupeByUrl(importedBookmarks);
+  const seenFolders = new Set();
+  folders = folders.filter((f) => {
+    const key = (f?.name || "").toLowerCase();
+    if (!key || seenFolders.has(key)) return false;
+    seenFolders.add(key);
+    return true;
+  });
+  const seenCardIds = new Set();
+  ["todo", "doing", "done"].forEach((col) => {
+    kanban[col] = kanban[col].filter((c) => {
+      if (seenCardIds.has(c.id)) return false;
+      seenCardIds.add(c.id);
+      return true;
+    });
+  });
+  const seenReminderIds = new Set();
+  reminders = reminders.filter((r) => {
+    if (seenReminderIds.has(r.id)) return false;
+    seenReminderIds.add(r.id);
+    return true;
+  });
+
+  return { quickAccess, notes, folders, importedBookmarks, kanban, reminders };
+}
+
 async function loadState() {
   let d = await API.getLocal([
     "user",
-    "workspaces",
-    "activeWsId",
     "trash",
     "settings",
     "weatherLocation",
-    "wsData",
+    "quickAccess",
+    "notes",
+    "folders",
+    "importedBookmarks",
     "habits",
     "readingQueue",
     "tabSessions",
@@ -1561,23 +1023,23 @@ async function loadState() {
     "kanban",
     "reminders",
     "calEvents",
+    "googleCalEvents",
+    "_gcalLastSync",
     "_savedAt",
     "googleUser",
     "_focusSessions",
     "_focusMinutes",
     "_qaDeleted",
     "_cloudResetDone",
+    // Legacy per-workspace keys — read once so _flattenLegacyWorkspaceData
+    // can merge them, then removed from storage below.
+    "workspaces",
+    "activeWsId",
+    "wsData",
   ]);
   // One-time migration: pull from sync storage if local is still empty
   if (!d.settings && IS_CHROME && chrome.storage) {
-    const synced = await API.get([
-      "user",
-      "workspaces",
-      "activeWsId",
-      "trash",
-      "settings",
-      "weatherLocation",
-    ]);
+    const synced = await API.get(["user", "trash", "settings", "weatherLocation"]);
     if (synced.settings) {
       d = { ...d, ...synced };
       save();
@@ -1591,21 +1053,8 @@ async function loadState() {
   // customized a default" have to use this flag — they cannot infer it from a
   // default-seeded field like settings.sbLinks, which is baked into S and is
   // therefore never empty. Session-only: no save()/Drive path persists it.
-  S._freshInstall = !(d.settings || d.wsData || d.workspaces || d.user);
+  S._freshInstall = !(d.settings || d.wsData || d.workspaces || d.quickAccess || d.user);
   S.user = d.user || S.user;
-  S.workspaces =
-    Array.isArray(d.workspaces) && d.workspaces.length
-      ? d.workspaces
-      : DEFAULT_WORKSPACES;
-  // Normalize all workspace IDs to numbers for consistent comparison
-  S.workspaces.forEach((ws) => {
-    ws.id = Number(ws.id);
-  });
-  const savedWsId =
-    d.activeWsId != null ? Number(d.activeWsId) : S.workspaces[0].id;
-  S.activeWsId = S.workspaces.find((w) => w.id === savedWsId)
-    ? savedWsId
-    : S.workspaces[0].id;
   S.trash = Array.isArray(d.trash) ? d.trash : [];
   // Restore deletion tombstones before merging settings/sbLinks below, since
   // _topUpSbGroup needs S._qaDeleted to avoid re-adding removed links.
@@ -1633,46 +1082,65 @@ async function loadState() {
     S.settings.sbLinks[g] = _dedupeByUrl(S.settings.sbLinks[g]);
   });
   S.weatherLocation = d.weatherLocation || null;
-  S.wsData = d.wsData || {};
-  S.workspaces.forEach((ws) => {
-    if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
-  });
-  // Self-heal duplicate Quick Access / imported-bookmark entries per workspace.
-  Object.values(S.wsData).forEach((wd) => {
-    if (wd.quickAccess) wd.quickAccess = _dedupeByUrl(wd.quickAccess);
-    if (wd.importedBookmarks) wd.importedBookmarks = _dedupeByUrl(wd.importedBookmarks);
-  });
-  // Migration: ensure AI (id:2) and Dev (id:3) preset workspaces exist
-  const wsIds = S.workspaces.map((w) => w.id);
-  let migrated = false;
-  if (!wsIds.includes(2)) {
-    S.workspaces.push({ id: 2, name: "AI", icon: "🤖" });
-    S.wsData[2] = DEFAULT_WS_DATA(2);
-    migrated = true;
+
+  // Bookmarks/notes/quick access/Nestodo/reminders used to be stored per
+  // workspace. Workspaces were removed as a feature — flatten everything
+  // from every workspace into the shared set exactly once so upgrading
+  // never drops data, then stop writing the old keys.
+  if (Array.isArray(d.workspaces) || (d.wsData && typeof d.wsData === "object")) {
+    const flat = _flattenLegacyWorkspaceData(d);
+    S.quickAccess = flat.quickAccess;
+    S.notes = flat.notes;
+    S.folders = flat.folders;
+    S.importedBookmarks = flat.importedBookmarks;
+    S.kanban = flat.kanban;
+    S.reminders = flat.reminders;
+    if (IS_CHROME && chrome.storage?.local) {
+      chrome.storage.local.remove(["workspaces", "activeWsId", "wsData"]);
+    } else {
+      ["workspaces", "activeWsId", "wsData"].forEach((k) => localStorage.removeItem("ftL_" + k));
+    }
+    save();
+  } else if (S._freshInstall) {
+    S.quickAccess = DEFAULT_QUICK_ACCESS.map((q) => ({ ...q }));
+    S.notes = [];
+    S.folders = DEFAULT_FOLDERS.map((f) => ({ ...f }));
+    S.importedBookmarks = DEFAULT_IMPORTED_BOOKMARKS.map((b) => ({ ...b }));
+    S.kanban = {
+      todo: DEFAULT_KANBAN.todo.map((c) => ({ ...c })),
+      doing: [],
+      done: DEFAULT_KANBAN.done.map((c) => ({ ...c })),
+    };
+    S.reminders = [];
+  } else {
+    S.quickAccess = Array.isArray(d.quickAccess) ? d.quickAccess : [];
+    S.notes = Array.isArray(d.notes) ? d.notes : [];
+    S.folders = Array.isArray(d.folders) ? d.folders : [];
+    S.importedBookmarks = Array.isArray(d.importedBookmarks) ? d.importedBookmarks : [];
+    S.kanban =
+      d.kanban && typeof d.kanban === "object"
+        ? { todo: [], doing: [], done: [], ...d.kanban }
+        : { todo: [], doing: [], done: [] };
+    S.reminders = Array.isArray(d.reminders) ? d.reminders : [];
   }
-  if (!wsIds.includes(3)) {
-    S.workspaces.push({ id: 3, name: "Dev", icon: "💻" });
-    S.wsData[3] = DEFAULT_WS_DATA(3);
-    migrated = true;
-  }
-  if (migrated) save();
+  // Self-heal duplicate Quick Access / imported-bookmark entries.
+  S.quickAccess = _dedupeByUrl(S.quickAccess);
+  S.importedBookmarks = _dedupeByUrl(S.importedBookmarks);
+
   // Load new feature state
   S.habits = Array.isArray(d.habits) ? d.habits : [];
   S.readingQueue = Array.isArray(d.readingQueue) ? d.readingQueue : [];
   S.tabSessions = Array.isArray(d.tabSessions) ? d.tabSessions : [];
   S.journal = d.journal && typeof d.journal === "object" ? d.journal : {};
-  S.kanban = d.kanban && typeof d.kanban === "object" ? d.kanban : {};
-  S.reminders = d.reminders && typeof d.reminders === "object" ? d.reminders : {};
-  if (_migrateLegacyTasksIntoKanban()) save();
   S.calEvents = Array.isArray(d.calEvents) ? d.calEvents : [];
+  S.googleCalEvents = Array.isArray(d.googleCalEvents) ? d.googleCalEvents : [];
+  S._gcalLastSync = typeof d._gcalLastSync === "number" ? d._gcalLastSync : 0;
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
   S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
-  // Filter any tombstoned URLs out of all workspace quickAccess arrays
-  Object.values(S.wsData).forEach((wd) => {
-    if (Array.isArray(wd.quickAccess) && S._qaDeleted.size) {
-      wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
-    }
-  });
+  // Filter any tombstoned URLs out of Quick Access
+  if (S._qaDeleted.size) {
+    S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
+  }
   S._cloudResetDone = !!d._cloudResetDone;
   S._savedAt = d._savedAt || 0;
   // Restore Google user so the signed-in state survives hard refresh
@@ -1700,12 +1168,13 @@ function save() {
   const p = API.setLocal({
     user: S.user,
     googleUser: S.googleUser,
-    workspaces: S.workspaces,
-    activeWsId: S.activeWsId,
     trash: S.trash,
     settings: S.settings,
     weatherLocation: S.weatherLocation,
-    wsData: S.wsData,
+    quickAccess: S.quickAccess,
+    notes: S.notes,
+    folders: S.folders,
+    importedBookmarks: S.importedBookmarks,
     habits: S.habits,
     readingQueue: S.readingQueue,
     tabSessions: S.tabSessions,
@@ -1713,6 +1182,8 @@ function save() {
     kanban: S.kanban,
     reminders: S.reminders,
     calEvents: S.calEvents,
+    googleCalEvents: S.googleCalEvents,
+    _gcalLastSync: S._gcalLastSync,
     _savedAt: S._savedAt,
     _focusSessions: S._focusSessions || {},
     _focusMinutes: S._focusMinutes || {},
@@ -1838,9 +1309,6 @@ function favSrc(url) {
   }
 }
 
-// Workspace edit state
-let _editingWsId = null;
-
 // Bookmark/folder edit state (Chrome native bookmarks)
 let _bmEditId = null;
 let _bmEditParentId = null;
@@ -1855,18 +1323,23 @@ let _wsBmDefaultFolder = null;
 let _wsBmFolderValue = null; // currently selected value in custom folder dropdown
 let _qaEditId = null;
 
-// Current workspace data helpers
+// Bookmarks/notes/quick access data helpers. wsData() used to look up the
+// active workspace's slot in S.wsData; workspaces are gone, so it's now a
+// thin proxy onto the flat S fields — get/set both pass straight through,
+// so callers that reassign a whole array (`wsData().notes = [...]`) still
+// land on S.notes, not a disconnected copy.
+const _wsDataProxy = {
+  get quickAccess() { return S.quickAccess; },
+  set quickAccess(v) { S.quickAccess = v; },
+  get notes() { return S.notes; },
+  set notes(v) { S.notes = v; },
+  get folders() { return S.folders; },
+  set folders(v) { S.folders = v; },
+  get importedBookmarks() { return S.importedBookmarks; },
+  set importedBookmarks(v) { S.importedBookmarks = v; },
+};
 function wsData() {
-  const d =
-    S.wsData[S.activeWsId] ||
-    (S.wsData[S.activeWsId] = {
-      quickAccess: [],
-      notes: [],
-      tasks: [],
-      importedBookmarks: [],
-    });
-  if (!d.folders) d.folders = [];
-  return d;
+  return _wsDataProxy;
 }
 function wsNotes() {
   return wsData().notes;
@@ -2222,6 +1695,8 @@ const Drive = {
 // show Chrome's native account picker/consent UI. This replaces the old
 // manual PKCE + token-exchange + refresh + cross-tab-lock machinery, which
 // existed only to work around not using this API.
+let _lastAuthTokenError = null;
+
 function getAuthToken(interactive = false) {
   return new Promise((resolve) => {
     if (!IS_CHROME || !chrome.identity) {
@@ -2230,6 +1705,7 @@ function getAuthToken(interactive = false) {
     }
     chrome.identity.getAuthToken({ interactive }, (result) => {
       if (chrome.runtime.lastError || !result) {
+        _lastAuthTokenError = chrome.runtime.lastError?.message || null;
         if (chrome.runtime.lastError && interactive) {
           console.warn(
             "[Nestpane] Google sign-in failed or was cancelled.",
@@ -2239,11 +1715,28 @@ function getAuthToken(interactive = false) {
         resolve(null);
         return;
       }
+      _lastAuthTokenError = null;
       // MV3 chrome.identity.getAuthToken resolves { token, grantedScopes };
       // some older typings/environments hand back a bare string — accept both.
       resolve(typeof result === "string" ? result : result.token || null);
     });
   });
+}
+
+// Brave self-identifies via navigator.brave.isBrave() (Brave's own official
+// detection API — https://github.com/brave/brave-browser/wiki/Detecting-Brave-Users).
+// chrome.identity.getAuthToken() needs Google's proprietary API keys baked
+// into real Google Chrome; Brave lacks them and its internal fallback sends a
+// request Google's servers reject with "Custom URI scheme is not supported on
+// Chrome apps" — a known, currently unresolved Brave limitation with no
+// workaround (brave/brave-browser#38066). Detect it up front so users get an
+// honest message instead of Google's confusing "Access blocked" error page.
+async function _isBrave() {
+  try {
+    return !!(await navigator.brave?.isBrave?.());
+  } catch {
+    return false;
+  }
 }
 
 // Evicts a specific token from Chrome's cache (e.g. after the API rejects it
@@ -2666,9 +2159,10 @@ function buildDrivePayload() {
     _version: 2,
     _savedAt: Date.now(),
     user: S.user,
-    workspaces: S.workspaces,
-    activeWsId: S.activeWsId,
-    wsData: S.wsData,
+    quickAccess: S.quickAccess,
+    notes: S.notes,
+    folders: S.folders,
+    importedBookmarks: S.importedBookmarks,
     settings: S.settings,
     habits: S.habits,
     readingQueue: S.readingQueue,
@@ -2686,27 +2180,30 @@ function buildDrivePayload() {
 // ── Apply cloud data pulled from Drive ──────────────────────────────────
 function applyCloudData(cloud) {
   if (!cloud || cloud._version < 1) return;
-  S.workspaces =
-    Array.isArray(cloud.workspaces) && cloud.workspaces.length
-      ? cloud.workspaces
-      : S.workspaces;
-  S.workspaces.forEach((ws) => {
-    ws.id = Number(ws.id);
-  });
   // Merge tombstones first so we can filter QA below
   if (Array.isArray(cloud._qaDeleted)) {
     S._qaDeleted = new Set([...S._qaDeleted, ...cloud._qaDeleted]);
   }
-  // Apply cloud wsData but strip tombstoned Quick Access items
-  if (cloud.wsData) {
-    S.wsData = cloud.wsData;
-    if (S._qaDeleted.size) {
-      Object.values(S.wsData).forEach((wd) => {
-        if (Array.isArray(wd.quickAccess)) {
-          wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
-        }
-      });
-    }
+  if (Array.isArray(cloud.workspaces) || (cloud.wsData && typeof cloud.wsData === "object")) {
+    // Backup predates workspace removal — flatten into the current model.
+    const flat = _flattenLegacyWorkspaceData(cloud);
+    S.quickAccess = flat.quickAccess;
+    S.notes = flat.notes;
+    S.folders = flat.folders;
+    S.importedBookmarks = flat.importedBookmarks;
+    S.kanban = flat.kanban;
+    S.reminders = flat.reminders;
+  } else {
+    if (Array.isArray(cloud.quickAccess)) S.quickAccess = cloud.quickAccess;
+    if (Array.isArray(cloud.notes)) S.notes = cloud.notes;
+    if (Array.isArray(cloud.folders)) S.folders = cloud.folders;
+    if (Array.isArray(cloud.importedBookmarks)) S.importedBookmarks = cloud.importedBookmarks;
+    if (cloud.kanban && typeof cloud.kanban === "object")
+      S.kanban = { todo: [], doing: [], done: [], ...cloud.kanban };
+    if (Array.isArray(cloud.reminders)) S.reminders = cloud.reminders;
+  }
+  if (S._qaDeleted.size) {
+    S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
   }
   S.habits = Array.isArray(cloud.habits) ? cloud.habits : S.habits;
   S.readingQueue = Array.isArray(cloud.readingQueue)
@@ -2719,15 +2216,10 @@ function applyCloudData(cloud) {
     cloud.journal && typeof cloud.journal === "object"
       ? cloud.journal
       : S.journal;
-  S.kanban =
-    cloud.kanban && typeof cloud.kanban === "object" ? cloud.kanban : S.kanban;
-  S.reminders =
-    cloud.reminders && typeof cloud.reminders === "object" ? cloud.reminders : S.reminders;
   S.calEvents = Array.isArray(cloud.calEvents) ? cloud.calEvents : S.calEvents;
   S.trash = Array.isArray(cloud.trash) ? cloud.trash : S.trash;
   if (cloud.weatherLocation !== undefined)
     S.weatherLocation = cloud.weatherLocation;
-  if (cloud.activeWsId != null) S.activeWsId = Number(cloud.activeWsId);
   if (cloud.settings)
     S.settings = {
       ...S.settings,
@@ -2745,10 +2237,6 @@ function applyCloudData(cloud) {
     }
   }
   S._savedAt = cloud._savedAt || 0;
-  // Ensure all WS data slots exist
-  S.workspaces.forEach((ws) => {
-    if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
-  });
 }
 
 // Remove duplicate entries by normalized URL, keeping the first occurrence.
@@ -2803,9 +2291,10 @@ async function _persistLocalState() {
   await API.setLocal({
     user: S.user,
     googleUser: S.googleUser,
-    workspaces: S.workspaces,
-    activeWsId: S.activeWsId,
-    wsData: S.wsData,
+    quickAccess: S.quickAccess,
+    notes: S.notes,
+    folders: S.folders,
+    importedBookmarks: S.importedBookmarks,
     settings: S.settings,
     habits: S.habits,
     readingQueue: S.readingQueue,
@@ -2864,11 +2353,10 @@ function _registerLiveStorageSync() {
 function _applyLiveStorageChange(changes) {
   if (changes.user) S.user = changes.user.newValue || S.user;
   if (changes.googleUser) S.googleUser = changes.googleUser.newValue || null;
-  if (changes.workspaces) {
-    S.workspaces = changes.workspaces.newValue || S.workspaces;
-    S.workspaces.forEach((ws) => { ws.id = Number(ws.id); });
-  }
-  if (changes.activeWsId) S.activeWsId = Number(changes.activeWsId.newValue);
+  if (changes.quickAccess) S.quickAccess = changes.quickAccess.newValue || [];
+  if (changes.notes) S.notes = changes.notes.newValue || [];
+  if (changes.folders) S.folders = changes.folders.newValue || [];
+  if (changes.importedBookmarks) S.importedBookmarks = changes.importedBookmarks.newValue || [];
   if (changes.trash) S.trash = changes.trash.newValue || [];
   if (changes.settings) {
     const ns = changes.settings.newValue || {};
@@ -2880,28 +2368,19 @@ function _applyLiveStorageChange(changes) {
     };
   }
   if (changes.weatherLocation) S.weatherLocation = changes.weatherLocation.newValue;
-  if (changes.wsData) S.wsData = changes.wsData.newValue || S.wsData;
   if (changes.habits) S.habits = changes.habits.newValue || [];
   if (changes.readingQueue) S.readingQueue = changes.readingQueue.newValue || [];
   if (changes.tabSessions) S.tabSessions = changes.tabSessions.newValue || [];
   if (changes.journal) S.journal = changes.journal.newValue || {};
-  if (changes.kanban) S.kanban = changes.kanban.newValue || {};
-  if (changes.reminders) S.reminders = changes.reminders.newValue || {};
+  if (changes.kanban) S.kanban = changes.kanban.newValue || { todo: [], doing: [], done: [] };
+  if (changes.reminders) S.reminders = changes.reminders.newValue || [];
   if (changes.calEvents) S.calEvents = changes.calEvents.newValue || [];
   if (changes._focusSessions) S._focusSessions = changes._focusSessions.newValue || {};
   if (changes._focusMinutes) S._focusMinutes = changes._focusMinutes.newValue || {};
   if (changes._qaDeleted) S._qaDeleted = new Set(changes._qaDeleted.newValue || []);
 
-  // Ensure all workspace data slots exist, then re-strip tombstoned QA items.
-  S.workspaces.forEach((ws) => {
-    if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
-  });
   if (S._qaDeleted.size) {
-    Object.values(S.wsData).forEach((wd) => {
-      if (Array.isArray(wd.quickAccess)) {
-        wd.quickAccess = wd.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
-      }
-    });
+    S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
   }
   S._savedAt = changes._savedAt.newValue || S._savedAt;
   _refreshAfterCloudApply();
@@ -3155,6 +2634,8 @@ async function checkGoogleIdentity() {
   updateGreeting();
   await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
+  fetchGoogleCalendarEvents(false);
+  _gcalStartAutoRefresh();
 }
 
 // Delete every existing cloud backup file for this app and replace it with a
@@ -3244,6 +2725,10 @@ async function signIn() {
     openModal("profileModal");
     return;
   }
+  if (await _isBrave()) {
+    showToast("Google sign-in only works in Google Chrome — Brave isn't supported.", "error");
+    return;
+  }
   // chrome.identity is undefined until the (now-optional) "identity"
   // permission is granted — request it BEFORE checking for the namespace,
   // not after, or a fresh install could never pass this check at all.
@@ -3256,7 +2741,11 @@ async function signIn() {
   const token = await getAuthToken(true); // interactive = true
   if (!token) {
     setSyncStatus("signed-out");
-    showToast("Sign-in cancelled");
+    if (_lastAuthTokenError) {
+      showToast("Google sign-in failed — this browser may not fully support it. Try Google Chrome.", "error");
+    } else {
+      showToast("Sign-in cancelled");
+    }
     return;
   }
   const profile = await fetchGoogleProfile(token);
@@ -3275,6 +2764,8 @@ async function signIn() {
   await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
   showToast("Signed in & synced ☁", "success");
+  fetchGoogleCalendarEvents(false);
+  _gcalStartAutoRefresh();
 }
 
 // ── Sign out: revoke token, clear state ──────────────────────────────────
@@ -3302,10 +2793,16 @@ async function signOut() {
   Drive._fileId = null;
   Drive._lastSyncAt = 0;
   clearTimeout(Drive._syncTimer);
+  clearInterval(_gcalRefreshTimer);
+  S.googleCalEvents = [];
+  S._gcalStatus = "idle";
+  S._gcalError = null;
   save();
   updateAvatarDisplay();
   updateGreeting();
   setSyncStatus("signed-out");
+  renderCalSyncStatus();
+  renderCalendarWidget();
   closeModal("profileModal");
   showToast("Signed out", "success");
 }
@@ -3356,7 +2853,6 @@ function updateAvatarDisplay() {
 
 // ===== RENDER ALL =====
 function renderAll() {
-  renderTopbarWorkspaces();
   renderSidebar();
   renderSidebarFolders();
   applyWidgetVisibility();
@@ -3371,80 +2867,32 @@ function renderAll() {
   updateSidebarTabActive();
 }
 
-// ===== FIX #7 — WORKSPACE SWITCHING =====
-function setActiveWorkspace(wsId) {
-  const id = Number(wsId);
-  if (id === S.activeWsId) return;
-  S.activeWsId = id;
-  save();
-  renderTopbarWorkspaces();
-  renderSidebar();
-  renderSidebarFolders();
-
-  const content = document.querySelector(".home-content");
-  const doRender = () => {
-    renderQuickAccess();
-    renderWorkspaceBookmarks();
-    renderNotesWidget();
-    renderKanbanDash();
-    renderNotesView();
-  };
-  if (content) {
-    content.style.animation = "wsContentOut .14s ease forwards";
-    setTimeout(() => {
-      doRender();
-      content.style.animation = "wsContentIn .2s cubic-bezier(.4,0,.2,1) both";
-      content.addEventListener(
-        "animationend",
-        () => {
-          content.style.animation = "";
-        },
-        { once: true },
-      );
-    }, 140);
-  } else {
-    doRender();
-  }
-}
-
-// ===== TOPBAR WORKSPACE SWITCHER =====
-// Replaces the old sidebar-only workspace renderer (which showed just the
-// custom workspaces, id > 3) and the dead tabs renderer (which rendered into
-// a display:none container). This shows every workspace, including the 3
-// built-in ones, since they previously had no click-to-switch UI at all —
-// only Alt+1-9 reached them.
-function renderTopbarWorkspaces() {
-  const list = el("topbarWorkspacesList");
-  if (!list) return;
-  list.innerHTML = S.workspaces
-    .map(
-      (ws) => `
-    <button class="topbar-ws-pill ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}" data-tip="${escH(ws.name)}">
-      <span class="topbar-ws-icon">${ws.icon}</span>
-      <span class="topbar-ws-name">${escH(ws.name)}</span>
-    </button>`,
-    )
-    .join("");
-  list.querySelectorAll(".topbar-ws-pill").forEach((btn) => {
-    btn.addEventListener("click", () => setActiveWorkspace(btn.dataset.wsid));
-  });
-}
-
 // ===== DATA-DRIVEN SIDEBAR RENDERER =====
+// Shared "dotted square" drag handle — the one drag affordance used
+// everywhere something is reorderable (sidebar groups and sidebar items).
+const SB_DRAG_HANDLE = `<span class="sb-drag-handle" data-tip="Drag to reorder">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+    <circle cx="8" cy="6" r="1.6"/><circle cx="16" cy="6" r="1.6"/>
+    <circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/>
+    <circle cx="8" cy="18" r="1.6"/><circle cx="16" cy="18" r="1.6"/>
+  </svg>
+</span>`;
+
 function _sbItemInner(item, groupId) {
   const icon = SB_ICONS[item.icon] || SB_ICONS.link;
+  // Only two controls per row in edit mode — drag (reorder) and edit (which
+  // opens the rename/delete popup). No separate move-up/down or delete icon.
   const editControls = S.sidebarEditMode
     ? `
     <div class="sb-item-edit-actions">
-      <button class="sb-icon-mini" data-sb-move-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" data-dir="up" title="Move up">▲</button>
-      <button class="sb-icon-mini" data-sb-move-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" data-dir="down" title="Move down">▼</button>
-      <button class="sb-icon-mini" data-sb-rename-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Rename">✎</button>
-      <button class="sb-icon-mini sb-icon-mini-danger" data-sb-delete-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Delete">✕</button>
+      ${SB_DRAG_HANDLE}
+      <button class="sb-icon-mini sb-icon-mini-edit" data-sb-rename-item="${escH(item.id)}" data-sb-item-group="${escH(groupId)}" title="Edit">✎</button>
     </div>`
     : "";
+  const rowAttrs = `data-sb-row-item-id="${escH(item.id)}" data-sb-row-group-id="${escH(groupId)}"`;
   if (item.kind === "view") {
     return `
-    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
+    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}" ${rowAttrs}>
       <a href="#" class="sb-item" data-view="${escH(item.view)}" data-sb-item-id="${escH(item.id)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
         <span class="sb-item-label">${escH(item.label)}</span>
@@ -3453,7 +2901,7 @@ function _sbItemInner(item, groupId) {
     </div>`;
   }
   return `
-    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}">
+    <div class="sb-item-row${S.sidebarEditMode ? " sb-item-row-edit" : ""}" ${rowAttrs}>
       <div class="sb-item sb-link-item" data-sb-item-id="${escH(item.id)}" data-tip="${escH(item.label)}">
         <a href="${escH(safeUrl(item.url) || "#")}" class="sb-link-main" target="_blank" rel="noopener">
           <img class="sb-fav" src="${favSrc(item.url)}" alt="">
@@ -3479,6 +2927,17 @@ function renderSidebar() {
       const itemsHtml = group.items.length
         ? group.items.map((it) => _sbItemInner(it, group.id)).join("")
         : `<div class="sb-empty-state">No links yet — click + to add</div>`;
+      // Same two-control pattern as items: drag + edit only. Edit opens the
+      // rename/delete popup instead of separate move/rename/delete icons.
+      const groupEditActions = `
+          <div class="sb-group-edit-actions">
+            ${SB_DRAG_HANDLE}
+            <button class="sb-icon-mini sb-icon-mini-edit" data-sb-rename-group="${escH(group.id)}" title="Edit">✎</button>
+          </div>`;
+      const addBtn = `
+          <button class="sb-gplus" data-addlink="${escH(group.id)}" title="Add link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>`;
       return `
       <div class="sb-group" id="sbg-${escH(group.id)}" data-sb-group-id="${escH(group.id)}">
         <div class="sb-group-hd${S.sidebarEditMode ? " sb-group-hd-edit" : ""}">
@@ -3487,20 +2946,7 @@ function renderSidebar() {
             <span class="sb-group-label">${escH(group.label)}</span>
             <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          ${
-            S.sidebarEditMode
-              ? `
-          <div class="sb-group-edit-actions">
-            <button class="sb-icon-mini" data-sb-move-group="${escH(group.id)}" data-dir="up" title="Move up">▲</button>
-            <button class="sb-icon-mini" data-sb-move-group="${escH(group.id)}" data-dir="down" title="Move down">▼</button>
-            <button class="sb-icon-mini" data-sb-rename-group="${escH(group.id)}" title="Rename">✎</button>
-            <button class="sb-icon-mini sb-icon-mini-danger" data-sb-delete-group="${escH(group.id)}" title="Delete group">✕</button>
-          </div>`
-              : `
-          <button class="sb-gplus" data-addlink="${escH(group.id)}" title="Add link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>`
-          }
+          ${S.sidebarEditMode ? groupEditActions : addBtn}
         </div>
         <div class="sb-group-items">${itemsHtml}</div>
       </div>`;
@@ -3509,6 +2955,21 @@ function renderSidebar() {
     (S.sidebarEditMode
       ? `<button class="sb-add-group-btn" id="sbAddGroupBtn">+ Add group</button>`
       : "");
+  if (S.sidebarEditMode) {
+    _addDragDrop(container, ".sb-group", "sbGroupId", reorderSidebarGroups, ".sb-group-hd .sb-drag-handle");
+    container.querySelectorAll(".sb-group").forEach((groupEl) => {
+      const groupId = groupEl.dataset.sbGroupId;
+      const itemsContainer = groupEl.querySelector(".sb-group-items");
+      if (!itemsContainer) return;
+      _addDragDrop(
+        itemsContainer,
+        ".sb-item-row",
+        "sbRowItemId",
+        (fromId, toId) => reorderSidebarItemsInGroup(groupId, fromId, toId),
+        ".sb-drag-handle",
+      );
+    });
+  }
   initSidebarTabs();
   updateSidebarTabActive();
 }
@@ -3532,11 +2993,16 @@ function addSidebarGroup() {
 function renameSidebarGroup(id) {
   const group = S.settings.sidebar.find((g) => g.id === id);
   if (!group) return;
-  sbPrompt("Rename group", group.label, (label) => {
-    group.label = label;
-    save();
-    renderSidebar();
-  });
+  sbPrompt(
+    "Edit group",
+    group.label,
+    (label) => {
+      group.label = label;
+      save();
+      renderSidebar();
+    },
+    () => deleteSidebarGroup(id),
+  );
 }
 
 function deleteSidebarGroup(id) {
@@ -3555,12 +3021,27 @@ function deleteSidebarGroup(id) {
   );
 }
 
-function moveSidebarGroup(id, direction) {
+// Drag-and-drop reorder — sidebar groups and items only reorder by drag now,
+// no separate move-up/down controls.
+function reorderSidebarGroups(fromId, toId) {
   const arr = S.settings.sidebar;
-  const idx = arr.findIndex((g) => g.id === id);
-  const swapWith = direction === "up" ? idx - 1 : idx + 1;
-  if (idx < 0 || swapWith < 0 || swapWith >= arr.length) return;
-  [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
+  const from = arr.findIndex((g) => g.id === fromId);
+  const to = arr.findIndex((g) => g.id === toId);
+  if (from < 0 || to < 0) return;
+  const [group] = arr.splice(from, 1);
+  arr.splice(to, 0, group);
+  save();
+  renderSidebar();
+}
+
+function reorderSidebarItemsInGroup(groupId, fromItemId, toItemId) {
+  const group = S.settings.sidebar.find((g) => g.id === groupId);
+  if (!group) return;
+  const from = group.items.findIndex((it) => String(it.id) === String(fromItemId));
+  const to = group.items.findIndex((it) => String(it.id) === String(toItemId));
+  if (from < 0 || to < 0) return;
+  const [item] = group.items.splice(from, 1);
+  group.items.splice(to, 0, item);
   save();
   renderSidebar();
 }
@@ -3570,11 +3051,16 @@ function renameSidebarItem(groupId, itemId) {
   const group = S.settings.sidebar.find((g) => g.id === groupId);
   const item = group?.items.find((it) => it.id === itemId);
   if (!item) return;
-  sbPrompt("Rename item", item.label, (label) => {
-    item.label = label;
-    save();
-    renderSidebar();
-  });
+  sbPrompt(
+    "Edit item",
+    item.label,
+    (label) => {
+      item.label = label;
+      save();
+      renderSidebar();
+    },
+    () => deleteSidebarItem(groupId, itemId),
+  );
 }
 
 function deleteSidebarItem(groupId, itemId) {
@@ -3585,25 +3071,13 @@ function deleteSidebarItem(groupId, itemId) {
   // sidebar link also mirrored it into Home's Quick Access, so deleting the
   // sidebar copy had to suppress the mirrored copy from coming back. Sidebar
   // items and Quick Access tiles are independent now, and _qaDeleted is
-  // global (it filters quickAccess in EVERY workspace, on every load, cloud
-  // apply and cross-tab sync, and is only ever unioned on Drive pull) — so
-  // writing to it here silently deleted unrelated Quick Access tiles
-  // everywhere, permanently.
+  // global (it filters quickAccess on every load, cloud apply and cross-tab
+  // sync, and is only ever unioned on Drive pull) — so writing to it here
+  // silently deleted unrelated Quick Access tiles everywhere, permanently.
   group.items = group.items.filter((it) => it.id !== itemId);
   save();
   renderSidebar();
   showToast("Item removed", "success");
-}
-
-function moveSidebarItem(groupId, itemId, direction) {
-  const group = S.settings.sidebar.find((g) => g.id === groupId);
-  if (!group) return;
-  const idx = group.items.findIndex((it) => it.id === itemId);
-  const swapWith = direction === "up" ? idx - 1 : idx + 1;
-  if (idx < 0 || swapWith < 0 || swapWith >= group.items.length) return;
-  [group.items[idx], group.items[swapWith]] = [group.items[swapWith], group.items[idx]];
-  save();
-  renderSidebar();
 }
 
 function openSbAddLink(groupId) {
@@ -3757,302 +3231,63 @@ function updateSidebarTabActive() {
   });
 }
 
-function reorderWorkspaces(fromId, toId) {
-  fromId = Number(fromId);
-  toId = Number(toId);
-  if (fromId === toId) return;
-  const from = S.workspaces.findIndex((w) => w.id === fromId);
-  const to = S.workspaces.findIndex((w) => w.id === toId);
-  if (from < 0 || to < 0) return;
-  const [item] = S.workspaces.splice(from, 1);
-  S.workspaces.splice(to, 0, item);
-  save();
-  renderTopbarWorkspaces();
-  renderManageWorkspacesList();
-}
-
-function _addDragDrop(container, itemSelector) {
+// Shared drag-to-reorder wiring — one implementation for every reorderable
+// list in the app (sidebar groups, sidebar items within a group).
+// `dataAttr` names the dataset key each item carries its id in (e.g.
+// "sbGroupId" for data-sb-group-id); `onReorder(fromId, toId)` applies the move
+// to the underlying data and re-renders. Items themselves stay clickable —
+// only the element matching `handleSelector` (if given) triggers the drag,
+// so a "drag the whole row" list can still register normal clicks.
+function _addDragDrop(container, itemSelector, dataAttr, onReorder, handleSelector) {
   let dragId = null;
   container.querySelectorAll(itemSelector).forEach((item) => {
+    const handle = handleSelector ? item.querySelector(handleSelector) : item;
+    if (!handle) return;
     item.setAttribute("draggable", "true");
-    item.addEventListener("dragstart", (e) => {
-      dragId = item.dataset.wsid;
-      item.classList.add("ws-dragging");
-      e.dataTransfer.effectAllowed = "move";
-    });
+    if (handleSelector) {
+      // Only start a drag from the handle — mousedown elsewhere behaves normally.
+      item.addEventListener("mousedown", (e) => {
+        item.dataset._dragOk = handle.contains(e.target) ? "1" : "";
+      });
+      item.addEventListener("dragstart", (e) => {
+        if (item.dataset._dragOk !== "1") { e.preventDefault(); return; }
+        dragId = item.dataset[dataAttr];
+        item.classList.add("drag-active");
+        e.dataTransfer.effectAllowed = "move";
+      });
+    } else {
+      item.addEventListener("dragstart", (e) => {
+        dragId = item.dataset[dataAttr];
+        item.classList.add("drag-active");
+        e.dataTransfer.effectAllowed = "move";
+      });
+    }
     item.addEventListener("dragend", () => {
       dragId = null;
       container
         .querySelectorAll(itemSelector)
-        .forEach((el) => el.classList.remove("ws-dragging", "ws-drag-over"));
+        .forEach((el) => el.classList.remove("drag-active", "drag-over"));
     });
     item.addEventListener("dragover", (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       container
         .querySelectorAll(itemSelector)
-        .forEach((el) => el.classList.remove("ws-drag-over"));
-      if (item.dataset.wsid !== dragId) item.classList.add("ws-drag-over");
+        .forEach((el) => el.classList.remove("drag-over"));
+      if (item.dataset[dataAttr] !== dragId) item.classList.add("drag-over");
     });
     item.addEventListener("dragleave", () =>
-      item.classList.remove("ws-drag-over"),
+      item.classList.remove("drag-over"),
     );
     item.addEventListener("drop", (e) => {
       e.preventDefault();
-      item.classList.remove("ws-drag-over");
-      if (dragId && item.dataset.wsid !== dragId)
-        reorderWorkspaces(dragId, item.dataset.wsid);
+      item.classList.remove("drag-over");
+      if (dragId && item.dataset[dataAttr] !== dragId)
+        onReorder(dragId, item.dataset[dataAttr]);
     });
   });
 }
 
-function renderManageWorkspacesList() {
-  const list = el("manageWsList");
-  if (!list) return;
-  list.innerHTML = S.workspaces
-    .map(
-      (ws) => `
-    <div class="manage-ws-row" data-wsid="${ws.id}">
-      <span class="manage-ws-drag" data-tip="Drag to reorder">⠿</span>
-      <span class="manage-ws-icon">${ws.icon}</span>
-      <span class="manage-ws-name">${escH(ws.name)}</span>
-      <div class="manage-ws-actions">
-        <button class="manage-ws-edit" data-wsid="${ws.id}" data-tip="Edit">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Edit
-        </button>
-        <button class="manage-ws-delete" data-wsid="${ws.id}" data-tip="Delete">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-          Delete
-        </button>
-      </div>
-    </div>`,
-    )
-    .join("");
-  list.querySelectorAll(".manage-ws-edit").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      closeModal("manageWorkspacesModal");
-      openEditWorkspaceModal(btn.dataset.wsid);
-    });
-  });
-  list.querySelectorAll(".manage-ws-delete").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      closeModal("manageWorkspacesModal");
-      const wsId = Number(btn.dataset.wsid);
-      if (S.workspaces.length <= 1) {
-        showToast("Cannot delete the last workspace!", "error");
-        renderManageWorkspacesList();
-        openModal("manageWorkspacesModal");
-        return;
-      }
-      const ws = S.workspaces.find((w) => w.id === wsId);
-      if (!ws) return;
-      confirm2(
-        `Delete "${ws.name}"?`,
-        "All notes, tasks and quick access in this workspace will be moved to trash.",
-        () => {
-          const data = S.wsData[wsId];
-          if (data) {
-            (data.notes || []).forEach((n) =>
-              S.trash.push({ ...n, _type: "note", _deletedAt: Date.now() }),
-            );
-          }
-          const kb = S.kanban[wsId];
-          if (kb) {
-            ["todo", "doing", "done"].forEach((col) =>
-              (kb[col] || []).forEach((card) =>
-                S.trash.push({ id: card.id, text: card.title, done: col === "done", _type: "task", _deletedAt: Date.now() }),
-              ),
-            );
-          }
-          (S.reminders[wsId] || []).forEach((r) =>
-            S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _deletedAt: Date.now() }),
-          );
-          delete S.wsData[wsId];
-          delete S.kanban[wsId];
-          delete S.reminders[wsId];
-          S.workspaces = S.workspaces.filter((w) => w.id !== wsId);
-          if (S.activeWsId === wsId) S.activeWsId = S.workspaces[0].id;
-          save();
-          renderAll();
-          renderManageWorkspacesList();
-          showToast("Workspace deleted", "success");
-        },
-        () => {
-          renderManageWorkspacesList();
-          openModal("manageWorkspacesModal");
-        },
-      );
-    });
-  });
-  _addDragDrop(list, ".manage-ws-row");
-}
-
-function openNewWorkspaceModal() {
-  _editingWsId = null;
-  el("workspaceModalTitle").textContent = "New Workspace";
-  el("workspaceName").value = "";
-  el("selectedEmoji").value = "🏠";
-  document
-    .querySelectorAll(".emoji-picker span")
-    .forEach((s) => s.classList.remove("selected"));
-  document
-    .querySelector('.emoji-picker span[data-emoji="🏠"]')
-    ?.classList.add("selected");
-  el("saveWorkspaceBtn").textContent = "Create";
-  openModal("workspaceModal");
-}
-
-function openEditWorkspaceModal(wsId) {
-  const ws = S.workspaces.find((w) => w.id === Number(wsId));
-  if (!ws) return;
-  _editingWsId = ws.id;
-  el("workspaceModalTitle").textContent = "Edit Workspace";
-  el("workspaceName").value = ws.name;
-  el("selectedEmoji").value = ws.icon;
-  document.querySelectorAll(".emoji-picker span").forEach((s) => {
-    s.classList.toggle("selected", s.dataset.emoji === ws.icon);
-  });
-  el("saveWorkspaceBtn").textContent = "Save";
-  openModal("workspaceModal");
-}
-
-function addWorkspace(name, icon) {
-  const ws = { id: Date.now(), name, icon };
-  S.workspaces.push(ws);
-  S.wsData[ws.id] = {
-    quickAccess: [],
-    notes: [],
-    tasks: [],
-    importedBookmarks: [],
-  };
-  save();
-  renderTopbarWorkspaces();
-  showToast(`Workspace "${name}" created!`, "success");
-}
-
-function deleteWorkspace(e, wsId) {
-  e.stopPropagation();
-  if (S.workspaces.length <= 1) {
-    showToast("Cannot delete the last workspace!", "error");
-    return;
-  }
-  const ws = S.workspaces.find((w) => w.id === wsId);
-  if (!ws) return;
-  confirm2(
-    `Delete workspace "${ws.name}"?`,
-    "All notes, tasks and quick access in this workspace will be moved to trash.",
-    () => {
-      // Move data to trash
-      const data = S.wsData[wsId];
-      if (data) {
-        (data.notes || []).forEach((n) =>
-          S.trash.push({ ...n, _type: "note", _deletedAt: Date.now() }),
-        );
-      }
-      const kb = S.kanban[wsId];
-      if (kb) {
-        ["todo", "doing", "done"].forEach((col) =>
-          (kb[col] || []).forEach((card) =>
-            S.trash.push({ id: card.id, text: card.title, done: col === "done", _type: "task", _deletedAt: Date.now() }),
-          ),
-        );
-      }
-      (S.reminders[wsId] || []).forEach((r) =>
-        S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _deletedAt: Date.now() }),
-      );
-      delete S.wsData[wsId];
-      delete S.kanban[wsId];
-      delete S.reminders[wsId];
-      S.workspaces = S.workspaces.filter((w) => w.id !== wsId);
-      if (S.activeWsId === wsId) S.activeWsId = S.workspaces[0].id;
-      save();
-      renderAll();
-      renderManageWorkspacesList();
-      showToast(`Workspace deleted`, "success");
-    },
-  );
-}
-
-// ===== SHAREABLE WORKSPACES (export/import) =====
-function exportWorkspace() {
-  const ws = S.workspaces.find((w) => w.id === S.activeWsId);
-  if (!ws) return;
-  const data = S.wsData[ws.id] || {};
-  const payload = {
-    __nestpaneWorkspace: true,
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    workspace: { name: ws.name, icon: ws.icon },
-    data: {
-      quickAccess: data.quickAccess || [],
-      notes: data.notes || [],
-      kanban: S.kanban[ws.id] || { todo: [], doing: [], done: [] },
-      importedBookmarks: data.importedBookmarks || [],
-      folders: data.folders || [],
-    },
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json",
-  });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `nestpane-workspace-${ws.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.json`;
-  a.click();
-  showToast(`Exported "${ws.name}"`, "success");
-}
-
-const IMPORT_FILE_MAX_BYTES = 10 * 1024 * 1024; // 10MB — matches the chrome.storage.local quota
-
-function importWorkspaceFile(file) {
-  if (file.size > IMPORT_FILE_MAX_BYTES) {
-    showToast("File too large to import (max 10MB)", "error");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const d = JSON.parse(e.target.result);
-      // __llmaotabWorkspace / __novatabWorkspace are pre-rename markers —
-      // files exported by older builds must still import.
-      if ((!d.__nestpaneWorkspace && !d.__llmaotabWorkspace && !d.__novatabWorkspace) || !d.workspace || !d.data) {
-        showToast("Not a valid workspace file", "error");
-        return;
-      }
-      const baseName = d.workspace.name || "Imported";
-      const existingNames = new Set(S.workspaces.map((w) => w.name));
-      let finalName = baseName,
-        n = 1;
-      while (existingNames.has(finalName)) finalName = `${baseName} (${++n})`;
-      const ws = { id: Date.now(), name: finalName, icon: d.workspace.icon || "📥" };
-      S.workspaces.push(ws);
-      S.wsData[ws.id] = {
-        quickAccess: _dedupeByUrl(
-          _sanitizeImportedLinks(Array.isArray(d.data.quickAccess) ? d.data.quickAccess : []),
-        ),
-        notes: Array.isArray(d.data.notes) ? d.data.notes : [],
-        tasks: Array.isArray(d.data.tasks) ? d.data.tasks : [], // legacy exports only — folded into kanban below
-        importedBookmarks: _dedupeByUrl(
-          _sanitizeImportedLinks(Array.isArray(d.data.importedBookmarks) ? d.data.importedBookmarks : []),
-        ),
-        folders: Array.isArray(d.data.folders) ? d.data.folders : [],
-      };
-      S.kanban[ws.id] = {
-        todo: Array.isArray(d.data.kanban?.todo) ? d.data.kanban.todo : [],
-        doing: Array.isArray(d.data.kanban?.doing) ? d.data.kanban.doing : [],
-        done: Array.isArray(d.data.kanban?.done) ? d.data.kanban.done : [],
-      };
-      _migrateLegacyTasksIntoKanban(); // folds d.data.tasks (older export format) into the board above
-      save();
-      setActiveWorkspace(ws.id);
-      renderAll();
-      showToast(`Imported workspace "${finalName}"`, "success");
-    } catch {
-      showToast("Could not import — invalid workspace file", "error");
-    }
-  };
-  reader.readAsText(file);
-}
 
 // ===== FIX #2 — BOOKMARKS (Real Chrome API) =====
 async function loadBookmarks() {
@@ -4785,7 +4020,6 @@ function openFolderCardCtxMenu(btn, folderName, items) {
   const top = spaceBelow >= 160 ? rect.bottom + 4 : rect.top - 160;
   menu.style.top = Math.max(4, top) + "px";
   menu.style.left = Math.min(rect.left, window.innerWidth - 210) + "px";
-  const otherWorkspaces = S.workspaces.filter((w) => w.id !== S.activeWsId);
   menu.innerHTML = `
     <div class="bm-ctx-item" data-action="add">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -4795,15 +4029,6 @@ function openFolderCardCtxMenu(btn, folderName, items) {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       Rename
     </div>
-    ${
-      otherWorkspaces.length
-        ? `<div class="bm-ctx-item" data-action="move-ws">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      Move folder to workspace
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto"><polyline points="9,6 15,12 9,18"/></svg>
-    </div>`
-        : ""
-    }
     <div class="bm-ctx-sep"></div>
     <div class="bm-ctx-item danger" data-action="delete">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
@@ -4817,73 +4042,6 @@ function openFolderCardCtxMenu(btn, folderName, items) {
     closeCtxMenu();
     openWsFolderEditModal(folderName);
   });
-  menu
-    .querySelector('[data-action="move-ws"]')
-    ?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const itemRect = e.currentTarget.getBoundingClientRect();
-      _ctxSub.innerHTML = otherWorkspaces
-        .map(
-          (ws, i) =>
-            `${i > 0 ? '<div class="bm-ctx-sep"></div>' : ""}
-      <div class="bm-ctx-ws-header bm-ctx-ws-direct" data-wsid="${ws.id}" style="cursor:pointer">
-        <span class="bm-ctx-ws-icon">${ws.icon}</span>
-        <span style="flex:1">${escH(ws.name)}</span>
-      </div>`,
-        )
-        .join("");
-      _ctxSub.classList.add("open");
-      requestAnimationFrame(() => {
-        const subW = _ctxSub.offsetWidth,
-          subH = _ctxSub.offsetHeight;
-        const spaceRight = window.innerWidth - itemRect.right - 8;
-        const left =
-          spaceRight >= subW ? itemRect.right + 4 : itemRect.left - subW - 4;
-        _ctxSub.style.left = Math.max(4, left) + "px";
-        _ctxSub.style.top =
-          Math.min(itemRect.top, window.innerHeight - subH - 8) + "px";
-      });
-      _ctxSub.querySelectorAll(".bm-ctx-ws-direct").forEach((opt) => {
-        opt.addEventListener("click", async () => {
-          const targetId = Number(opt.dataset.wsid);
-          const src = wsData();
-          const folderItems = (src.importedBookmarks || []).filter(
-            (b) => b.folderName === folderName,
-          );
-          // Remove from current workspace
-          src.importedBookmarks = (src.importedBookmarks || []).filter(
-            (b) => b.folderName !== folderName,
-          );
-          // Also remove explicit folder entry
-          if (src.folders)
-            src.folders = src.folders.filter((f) => f.name !== folderName);
-          // Add to target workspace
-          const tgt =
-            S.wsData[targetId] ||
-            (S.wsData[targetId] = {
-              quickAccess: [],
-              notes: [],
-              tasks: [],
-              importedBookmarks: [],
-              folders: [],
-            });
-          if (!tgt.importedBookmarks) tgt.importedBookmarks = [];
-          if (!tgt.folders) tgt.folders = [];
-          folderItems.forEach((b) => tgt.importedBookmarks.push({ ...b }));
-          if (!tgt.folders.find((f) => f.name === folderName))
-            tgt.folders.push({ name: folderName });
-          await save();
-          closeCtxMenu();
-          renderWorkspaceBookmarks();
-          renderSidebarFolders();
-          const ws = S.workspaces.find((w) => w.id === targetId);
-          showToast(
-            `Folder "${folderName}" moved to ${ws?.name || "workspace"}`,
-            "success",
-          );
-        });
-      });
-    });
   menu.querySelector('[data-action="delete"]').addEventListener("click", () => {
     closeCtxMenu();
     const count = items.length;
@@ -4909,7 +4067,6 @@ function openBmCtxMenu(btn, bm, currentFolder) {
   menu.style.left = Math.min(rect.left, window.innerWidth - 210) + "px";
 
   const otherFolders = allWsFolderNames().filter((f) => f !== currentFolder);
-  const otherWorkspaces = S.workspaces.filter((w) => w.id !== S.activeWsId);
   const isPinned = wsQA().some((q) => q.url === bm.url);
 
   menu.innerHTML = `
@@ -4926,15 +4083,6 @@ function openBmCtxMenu(btn, bm, currentFolder) {
         ? `<div class="bm-ctx-item" data-action="move-folder">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
       Move to folder
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto"><polyline points="9,6 15,12 9,18"/></svg>
-    </div>`
-        : ""
-    }
-    ${
-      otherWorkspaces.length
-        ? `<div class="bm-ctx-item" data-action="move-ws">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      Move to workspace
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto"><polyline points="9,6 15,12 9,18"/></svg>
     </div>`
         : ""
@@ -4998,116 +4146,6 @@ function openBmCtxMenu(btn, bm, currentFolder) {
           renderWorkspaceBookmarks();
           renderSidebarFolders();
           showToast(`Moved to "${opt.dataset.folder}"`, "success");
-        });
-      });
-    });
-
-  menu
-    .querySelector('[data-action="move-ws"]')
-    ?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const itemRect = e.currentTarget.getBoundingClientRect();
-      _ctxSub.innerHTML = otherWorkspaces
-        .map((ws, i) => {
-          const wsFolders = [
-            ...(S.wsData[ws.id]?.folders || []).map((f) => f.name),
-            ...[
-              ...new Set(
-                (S.wsData[ws.id]?.importedBookmarks || [])
-                  .map((b) => b.folderName)
-                  .filter(Boolean),
-              ),
-            ],
-          ].filter((v, idx, a) => v && a.indexOf(v) === idx);
-          const folderItems = wsFolders
-            .map(
-              (f) =>
-                `<div class="bm-ctx-ws-folder" data-wsid="${ws.id}" data-folder="${escH(f)}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-          ${escH(f)}
-        </div>`,
-            )
-            .join("");
-          return `${i > 0 ? '<div class="bm-ctx-sep"></div>' : ""}
-<div class="bm-ctx-ws-header" data-ws-toggle="${ws.id}">
-  <span class="bm-ctx-ws-icon">${ws.icon}</span>
-  <span style="flex:1">${escH(ws.name)}</span>
-  <svg class="bm-ctx-ws-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
-</div>
-<div class="bm-ctx-ws-body" data-ws-body="${ws.id}" style="display:none">
-${folderItems}
-<div class="bm-ctx-ws-folder bm-ctx-ws-nofolder" data-wsid="${ws.id}" data-folder="">
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-  No folder
-</div>
-</div>`;
-        })
-        .join("");
-      // Auto-expand first workspace
-      const firstBody = _ctxSub.querySelector("[data-ws-body]");
-      const firstHeader = _ctxSub.querySelector("[data-ws-toggle]");
-      if (firstBody) {
-        firstBody.style.display = "";
-        firstHeader?.querySelector(".bm-ctx-ws-chevron")?.classList.add("open");
-      }
-      // Toggle collapse on header click
-      _ctxSub.querySelectorAll("[data-ws-toggle]").forEach((hdr) => {
-        hdr.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const body = _ctxSub.querySelector(
-            `[data-ws-body="${hdr.dataset.wsToggle}"]`,
-          );
-          if (!body) return;
-          const open = body.style.display !== "none";
-          body.style.display = open ? "none" : "";
-          hdr
-            .querySelector(".bm-ctx-ws-chevron")
-            ?.classList.toggle("open", !open);
-        });
-      });
-      _ctxSub.classList.add("open");
-      requestAnimationFrame(() => {
-        const subW = _ctxSub.offsetWidth;
-        const subH = _ctxSub.offsetHeight;
-        const spaceRight = window.innerWidth - itemRect.right - 8;
-        const left =
-          spaceRight >= subW ? itemRect.right + 4 : itemRect.left - subW - 4;
-        const maxTop = window.innerHeight - subH - 8;
-        _ctxSub.style.left = Math.max(4, left) + "px";
-        _ctxSub.style.top = Math.min(itemRect.top, maxTop) + "px";
-      });
-      _ctxSub.querySelectorAll(".bm-ctx-ws-folder").forEach((opt) => {
-        opt.addEventListener("click", async () => {
-          const targetId = Number(opt.dataset.wsid);
-          const targetFolder = opt.dataset.folder;
-          const src = wsData();
-          src.importedBookmarks = (src.importedBookmarks || []).filter(
-            (b) => b.id !== bm.id,
-          );
-          const tgt =
-            S.wsData[targetId] ||
-            (S.wsData[targetId] = {
-              quickAccess: [],
-              notes: [],
-              tasks: [],
-              importedBookmarks: [],
-              folders: [],
-            });
-          if (!tgt.importedBookmarks) tgt.importedBookmarks = [];
-          tgt.importedBookmarks.push({
-            ...bm,
-            folderName: targetFolder || undefined,
-          });
-          await save();
-          closeCtxMenu();
-          closeModal("folderModal");
-          renderWorkspaceBookmarks();
-          renderSidebarFolders();
-          const ws = S.workspaces.find((w) => w.id === targetId);
-          const dest = targetFolder
-            ? `"${targetFolder}" in ${ws?.name}`
-            : ws?.name || "workspace";
-          showToast(`Moved to ${dest}`, "success");
         });
       });
     });
@@ -5755,7 +4793,6 @@ function removeQA(e, id) {
   S.trash.push({
     ...item,
     _type: "quickAccess",
-    _wsId: S.activeWsId,
     _deletedAt: Date.now(),
   });
   save();
@@ -5885,7 +4922,6 @@ function openQACtxMenu(btn, item) {
           S.trash.push({
             ...found,
             _type: "quickAccess",
-            _wsId: S.activeWsId,
             _deletedAt: Date.now(),
           });
         }
@@ -6202,7 +5238,6 @@ function deleteNoteById(id) {
     S.trash.push({
       ...note,
       _type: "note",
-      _wsId: S.activeWsId,
       _deletedAt: Date.now(),
     });
     data.notes = data.notes.filter((n) => n.id !== noteId);
@@ -6251,7 +5286,7 @@ function renderKanbanDash() {
           kb2.done.unshift(card);
           save();
           renderKanbanDash();
-          if (el("view-kanban")?.classList.contains("active")) renderKanban();
+          if (el("nestodoModal")?.classList.contains("open")) renderKanban();
         });
       });
 
@@ -6270,13 +5305,8 @@ function renderKanbanDash() {
 // the Nestodo board — but a Nestodo card can ALSO carry a remindAt (set via
 // the Add/Edit Card modal), which shows up here too. The widget merges both
 // sources into one upcoming view; each kind edits through its own modal.
-function _remindersFor(wsId) {
-  if (!S.reminders[wsId]) S.reminders[wsId] = [];
-  return S.reminders[wsId];
-}
-
 function getReminders() {
-  return _remindersFor(S.activeWsId);
+  return S.reminders;
 }
 
 function renderRemindersWidget() {
@@ -6304,7 +5334,7 @@ function renderRemindersWidget() {
       <div class="reminder-check" data-rid="${item.id}" data-kind="${item.kind}" data-col="${item.col || ""}" title="Mark done"></div>
       <div class="reminder-item-body">
         <span class="reminder-item-text">${escH(item.title)}</span>
-        <span class="reminder-item-time">🔔 ${escH(text)}${item.kind === "card" ? " · Nestodo" : ""}</span>
+        <span class="reminder-item-time">🔔 ${escH(text)}</span>
       </div>
       <button class="reminder-clear-btn" data-rid="${item.id}" data-kind="${item.kind}" data-col="${item.col || ""}" title="${item.kind === "card" ? "Clear reminder" : "Delete reminder"}">✕</button>
     </div>`;
@@ -6332,7 +5362,7 @@ function renderRemindersWidget() {
         kb2.done.unshift(card);
         save();
         renderKanbanDash();
-        if (el("view-kanban")?.classList.contains("active")) renderKanban();
+        if (el("nestodoModal")?.classList.contains("open")) renderKanban();
       } else {
         deleteReminder(id); // "done" for a standalone reminder = dismiss it
       }
@@ -6352,7 +5382,7 @@ function renderRemindersWidget() {
         }
         save();
         renderKanbanDash();
-        if (el("view-kanban")?.classList.contains("active")) renderKanban();
+        if (el("nestodoModal")?.classList.contains("open")) renderKanban();
       } else {
         deleteReminder(id);
       }
@@ -6410,9 +5440,9 @@ function deleteReminder(id) {
   const list = getReminders();
   const r = list.find((r) => r.id === id);
   if (r) {
-    S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _wsId: S.activeWsId, _deletedAt: Date.now() });
+    S.trash.push({ id: r.id, text: r.title, remindAt: r.remindAt, _type: "reminder", _deletedAt: Date.now() });
   }
-  S.reminders[S.activeWsId] = list.filter((r) => r.id !== id);
+  S.reminders = list.filter((r) => r.id !== id);
   save();
   renderRemindersWidget();
   renderTrash();
@@ -6465,12 +5495,22 @@ function migrateAddNestodoSidebarItem() {
   save();
 }
 
+// One-time: strip any "Workspaces" sidebar group left over from before
+// workspaces were removed as a feature — installs that went through a boot
+// with the old migrateAddWorkspacesSidebarGroup() have this saved in
+// S.settings.sidebar and would otherwise show a permanently-empty group.
+function migrateRemoveWorkspacesSidebarGroup() {
+  const groups = S.settings.sidebar;
+  if (!Array.isArray(groups)) return;
+  if (!groups.some((g) => g.id === "workspaces")) return;
+  S.settings.sidebar = groups.filter((g) => g.id !== "workspaces");
+  save();
+}
+
 // One-time: build S.settings.sidebar from whatever the user already has, so
 // existing customizations (Google/Socials links, AI tool links) survive the
 // move to the new data-driven sidebar. Safe to call every boot — it's a
-// no-op once S.settings.sidebar exists. AI items are COPIED from the AI
-// workspace's quick access (S.wsData[2].quickAccess), not moved — that
-// workspace's own dashboard quick-access grid is untouched.
+// no-op once S.settings.sidebar exists.
 function migrateSidebarToDataModel() {
   if (S.settings.sidebar) return;
 
@@ -6487,9 +5527,9 @@ function migrateSidebarToDataModel() {
   // its own doc comment). This deliberately keys off S._freshInstall, which
   // loadState() derives from what was actually in storage before defaults
   // were merged. The obvious-looking alternative — testing whether
-  // settings.sbLinks.google/socials or wsData[2].quickAccess are empty — is
-  // always false: all three are seeded from hardcoded defaults in S, so that
-  // test never identified a fresh install and this branch was dead code.
+  // settings.sbLinks.google/socials is empty — is always false: both are
+  // seeded from hardcoded defaults in S, so that test never identified a
+  // fresh install and this branch was dead code.
   if (S._freshInstall) {
     S.settings.sidebar = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR));
     return;
@@ -6499,7 +5539,6 @@ function migrateSidebarToDataModel() {
   const byId = Object.fromEntries(S.settings.sidebar.map((g) => [g.id, g]));
   if (byId.google) byId.google.items = toLinkItems(S.settings.sbLinks?.google);
   if (byId.socials) byId.socials.items = toLinkItems(S.settings.sbLinks?.socials);
-  if (byId.ai) byId.ai.items = toLinkItems(S.wsData?.[2]?.quickAccess);
 }
 
 // Normalize a URL for de-dupe comparisons (ignore protocol/trailing slash/case)
@@ -6527,15 +5566,13 @@ function _topUpSbGroup(saved, defaults, min = 10) {
   return arr;
 }
 
-// Add a sidebar link to the Home workspace's Quick Access, skipping it if a
-// link to the same URL already exists there.
-function _mirrorLinkToHomeQA(link) {
-  const home = S.wsData[1];
-  if (!home?.quickAccess) return false;
+// Add a sidebar link to Quick Access, skipping it if a link to the same URL
+// already exists there.
+function _mirrorLinkToQuickAccess(link) {
   const key = _normUrl(link.url);
   if (S._qaDeleted.has(key)) return false; // user deleted it — don't re-add
-  if (home.quickAccess.some((q) => _normUrl(q.url) === key)) return false;
-  home.quickAccess.push({
+  if (S.quickAccess.some((q) => _normUrl(q.url) === key)) return false;
+  S.quickAccess.push({
     id: Date.now() + Math.floor(Math.random() * 100000),
     name: link.name,
     url: link.url,
@@ -6543,38 +5580,12 @@ function _mirrorLinkToHomeQA(link) {
   return true;
 }
 
-// ===== MIGRATION: populate sample notes/tasks for AI & Dev workspaces =====
-function migrateAddWorkspaceContent() {
-  let added = false;
-  [2, 3].forEach((wsId) => {
-    const data = S.wsData[wsId];
-    if (!data) return;
-    const defaults = DEFAULT_WS_DATA(wsId);
-    if (Array.isArray(data.notes) && !data.notes.length && defaults.notes.length) {
-      data.notes = defaults.notes;
-      added = true;
-    }
-    // Sample tasks now seed the Nestodo board directly (todo/done columns)
-    // instead of the retired flat wsData.tasks list.
-    const kb = _kanbanFor(wsId);
-    const kbEmpty = !kb.todo.length && !kb.doing.length && !kb.done.length;
-    if (kbEmpty && defaults.tasks?.length) {
-      defaults.tasks.forEach((t) => {
-        const card = { id: t.id, title: t.text, desc: "", createdAt: Date.now(), remindAt: null, notified: false };
-        (t.done ? kb.done : kb.todo).push(card);
-      });
-      added = true;
-    }
-  });
-  if (added) save();
-}
-
-// ===== MIGRATION: mirror all global sidebar links into Home Quick Access =====
+// ===== MIGRATION: mirror all global sidebar links into Quick Access =====
 function migrateSyncSbLinksToQA() {
   let added = false;
   ["google", "projects", "others", "socials"].forEach((group) => {
     (S.settings.sbLinks?.[group] || []).forEach((link) => {
-      if (_mirrorLinkToHomeQA(link)) added = true;
+      if (_mirrorLinkToQuickAccess(link)) added = true;
     });
   });
   if (added) save();
@@ -6600,7 +5611,7 @@ function addTask(text) {
   });
   save();
   renderKanbanDash();
-  if (el("view-kanban")?.classList.contains("active")) renderKanban();
+  if (el("nestodoModal")?.classList.contains("open")) renderKanban();
   showToast("Added to Nestodo!", "success");
 }
 
@@ -6661,8 +5672,8 @@ function saveHeroQuoteEdit() {
   const auth = el("heroQuoteAuthor");
   const saveBtn = el("saveQuoteBtn");
   const editBtn = el("editQuoteBtn");
-  const quote = txt.textContent.trim();
-  const author = auth.textContent.replace(/^—\s*/, "").trim();
+  const quote = txt.textContent.trim().slice(0, 240);
+  const author = auth.textContent.replace(/^—\s*/, "").trim().slice(0, 60);
   col.classList.remove("editing");
   txt.contentEditable = "false";
   auth.contentEditable = "false";
@@ -6779,7 +5790,7 @@ function refreshAiBriefing() {
 }
 
 // ===== SMART AUTO-ORGANIZE =====
-let _organizeResults = []; // [{title, url, workspace}]
+let _organizeResults = []; // [{title, url, folder}]
 
 function _organizeSetupHtml(msg) {
   return `<div class="organize-setup">
@@ -6808,20 +5819,10 @@ async function openSmartOrganizeModal() {
     });
     return;
   }
-  if (S.workspaces.length < 1) {
-    body.innerHTML = `<div class="organize-empty">Create a workspace first.</div>`;
-    return;
-  }
-
   body.innerHTML = `<div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Scanning open tabs…</div>`;
   const tabs = await new Promise((res) => chrome.tabs.query({}, res));
   const ownPrefix = chrome.runtime.getURL("");
-  const existingUrls = new Set();
-  S.workspaces.forEach((ws) =>
-    (S.wsData[ws.id]?.importedBookmarks || []).forEach((b) =>
-      existingUrls.add(_normUrl(b.url)),
-    ),
-  );
+  const existingUrls = new Set(wsBookmarks().map((b) => _normUrl(b.url)));
   const candidates = [];
   const seen = new Set();
   (tabs || []).forEach((t) => {
@@ -6853,7 +5854,7 @@ async function openSmartOrganizeModal() {
     : "";
   body.innerHTML = `
     <div class="organize-consent">
-      <p>This sends the <strong>titles and URLs</strong> of ${safeCandidates.length} open tab${safeCandidates.length === 1 ? "" : "s"} to Anthropic's API to decide which workspace each belongs in.</p>
+      <p>This sends the <strong>titles and URLs</strong> of ${safeCandidates.length} open tab${safeCandidates.length === 1 ? "" : "s"} to Anthropic's API to decide which folder each belongs in.</p>
       ${excludedNote}
       <div class="organize-consent-actions">
         <button class="btn-secondary" id="organizeCancelBtn">Cancel</button>
@@ -6881,17 +5882,15 @@ function _isSensitiveDomain(domain) {
 
 async function _organizeRunAI(candidates, body) {
   body.innerHTML = `<div class="cmd-ai-loading"><div class="cmd-ai-spinner"></div>Asking AI to sort ${candidates.length} tab${candidates.length === 1 ? "" : "s"}…</div>`;
-  const wsNames = S.workspaces.map((w) => w.name);
+  const folderNames = allWsFolderNames();
   const list = candidates
     .map((t, i) => `${i}. [${getDomain(t.url)}] ${(t.title || t.url).slice(0, 80)}`)
     .join("\n");
-  const prompt = `You are sorting browser tabs into existing workspaces.
-Workspaces: ${wsNames.join(", ")}
-
-Tabs:
+  const prompt = `You are sorting browser tabs into bookmark folders.
+${folderNames.length ? `Existing folders: ${folderNames.join(", ")}\n\n` : ""}Tabs:
 ${list}
 
-For each numbered tab, pick the single best-matching workspace from the list above. Respond with ONLY a JSON array (no markdown, no commentary), one object per tab in the same order: {"workspace": "<exact workspace name from the list>"}`;
+For each numbered tab, pick the best-matching folder — reuse one of the existing folders above when it fits, or invent a short new folder name (1-3 words) when nothing fits. Respond with ONLY a JSON array (no markdown, no commentary), one object per tab in the same order: {"folder": "<folder name>"}`;
 
   try {
     const raw = await aiComplete(prompt, {
@@ -6903,9 +5902,7 @@ For each numbered tab, pick the single best-matching workspace from the list abo
     _organizeResults = candidates.map((t, i) => ({
       title: t.title || t.url,
       url: t.url,
-      workspace: wsNames.includes(parsed?.[i]?.workspace)
-        ? parsed[i].workspace
-        : S.workspaces.find((w) => w.id === S.activeWsId)?.name || wsNames[0],
+      folder: (parsed?.[i]?.folder || "Smart Organize").toString().slice(0, 40),
     }));
     _renderOrganizeResults();
   } catch (err) {
@@ -6932,13 +5929,13 @@ function _renderOrganizeResults() {
   const body = el("organizeModalBody");
   const groups = {};
   _organizeResults.forEach((r, i) => {
-    (groups[r.workspace] = groups[r.workspace] || []).push(i);
+    (groups[r.folder] = groups[r.folder] || []).push(i);
   });
   body.innerHTML = Object.entries(groups)
     .map(
-      ([wsName, idxs]) => `
+      ([folderName, idxs]) => `
     <div class="organize-group">
-      <div class="organize-group-title">${escH(wsName)} <span class="cmd-domain-tag">${idxs.length}</span></div>
+      <div class="organize-group-title">${escH(folderName)} <span class="cmd-domain-tag">${idxs.length}</span></div>
       ${idxs
         .map((i) => {
           const r = _organizeResults[i];
@@ -6961,24 +5958,22 @@ function applySmartOrganize() {
     "input[data-organize-idx]:checked",
   );
   let count = 0;
+  const usedFolders = new Set();
   checked.forEach((cb) => {
     const r = _organizeResults[Number(cb.dataset.organizeIdx)];
     if (!r) return;
-    const ws =
-      S.workspaces.find((w) => w.name === r.workspace) ||
-      S.workspaces.find((w) => w.id === S.activeWsId);
-    if (!ws) return;
-    if (!S.wsData[ws.id]) S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id);
-    const d = S.wsData[ws.id];
-    if (!d.importedBookmarks) d.importedBookmarks = [];
-    d.importedBookmarks.push({
+    wsBookmarks().push({
       id: "ai_" + Date.now() + "_" + count,
       title: r.title,
       url: r.url,
-      folderName: "Smart Organize",
+      folderName: r.folder,
     });
-    d.importedBookmarks = _dedupeByUrl(d.importedBookmarks);
+    usedFolders.add(r.folder);
     count++;
+  });
+  S.importedBookmarks = _dedupeByUrl(S.importedBookmarks);
+  usedFolders.forEach((name) => {
+    if (!S.folders.find((f) => f.name === name)) S.folders.push({ name });
   });
   save();
   renderWorkspaceBookmarks();
@@ -7247,39 +6242,33 @@ function _scheduleHabitNotifications() {
 function _checkDueReminders() {
   const now = Date.now();
   let changed = false;
-  Object.keys(S.kanban || {}).forEach((wsId) => {
-    const kb = S.kanban[wsId];
-    ["todo", "doing"].forEach((col) => {
-      (kb[col] || []).forEach((card) => {
-        if (card.remindAt && !card.notified && card.remindAt <= now) {
-          card.notified = true;
-          changed = true;
-          const ws = S.workspaces.find((w) => w.id === Number(wsId));
-          _notifyUser(`⏰ ${card.title}`, {
-            body: ws ? `Reminder in "${ws.name}"` : "Nestodo reminder",
-            icon: "icons/favicon.png",
-          });
-        }
-      });
-    });
-  });
-  Object.keys(S.reminders || {}).forEach((wsId) => {
-    (S.reminders[wsId] || []).forEach((r) => {
-      if (r.remindAt && !r.notified && r.remindAt <= now) {
-        r.notified = true;
+  const kb = S.kanban || {};
+  ["todo", "doing"].forEach((col) => {
+    (kb[col] || []).forEach((card) => {
+      if (card.remindAt && !card.notified && card.remindAt <= now) {
+        card.notified = true;
         changed = true;
-        const ws = S.workspaces.find((w) => w.id === Number(wsId));
-        _notifyUser(`⏰ ${r.title}`, {
-          body: ws ? `Reminder in "${ws.name}"` : "Reminder",
+        _notifyUser(`⏰ ${card.title}`, {
+          body: "Nestodo reminder",
           icon: "icons/favicon.png",
         });
       }
     });
   });
+  (S.reminders || []).forEach((r) => {
+    if (r.remindAt && !r.notified && r.remindAt <= now) {
+      r.notified = true;
+      changed = true;
+      _notifyUser(`⏰ ${r.title}`, {
+        body: "Reminder",
+        icon: "icons/favicon.png",
+      });
+    }
+  });
   if (changed) {
     save();
     renderKanbanDash(); // also refreshes the reminders widget internally
-    if (el("view-kanban")?.classList.contains("active")) renderKanban();
+    if (el("nestodoModal")?.classList.contains("open")) renderKanban();
   }
 }
 
@@ -7475,12 +6464,8 @@ function restoreItem(key) {
   const idx = S.trash.findIndex((i) => (i.id || i._deletedAt) === key);
   if (idx === -1) return;
   const item = S.trash.splice(idx, 1)[0];
-  const wsId = item._wsId || S.activeWsId;
-  if (!S.wsData[wsId])
-    S.wsData[wsId] = { quickAccess: [], notes: [], tasks: [] };
   if (item._type === "task") {
-    const kb = _kanbanFor(wsId);
-    kb.todo.unshift({
+    S.kanban.todo.unshift({
       id: item.id || Date.now(),
       title: item.text,
       desc: "",
@@ -7489,7 +6474,7 @@ function restoreItem(key) {
       notified: false,
     });
   } else if (item._type === "reminder") {
-    _remindersFor(wsId).unshift({
+    S.reminders.unshift({
       id: item.id || Date.now(),
       title: item.text,
       remindAt: item.remindAt || Date.now(),
@@ -7497,14 +6482,14 @@ function restoreItem(key) {
       createdAt: item.id || Date.now(),
     });
   } else if (item._type === "note")
-    S.wsData[wsId].notes.unshift({
+    S.notes.unshift({
       id: item.id || Date.now(),
       title: item.title,
       content: item.content,
       date: item.date || Date.now(),
     });
   else if (item._type === "quickAccess")
-    S.wsData[wsId].quickAccess.unshift({
+    S.quickAccess.unshift({
       id: item.id || Date.now(),
       name: item.name,
       url: item.url,
@@ -7579,18 +6564,11 @@ async function renderAnalytics() {
     totalBookmarks += (f.items || []).length;
   });
 
-  let totalNotes = 0,
-    totalTasksDone = 0,
-    totalTasksPending = 0,
-    totalQA = 0;
-  S.workspaces.forEach((ws) => {
-    const d = S.wsData[ws.id] || {};
-    totalNotes += (d.notes || []).length;
-    const kb = S.kanban[ws.id] || {};
-    totalTasksDone += (kb.done || []).length;
-    totalTasksPending += (kb.todo || []).length + (kb.doing || []).length;
-    totalQA += (d.quickAccess || []).length;
-  });
+  const totalNotes = S.notes.length;
+  const kb = S.kanban || {};
+  const totalTasksDone = (kb.done || []).length;
+  const totalTasksPending = (kb.todo || []).length + (kb.doing || []).length;
+  const totalQA = S.quickAccess.length;
   const totalTasks = totalTasksDone + totalTasksPending;
   const taskRate =
     totalTasks > 0 ? Math.round((totalTasksDone / totalTasks) * 100) : 0;
@@ -7608,25 +6586,10 @@ async function renderAnalytics() {
     .slice(0, 8);
   const maxFolderSize = (topFolders[0]?.items || []).length || 1;
 
-  const wsRows = S.workspaces.map((ws) => {
-    const d = S.wsData[ws.id] || {};
-    const kb = S.kanban[ws.id] || {};
-    const done = (kb.done || []).length;
-    return {
-      ws,
-      notes: (d.notes || []).length,
-      tasks: done + (kb.todo || []).length + (kb.doing || []).length,
-      done,
-      qa: (d.quickAccess || []).length,
-    };
-  });
-
   const tagCounts = {};
-  S.workspaces.forEach((ws) => {
-    (S.wsData[ws.id]?.notes || []).forEach((note) => {
-      (note.tags || []).forEach((tag) => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
+  S.notes.forEach((note) => {
+    (note.tags || []).forEach((tag) => {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
     });
   });
   const topTags = Object.entries(tagCounts)
@@ -7639,24 +6602,14 @@ async function renderAnalytics() {
   const chromeVer = navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || "";
 
   // Recent notes (last 5)
-  const allNotes = [];
-  S.workspaces.forEach((ws) =>
-    (S.wsData[ws.id]?.notes || []).forEach((n) =>
-      allNotes.push({ ...n, _ws: ws.name }),
-    ),
-  );
-  allNotes.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  const recentNotes = allNotes.slice(0, 5);
+  const recentNotes = [...S.notes]
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .slice(0, 5);
 
-  // Pending tasks (Nestodo cards) across all workspaces
-  const allPending = [];
-  S.workspaces.forEach((ws) => {
-    const kb = S.kanban[ws.id] || {};
-    [...(kb.todo || []), ...(kb.doing || [])].forEach((card) =>
-      allPending.push({ text: card.title, _ws: ws.name, _wsIcon: ws.icon }),
-    );
-  });
-  const pendingDisplay = allPending.slice(0, 6);
+  // Pending tasks (Nestodo cards)
+  const pendingDisplay = [...(kb.todo || []), ...(kb.doing || [])]
+    .map((card) => ({ text: card.title }))
+    .slice(0, 6);
   const now = Date.now();
   const dayMs = 86400000;
   container.className = "insights-board";
@@ -7687,7 +6640,7 @@ async function renderAnalytics() {
       <div class="insights-kpi">
         <div class="insights-kpi-val">${totalQA}</div>
         <div class="insights-kpi-lbl">Quick Access</div>
-        <div class="insights-kpi-trend neutral">${S.workspaces.length} workspaces</div>
+        <div class="insights-kpi-trend neutral">Pinned shortcuts</div>
       </div>
       <div class="insights-kpi">
         <div class="insights-kpi-val">${doneReading}<em>/${totalReadingItems}</em></div>
@@ -7724,7 +6677,6 @@ async function renderAnalytics() {
                 <div class="ins-dot"></div>
                 <span class="ins-row-label">${escH(t.text)}</span>
               </div>
-              <span class="ins-row-sub">${escH(t._wsIcon || "")} ${escH(t._ws)}</span>
             </div>`,
                 )
                 .join("")
@@ -7800,30 +6752,9 @@ async function renderAnalytics() {
 
     </div>
 
-    <!-- Row: Workspaces | Bookmarks | Account -->
+    <!-- Row: Bookmarks | Account -->
     <div class="insights-section-hd">Overview</div>
     <div class="insights-cards-row">
-
-      <div class="insights-card">
-        <div class="insights-card-hd">
-          <span class="insights-card-title">Workspaces</span>
-          <span class="insights-card-badge muted">${S.workspaces.length}</span>
-        </div>
-        ${wsRows
-          .map(
-            (r) => `
-          <div class="ins-row">
-            <div class="ins-row-left">
-              <span style="font-size:16px">${escH(r.ws.icon)}</span>
-              <span class="ins-row-label">${escH(r.ws.name)}</span>
-            </div>
-            <div style="display:flex;gap:6px;font-size:11px;color:var(--text-3)">
-              <span>${r.notes}n</span><span>·</span><span>${r.tasks}t</span><span>·</span><span>${r.qa}qa</span>
-            </div>
-          </div>`,
-          )
-          .join("")}
-      </div>
 
       <div class="insights-card">
         <div class="insights-card-hd">
@@ -8380,8 +7311,10 @@ function exportData() {
       JSON.stringify(
         {
           user: S.user,
-          workspaces: S.workspaces,
-          wsData: S.wsData,
+          quickAccess: S.quickAccess,
+          notes: S.notes,
+          folders: S.folders,
+          importedBookmarks: S.importedBookmarks,
           settings: S.settings,
           trash: S.trash,
           exportedAt: new Date().toISOString(),
@@ -8398,20 +7331,14 @@ function exportData() {
   a.click();
   showToast("Data exported!", "success");
 }
-// Full-backup import touches quickAccess/importedBookmarks across every
-// workspace, plus sidebar link items in settings — sanitize every URL found
-// rather than trusting a backup file's scheme.
-function _sanitizeImportedWsData(wsData) {
-  if (!wsData || typeof wsData !== "object") return wsData;
-  const out = {};
-  for (const [id, wd] of Object.entries(wsData)) {
-    out[id] = {
-      ...wd,
-      quickAccess: _dedupeByUrl(_sanitizeImportedLinks(wd?.quickAccess)),
-      importedBookmarks: _dedupeByUrl(_sanitizeImportedLinks(wd?.importedBookmarks)),
-    };
-  }
-  return out;
+// Full-backup import touches quickAccess/importedBookmarks, plus sidebar
+// link items in settings — sanitize every URL found rather than trusting a
+// backup file's scheme.
+function _sanitizeImportedFlatData(d) {
+  return {
+    quickAccess: _dedupeByUrl(_sanitizeImportedLinks(d?.quickAccess)),
+    importedBookmarks: _dedupeByUrl(_sanitizeImportedLinks(d?.importedBookmarks)),
+  };
 }
 
 function _sanitizeImportedSidebar(sidebar) {
@@ -8430,6 +7357,8 @@ function _sanitizeImportedSidebar(sidebar) {
   }));
 }
 
+const IMPORT_FILE_MAX_BYTES = 10 * 1024 * 1024; // 10MB — matches the chrome.storage.local quota
+
 function importData(file) {
   if (file.size > IMPORT_FILE_MAX_BYTES) {
     showToast("File too large to import (max 10MB)", "error");
@@ -8439,8 +7368,23 @@ function importData(file) {
   reader.onload = (e) => {
     try {
       const d = JSON.parse(e.target.result);
-      if (d.workspaces) S.workspaces = d.workspaces;
-      if (d.wsData) S.wsData = _sanitizeImportedWsData(d.wsData);
+      if (Array.isArray(d.workspaces) || (d.wsData && typeof d.wsData === "object")) {
+        // Backup predates workspace removal — flatten into the current model.
+        const flat = _flattenLegacyWorkspaceData(d);
+        const clean = _sanitizeImportedFlatData(flat);
+        S.quickAccess = clean.quickAccess;
+        S.notes = flat.notes;
+        S.folders = flat.folders;
+        S.importedBookmarks = clean.importedBookmarks;
+        S.kanban = flat.kanban;
+        S.reminders = flat.reminders;
+      } else {
+        const clean = _sanitizeImportedFlatData(d);
+        if (Array.isArray(d.quickAccess)) S.quickAccess = clean.quickAccess;
+        if (Array.isArray(d.notes)) S.notes = d.notes;
+        if (Array.isArray(d.folders)) S.folders = d.folders;
+        if (Array.isArray(d.importedBookmarks)) S.importedBookmarks = clean.importedBookmarks;
+      }
       if (d.user) S.user = d.user;
       if (d.settings) {
         S.settings = { ...S.settings, ...d.settings };
@@ -8559,18 +7503,16 @@ function _cmdEmptyState() {
 function _buildCmdResults(q) {
   const scoreItem = (title, url) => Math.max(_fuzzyScore(title || "", q), _fuzzyScore(url || "", q) * 0.7);
 
-  // Bookmarks — combine Chrome bookmarks + workspace bookmarks, deduplicate, sort by score
+  // Bookmarks — combine Chrome bookmarks + saved bookmarks, deduplicate, sort by score
   const allBmCandidates = [];
   for (const f of S.allBookmarks) {
     for (const it of f.items) allBmCandidates.push(it);
   }
-  for (const ws of S.workspaces) {
-    for (const bm of S.wsData[ws.id]?.importedBookmarks || []) {
-      if (!allBmCandidates.find((b) => b.url === bm.url)) allBmCandidates.push({ title: bm.title, url: bm.url });
-    }
-    for (const qa of S.wsData[ws.id]?.quickAccess || []) {
-      if (!allBmCandidates.find((b) => b.url === qa.url)) allBmCandidates.push({ title: qa.name, url: qa.url });
-    }
+  for (const bm of S.importedBookmarks || []) {
+    if (!allBmCandidates.find((b) => b.url === bm.url)) allBmCandidates.push({ title: bm.title, url: bm.url });
+  }
+  for (const qa of S.quickAccess || []) {
+    if (!allBmCandidates.find((b) => b.url === qa.url)) allBmCandidates.push({ title: qa.name, url: qa.url });
   }
   const bmMatches = allBmCandidates
     .map((it) => ({ it, score: scoreItem(it.title, it.url) }))
@@ -8580,23 +7522,17 @@ function _buildCmdResults(q) {
     .map((x) => x.it);
 
   // Notes
-  const noteMatches = [];
-  for (const ws of S.workspaces) {
-    for (const n of S.wsData[ws.id]?.notes || []) {
-      if (_fuzzyMatch(n.title || "", q) || _fuzzyMatch(n.content || "", q)) noteMatches.push(n);
-    }
-  }
+  const noteMatches = (S.notes || []).filter(
+    (n) => _fuzzyMatch(n.title || "", q) || _fuzzyMatch(n.content || "", q),
+  );
 
   // Tasks (Nestodo cards)
   const taskMatches = [];
-  for (const ws of S.workspaces) {
-    const kb = S.kanban[ws.id];
-    if (!kb) continue;
-    for (const col of ["todo", "doing", "done"]) {
-      for (const card of kb[col] || []) {
-        if (_fuzzyMatch(card.title || "", q) || _fuzzyMatch(card.desc || "", q)) {
-          taskMatches.push({ id: card.id, text: card.title, done: col === "done" });
-        }
+  const cmdKb = S.kanban || {};
+  for (const col of ["todo", "doing", "done"]) {
+    for (const card of cmdKb[col] || []) {
+      if (_fuzzyMatch(card.title || "", q) || _fuzzyMatch(card.desc || "", q)) {
+        taskMatches.push({ id: card.id, text: card.title, done: col === "done" });
       }
     }
   }
@@ -8777,7 +7713,7 @@ function _renderCmdResults(q) {
     .querySelectorAll("[data-task-id]")
     .forEach((el2) => {
       el2.addEventListener("click", () => {
-        navigateTo("kanban");
+        openNestodoModal();
         closeCmdPalette();
       });
     });
@@ -9061,17 +7997,21 @@ function _cmdSetActive(idx) {
 }
 
 // ── Keyboard shortcut helpers ─────────────────────────────────────────────
-// key string format: "Alt+K", "Ctrl+Shift+T", or single char "/"
+// key string format: "Alt+K", "Ctrl+Shift+T", "Cmd+K", or single char "/"
 function _kbMatch(e, keyStr) {
   if (!keyStr) return false;
   const parts = keyStr.split("+").map((s) => s.toLowerCase().trim());
   const mainKey = parts.at(-1);
-  const needsAlt = parts.includes("alt");
   const needsCtrl = parts.includes("ctrl");
   const needsShift = parts.includes("shift");
+  // Mac keyboards produce special characters for Option(Alt)+letter, so
+  // "Alt+" shortcuts (the app's defaults) also fire on Cmd there — the same
+  // convention browsers use for their own built-in Alt shortcuts. A shortcut
+  // typed as "Cmd+…"/"Meta+…" works the same way in reverse.
+  const needsAltOrCmd = parts.includes("alt") || parts.includes("cmd") || parts.includes("meta");
   return (
     e.key.toLowerCase() === mainKey &&
-    !!e.altKey === needsAlt &&
+    (e.altKey || e.metaKey) === needsAltOrCmd &&
     !!e.ctrlKey === needsCtrl &&
     !!e.shiftKey === needsShift
   );
@@ -9180,7 +8120,6 @@ function navigateTo(view) {
 function _navigateLoad(view) {
   if (view === "bookmarks") {
     if (!S.allBookmarks.length) loadBookmarks();
-    renderBmWorkspaceTabs();
     S.bmFolderFilter = null;
     renderBmForActiveWorkspace();
   }
@@ -9192,29 +8131,6 @@ function _navigateLoad(view) {
   if (view === "reading") renderReadingQueue();
   if (view === "sessions") renderSessions();
   if (view === "journal") initJournalView();
-  if (view === "kanban") renderKanban();
-}
-
-function renderBmWorkspaceTabs() {
-  const bar = el("bmWsTabs");
-  if (!bar) return;
-  bar.innerHTML = S.workspaces
-    .map(
-      (ws) => `
-    <div class="bm-ws-tab ${ws.id === S.activeWsId ? "active" : ""}" data-wsid="${ws.id}">
-      <span>${ws.icon}</span>
-      <span>${escH(ws.name)}</span>
-    </div>`,
-    )
-    .join("");
-  bar.querySelectorAll(".bm-ws-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      setActiveWorkspace(tab.dataset.wsid);
-      S.bmFolderFilter = null;
-      renderBmWorkspaceTabs();
-      renderBmForActiveWorkspace();
-    });
-  });
 }
 
 function renderBmForActiveWorkspace() {
@@ -9226,7 +8142,7 @@ function renderBmForActiveWorkspace() {
     el("allBookmarksList").innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">🔖</div>
-        <div class="empty-state-text">No bookmarks in this workspace.<br>Click + to add one.</div>
+        <div class="empty-state-text">No bookmarks yet.<br>Click + to add one.</div>
       </div>`;
     return;
   }
@@ -9378,15 +8294,17 @@ function confirm2(title, msg, onOk, onCancel) {
 
 // Generic single-field text prompt modal — replaces window.prompt() so
 // renames/adds match the rest of the app's custom modal styling. Reused by
-// addSidebarGroup, renameSidebarGroup (this task) and renameSidebarItem
-// (Task 10).
-function sbPrompt(title, initialValue, onSave) {
+// addSidebarGroup, renameSidebarGroup and renameSidebarItem. When onDelete is
+// passed (editing an existing group/item), the modal also shows a Delete
+// button so rename/delete/cancel all live in one popup.
+function sbPrompt(title, initialValue, onSave, onDelete) {
   el("sbPromptTitle").textContent = title;
   const input = el("sbPromptInput");
   input.value = initialValue || "";
   input.onkeydown = (e) => {
     if (e.key === "Enter") el("sbPromptSaveBtn").click();
   };
+  el("sbPromptSaveBtn").textContent = onDelete ? "Update" : "Create";
   el("sbPromptSaveBtn").onclick = () => {
     const value = input.value.trim();
     if (!value) {
@@ -9396,6 +8314,16 @@ function sbPrompt(title, initialValue, onSave) {
     closeModal("sbPromptModal");
     onSave(value);
   };
+  const deleteBtn = el("sbPromptDeleteBtn");
+  if (deleteBtn) {
+    deleteBtn.style.display = onDelete ? "" : "none";
+    deleteBtn.onclick = onDelete
+      ? () => {
+          closeModal("sbPromptModal");
+          onDelete();
+        }
+      : null;
+  }
   openModal("sbPromptModal");
   setTimeout(() => {
     input.focus();
@@ -9461,20 +8389,12 @@ function setupEventListeners() {
   document.addEventListener("click", (e) => {
     const addGroupBtn = e.target.closest("#sbAddGroupBtn");
     if (addGroupBtn) return addSidebarGroup();
-    const moveBtn = e.target.closest("[data-sb-move-group]");
-    if (moveBtn) return moveSidebarGroup(moveBtn.dataset.sbMoveGroup, moveBtn.dataset.dir);
     const renameBtn = e.target.closest("[data-sb-rename-group]");
     if (renameBtn) return renameSidebarGroup(renameBtn.dataset.sbRenameGroup);
-    const deleteBtn = e.target.closest("[data-sb-delete-group]");
-    if (deleteBtn) return deleteSidebarGroup(deleteBtn.dataset.sbDeleteGroup);
     const addViewBtn = e.target.closest("[data-add-view]");
     if (addViewBtn) return addSidebarViewItem(S._sbAddLinkGroup, addViewBtn.dataset.addView);
-    const moveItemBtn = e.target.closest("[data-sb-move-item]");
-    if (moveItemBtn) return moveSidebarItem(moveItemBtn.dataset.sbItemGroup, moveItemBtn.dataset.sbMoveItem, moveItemBtn.dataset.dir);
     const renameItemBtn = e.target.closest("[data-sb-rename-item]");
     if (renameItemBtn) return renameSidebarItem(renameItemBtn.dataset.sbItemGroup, renameItemBtn.dataset.sbRenameItem);
-    const deleteItemBtn = e.target.closest("[data-sb-delete-item]");
-    if (deleteItemBtn) return deleteSidebarItem(deleteItemBtn.dataset.sbItemGroup, deleteItemBtn.dataset.sbDeleteItem);
   });
 
   el("weatherWidget").addEventListener("click", openWeatherLocationModal);
@@ -9487,7 +8407,10 @@ function setupEventListeners() {
     const n = e.target.closest(".sb-item[data-view]");
     if (!n) return;
     e.preventDefault();
-    navigateTo(n.dataset.view);
+    // Nestodo is a modal now, not a routed view — every other sidebar item
+    // still goes through the normal view navigation.
+    if (n.dataset.view === "kanban") openNestodoModal();
+    else navigateTo(n.dataset.view);
   });
 
   // Global [data-action] dispatch — CSP-safe replacement for inline onclick=
@@ -9539,6 +8462,9 @@ function setupEventListeners() {
         break;
       case "delete-cal-event":
         deleteCalEvent(Number(d.id));
+        break;
+      case "gcal-retry":
+        fetchGoogleCalendarEvents(S._gcalStatus === "unauthorized");
         break;
       case "search-web":
         searchTheWeb(d.q);
@@ -9673,28 +8599,17 @@ function setupEventListeners() {
     e.target.value = "";
   });
 
-  // Shareable workspaces — export/import
-  el("exportWorkspaceBtn").addEventListener("click", exportWorkspace);
-  el("importWorkspaceBtn").addEventListener("click", () =>
-    el("importWorkspaceFileInput").click(),
-  );
-  el("importWorkspaceFileInput").addEventListener("change", (e) => {
-    if (e.target.files[0]) importWorkspaceFile(e.target.files[0]);
-    e.target.value = "";
-  });
-
   // Granular data clear
   el("clearNotesBtn").addEventListener("click", () => {
     confirm2(
       "Clear All Notes?",
-      "All notes in the current workspace will be moved to Trash.",
+      "All notes will be moved to Trash.",
       () => {
         const data = wsData();
         (data.notes || []).forEach((n) =>
           S.trash.push({
             ...n,
             _type: "note",
-            _wsId: S.activeWsId,
             _deletedAt: Date.now(),
           }),
         );
@@ -9710,7 +8625,7 @@ function setupEventListeners() {
   el("clearTasksBtn").addEventListener("click", () => {
     confirm2(
       "Clear All Nestodo?",
-      "All to-dos, in-progress and done cards in the current workspace will be moved to Trash.",
+      "All to-dos, in-progress and done cards will be moved to Trash.",
       () => {
         const kb = getKanban();
         ["todo", "doing", "done"].forEach((col) => {
@@ -9720,7 +8635,6 @@ function setupEventListeners() {
               text: card.title,
               done: col === "done",
               _type: "task",
-              _wsId: S.activeWsId,
               _deletedAt: Date.now(),
             }),
           );
@@ -9728,7 +8642,7 @@ function setupEventListeners() {
         });
         save();
         renderKanbanDash();
-        if (el("view-kanban")?.classList.contains("active")) renderKanban();
+        if (el("nestodoModal")?.classList.contains("open")) renderKanban();
         renderTrash();
         showToast("Nestodo cleared", "success");
       },
@@ -9737,7 +8651,7 @@ function setupEventListeners() {
   el("clearQuickAccessBtn").addEventListener("click", () => {
     confirm2(
       "Clear Quick Access?",
-      "All quick access links in the current workspace will be removed.",
+      "All quick access links will be removed.",
       () => {
         wsData().quickAccess = [];
         save();
@@ -9761,7 +8675,7 @@ function setupEventListeners() {
   el("clearAllDataBtn").addEventListener("click", () => {
     confirm2(
       "Clear All Data",
-      "This will permanently delete all your notes, tasks, workspaces and settings, and sign you out of Google (revoking Drive sync access). This cannot be undone.",
+      "This will permanently delete all your notes, tasks and settings, and sign you out of Google (revoking Drive sync access). This cannot be undone.",
       async () => {
         await _revokeGoogleAccess();
         S.googleUser = null;
@@ -9770,13 +8684,11 @@ function setupEventListeners() {
         Drive._fileId = null;
         Drive._lastSyncAt = 0;
         clearTimeout(Drive._syncTimer);
-        S.workspaces = DEFAULT_WORKSPACES;
-        S.activeWsId = 1;
-        S.wsData = {};
+        S.quickAccess = DEFAULT_QUICK_ACCESS.map((q) => ({ ...q }));
+        S.notes = [];
+        S.folders = DEFAULT_FOLDERS.map((f) => ({ ...f }));
+        S.importedBookmarks = DEFAULT_IMPORTED_BOOKMARKS.map((b) => ({ ...b }));
         S.weatherLocation = null;
-        S.workspaces.forEach(
-          (ws) => (S.wsData[ws.id] = DEFAULT_WS_DATA(ws.id)),
-        );
         S.trash = [];
         S.settings = {
           theme: "dark",
@@ -9785,8 +8697,11 @@ function setupEventListeners() {
           showSeconds: true,
           cardGlow: "glow",
           widgets: {
-            notes: true,
-            timer: true,
+            notes: false,
+            timer: false,
+            calendar: true,
+            todo: false,
+            reminders: true,
           },
           heroBg: null,
           qaMode: "icon",
@@ -9795,8 +8710,12 @@ function setupEventListeners() {
         S.readingQueue = [];
         S.tabSessions = [];
         S.journal = {};
-        S.kanban = {};
-        S.reminders = {};
+        S.kanban = {
+          todo: DEFAULT_KANBAN.todo.map((c) => ({ ...c })),
+          doing: [],
+          done: DEFAULT_KANBAN.done.map((c) => ({ ...c })),
+        };
+        S.reminders = [];
         save();
         renderAll();
         applyTheme("dark");
@@ -9818,50 +8737,6 @@ function setupEventListeners() {
   el("reDetectWeatherBtn").addEventListener("click", () => {
     closeModal("weatherLocationModal");
     reDetectWeather();
-  });
-
-  // Workspaces (buttons now live in the topbar)
-  el("addWorkspaceBtn")?.addEventListener("click", openNewWorkspaceModal);
-  el("newWorkspaceTabBtn")?.addEventListener("click", openNewWorkspaceModal);
-  el("manageWorkspacesBtn")?.addEventListener("click", () => {
-    renderManageWorkspacesList();
-    openModal("manageWorkspacesModal");
-  });
-  el("manageWsAddBtn").addEventListener("click", () => {
-    closeModal("manageWorkspacesModal");
-    openNewWorkspaceModal();
-  });
-  document.querySelector(".emoji-picker span")?.classList.add("selected");
-  document.querySelectorAll(".emoji-picker span").forEach((s) => {
-    s.addEventListener("click", () => {
-      document
-        .querySelectorAll(".emoji-picker span")
-        .forEach((x) => x.classList.remove("selected"));
-      s.classList.add("selected");
-      el("selectedEmoji").value = s.dataset.emoji;
-    });
-  });
-  el("saveWorkspaceBtn").addEventListener("click", () => {
-    const name = el("workspaceName").value.trim();
-    const icon = el("selectedEmoji").value;
-    if (!name) {
-      showToast("Enter a workspace name", "error");
-      return;
-    }
-    if (_editingWsId !== null) {
-      const ws = S.workspaces.find((w) => w.id === _editingWsId);
-      if (ws) {
-        ws.name = name;
-        ws.icon = icon;
-      }
-      save();
-      renderTopbarWorkspaces();
-      showToast("Workspace updated!", "success");
-    } else {
-      addWorkspace(name, icon);
-    }
-    _editingWsId = null;
-    closeModal("workspaceModal");
   });
 
   // Notes
@@ -10253,7 +9128,7 @@ function setupEventListeners() {
   });
 
   // ── Kanban ──────────────────────────────────────────────────────────────
-  el("kanbanDashOpenBtn")?.addEventListener("click", () => navigateTo("kanban"));
+  el("kanbanDashOpenBtn")?.addEventListener("click", () => openNestodoModal());
   el("kanbanDashAddBtn")?.addEventListener("click", () => openKanbanCardModal("todo"));
   document.querySelectorAll(".kanban-add-card").forEach((btn) => {
     btn.addEventListener("click", () => openKanbanCardModal(btn.dataset.col));
@@ -10271,7 +9146,6 @@ function setupEventListeners() {
   });
 
   // ── Reminders widget ────────────────────────────────────────────────────
-  el("remindersOpenBtn")?.addEventListener("click", () => navigateTo("kanban"));
   el("remindersAddBtn")?.addEventListener("click", () => openReminderModal());
   el("reminderSaveBtn")?.addEventListener("click", saveReminder);
   el("reminderDeleteBtn")?.addEventListener("click", () => {
@@ -10312,6 +9186,7 @@ function setupEventListeners() {
   el("addCalEventBtn")?.addEventListener("click", () =>
     openCalEventModal(null),
   );
+  el("calGsyncBtn")?.addEventListener("click", handleCalGsyncClick);
   el("saveCalEventBtn")?.addEventListener("click", saveCalEvent);
   el("calEventTitle")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") saveCalEvent();
@@ -10736,43 +9611,15 @@ function saveJournalEntry() {
 let _kanbanTargetCol = null;
 let _kanbanEditingId = null; // id of the card being edited, or null when adding
 
-function _kanbanFor(wsId) {
-  if (!S.kanban[wsId]) S.kanban[wsId] = { todo: [], doing: [], done: [] };
-  return S.kanban[wsId];
-}
-
 function getKanban() {
-  return _kanbanFor(S.activeWsId);
+  return S.kanban;
 }
 
-// One-time fold-in (effectively a no-op once wsData[wsId].tasks is empty):
-// the old flat per-workspace task list is retired in favor of the Nestodo
-// board, so any pre-existing tasks are moved into the todo/done columns
-// instead of being silently lost. Called from loadState() and from
-// importWorkspaceFile() for imported workspace JSON that still has the
-// legacy "tasks" field.
-function _migrateLegacyTasksIntoKanban() {
-  let changed = false;
-  Object.keys(S.wsData || {}).forEach((wsId) => {
-    const data = S.wsData[wsId];
-    const legacy = data?.tasks;
-    if (!Array.isArray(legacy) || !legacy.length) return;
-    const kb = _kanbanFor(Number(wsId));
-    legacy.forEach((t, i) => {
-      const card = {
-        id: t.id || Date.now() + i,
-        title: t.text || "(untitled task)",
-        desc: "",
-        createdAt: t.id || Date.now(),
-        remindAt: null,
-        notified: false,
-      };
-      (t.done ? kb.done : kb.todo).push(card);
-    });
-    data.tasks = [];
-    changed = true;
-  });
-  return changed;
+// Nestodo lives in a large modal now (not a routed view) — open it and
+// render fresh so it always reflects the current board.
+function openNestodoModal() {
+  renderKanban();
+  openModal("nestodoModal");
 }
 
 // Cards with a remindAt sort soonest-first; everything else keeps insertion order.
@@ -11068,7 +9915,6 @@ function deleteKanbanCard(col, id) {
       text: card.title,
       done: col === "done",
       _type: "task",
-      _wsId: S.activeWsId,
       _deletedAt: Date.now(),
     });
   }
@@ -11262,8 +10108,125 @@ function _resizeImageFile(file, maxW, maxH) {
   });
 }
 
+// ===== GOOGLE CALENDAR (read-only) ====================================
+// Reuses the existing Google sign-in session — chrome.identity.getAuthToken()
+// returns one token covering every scope in manifest.json's oauth2.scopes,
+// so once "calendar.events.readonly" is added there alongside the Drive scopes,
+// signing in for Drive sync also grants calendar read access. No separate
+// "connect Calendar" OAuth flow needed; connection state IS S.googleUser.
+let _gcalFetching = false;
+let _gcalRefreshTimer = null;
+
+async function fetchGoogleCalendarEvents(interactive = false) {
+  if (!IS_CHROME || !S.googleUser || _gcalFetching) return;
+  _gcalFetching = true;
+  S._gcalStatus = "loading";
+  renderCalSyncStatus();
+  try {
+    if (!navigator.onLine) {
+      S._gcalStatus = S.googleCalEvents.length ? "offline" : "error";
+      S._gcalError = "You're offline";
+      return;
+    }
+    const token = await getAuthToken(interactive);
+    if (!token) {
+      S._gcalStatus = "unauthorized";
+      S._gcalError = null;
+      return;
+    }
+    const timeMin = new Date();
+    timeMin.setDate(timeMin.getDate() - 7);
+    const timeMax = new Date();
+    timeMax.setDate(timeMax.getDate() + 60);
+    const url =
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events` +
+      `?timeMin=${encodeURIComponent(timeMin.toISOString())}` +
+      `&timeMax=${encodeURIComponent(timeMax.toISOString())}` +
+      `&singleEvents=true&orderBy=startTime&maxResults=100`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) {
+      const data = await r.json();
+      S.googleCalEvents = (data.items || [])
+        .filter((ev) => ev.status !== "cancelled" && (ev.start?.date || ev.start?.dateTime))
+        .map((ev) => ({
+          id: ev.id,
+          title: ev.summary || "(untitled)",
+          date: ev.start.date || ev.start.dateTime.slice(0, 10),
+          allDay: !!ev.start.date,
+          link: ev.htmlLink || null,
+        }));
+      S._gcalStatus = "connected";
+      S._gcalError = null;
+      S._gcalLastSync = Date.now();
+      save();
+    } else if (r.status === 401) {
+      await _forgetToken(token);
+      S._gcalStatus = "unauthorized";
+      S._gcalError = null;
+    } else if (r.status === 403) {
+      S._gcalStatus = "unauthorized";
+      S._gcalError = "Calendar permission missing — sign out then back in.";
+    } else {
+      const err = await r.json().catch(() => ({}));
+      S._gcalStatus = S.googleCalEvents.length ? "offline" : "error";
+      S._gcalError = err?.error?.message || `Calendar error ${r.status}`;
+    }
+  } catch {
+    S._gcalStatus = S.googleCalEvents.length ? "offline" : "error";
+    S._gcalError = "Network error";
+  } finally {
+    _gcalFetching = false;
+    renderCalendarWidget(); // also refreshes the sync status button
+  }
+}
+
+function _gcalStartAutoRefresh() {
+  clearInterval(_gcalRefreshTimer);
+  _gcalRefreshTimer = setInterval(() => {
+    if (S.googleUser) fetchGoogleCalendarEvents(false);
+  }, 15 * 60 * 1000); // 15 min — Calendar isn't push-updated here, poll lightly
+}
+
+function renderCalSyncStatus() {
+  const btn = el("calGsyncBtn");
+  if (!btn) return;
+  const spinner = el("calGsyncSpinner");
+  const icon = el("calGsyncIcon");
+  btn.classList.remove("gcal-connected", "gcal-unauthorized", "gcal-error", "gcal-offline", "gcal-disconnected");
+  if (!S.googleUser) {
+    btn.classList.add("gcal-disconnected");
+    btn.dataset.tip = "Connect Google Calendar";
+  } else if (S._gcalStatus === "connected") {
+    btn.classList.add("gcal-connected");
+    const t = S._gcalLastSync ? new Date(S._gcalLastSync).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "";
+    btn.dataset.tip = t ? `Google Calendar synced ${t}` : "Google Calendar synced";
+  } else if (S._gcalStatus === "unauthorized") {
+    btn.classList.add("gcal-unauthorized");
+    btn.dataset.tip = "Reconnect Google Calendar";
+  } else if (S._gcalStatus === "offline") {
+    btn.classList.add("gcal-offline");
+    btn.dataset.tip = `Showing cached events — ${S._gcalError || "offline"}`;
+  } else if (S._gcalStatus === "error") {
+    btn.classList.add("gcal-error");
+    btn.dataset.tip = S._gcalError || "Couldn't load Google Calendar";
+  } else {
+    btn.classList.add("gcal-disconnected");
+    btn.dataset.tip = "Connect Google Calendar";
+  }
+  const loading = S._gcalStatus === "loading";
+  if (spinner) spinner.style.display = loading ? "" : "none";
+  if (icon) icon.style.display = loading ? "none" : "";
+}
+
+function handleCalGsyncClick() {
+  // signIn() already triggers fetchGoogleCalendarEvents() itself on success.
+  if (!S.googleUser) { signIn(); return; }
+  fetchGoogleCalendarEvents(S._gcalStatus === "unauthorized");
+}
+
 // ===== CALENDAR WIDGET ================================================
 function renderCalendarWidget() {
+  renderCalSyncStatus();
   const today = new Date();
   if (!S._calMonth)
     S._calMonth = { year: today.getFullYear(), month: today.getMonth() };
@@ -11321,7 +10284,8 @@ function renderCalendarWidget() {
 
 function calHasEvent(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
-  return S.calEvents.some((ev) => calEventOccursOn(ev, d));
+  if (S.calEvents.some((ev) => calEventOccursOn(ev, d))) return true;
+  return (S.googleCalEvents || []).some((ev) => ev.date === dateStr);
 }
 
 function calEventOccursOn(ev, date) {
@@ -11354,23 +10318,50 @@ function renderCalEventsList(year, month) {
     const date = new Date(year, month, d);
     if (date < today) continue;
     S.calEvents.forEach((ev) => {
-      if (calEventOccursOn(ev, date)) upcoming.push({ ev, date });
+      if (calEventOccursOn(ev, date)) upcoming.push({ ev, date, source: "local" });
     });
   }
+  (S.googleCalEvents || []).forEach((ev) => {
+    const [y, m, day] = ev.date.split("-").map(Number);
+    const date = new Date(y, m - 1, day);
+    if (date.getFullYear() === year && date.getMonth() === month && date >= today) {
+      upcoming.push({ ev, date, source: "google" });
+    }
+  });
   upcoming.sort((a, b) => a.date - b.date);
   const shown = upcoming.slice(0, 5);
   if (!shown.length) {
-    listEl.innerHTML = "";
+    // Loading/error/offline get their own explanation; a genuinely empty
+    // month (nothing local, nothing from Google) gets the plain empty state.
+    if (S._gcalStatus === "loading") {
+      listEl.innerHTML = `<div class="cal-events-status"><div class="spinner spinner-sm"></div><span>Loading Google Calendar…</span></div>`;
+    } else if (S._gcalStatus === "error" && S.googleUser) {
+      listEl.innerHTML = `<div class="cal-events-status cal-events-status-error">
+        <span>${escH(S._gcalError || "Couldn't load Google Calendar")}</span>
+        <button class="cal-events-retry-btn" data-action="gcal-retry">Retry</button>
+      </div>`;
+    } else if (S._gcalStatus === "unauthorized" && S.googleUser) {
+      listEl.innerHTML = `<div class="cal-events-status cal-events-status-error">
+        <span>Google Calendar needs reconnecting</span>
+        <button class="cal-events-retry-btn" data-action="gcal-retry">Reconnect</button>
+      </div>`;
+    } else {
+      listEl.innerHTML = `<div class="cal-events-status">No upcoming events this month</div>`;
+    }
     return;
   }
   listEl.innerHTML = shown
     .map(
-      ({ ev, date }) =>
+      ({ ev, date, source }) =>
         `<div class="cal-event-item">
-      <div class="cal-event-dot"></div>
+      <div class="cal-event-dot${source === "google" ? " google" : ""}"></div>
       <span class="cal-event-text">${escH(ev.title)}</span>
       <span style="font-size:10px;color:var(--text-3);flex-shrink:0">${date.getDate()}/${date.getMonth() + 1}</span>
-      <button class="cal-event-del" data-action="delete-cal-event" data-id="${ev.id}">✕</button>
+      ${
+        source === "local"
+          ? `<button class="cal-event-del" data-action="delete-cal-event" data-id="${ev.id}">✕</button>`
+          : `<span class="cal-event-src" title="From Google Calendar">G</span>`
+      }
     </div>`,
     )
     .join("");
@@ -11453,10 +10444,6 @@ function deleteCalEvent(id) {
 // (wired in setupEventListeners)
 
 // Make functions global (needed for inline onclick)
-window.setActiveWorkspace = setActiveWorkspace;
-window.deleteWorkspace = deleteWorkspace;
-window.openEditWorkspaceModal = openEditWorkspaceModal;
-window.openNewWorkspaceModal = openNewWorkspaceModal;
 window.openFolderModal = openFolderModal;
 window.toggleBmFolder = toggleBmFolder;
 window.closeModal = closeModal;
