@@ -27,8 +27,8 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </button>
     <button class="sb-collapse-btn" id="sidebarToggleBtn" data-tip="Toggle sidebar" aria-label="Toggle sidebar" aria-controls="sbNav">
-      <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
-      <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
+      <svg class="sb-toggle-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+      <svg class="sb-toggle-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
     </button>
   </div>
 
@@ -120,17 +120,9 @@
       <kbd class="search-kbd">/</kbd>
     </button>
     <div class="topbar-ws" id="topbarWorkspaces">
-      <div class="topbar-ws-list" id="topbarWorkspacesList"></div>
-      <button class="topbar-ws-btn" id="newWorkspaceTabBtn" data-tip="New Workspace">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-      <button class="topbar-ws-btn" id="manageWorkspacesBtn" data-tip="Manage Workspaces">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
       <button class="topbar-ws-btn" id="smartOrganizeBtn" data-tip="Smart Organize open tabs with AI">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg>
       </button>
-      <button id="addWorkspaceBtn" style="display:none"></button>
     </div>
     <div class="topbar-actions">
       <!-- topSettingsBtn kept as no-op stub for JS compat -->
@@ -234,9 +226,6 @@
         </div>
       </section>
 
-      <!-- hidden legacy workspace tabs (kept for JS compatibility) -->
-      <div id="workspaceTabs" style="display:none"></div>
-
       <!-- Home Body -->
       <div class="home-content">
 
@@ -320,10 +309,19 @@
           <!-- Calendar widget -->
           <div class="widget calendar-widget" id="widget-calendar">
             <div class="widget-top-row">
-              <span class="widget-label">Calendar</span>
-              <button class="widget-action-btn" id="addCalEventBtn" data-tip="Add event">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </button>
+              <span class="widget-title">
+                <svg class="widget-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span class="widget-label">Calendar</span>
+              </span>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="cal-gsync-btn gcal-disconnected" id="calGsyncBtn" data-tip="Connect Google Calendar" aria-label="Google Calendar sync status">
+                  <div class="spinner spinner-sm" id="calGsyncSpinner" style="display:none"></div>
+                  <svg id="calGsyncIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </button>
+                <button class="widget-action-btn" id="addCalEventBtn" data-tip="Add event">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              </div>
             </div>
             <div class="cal-header">
               <button class="cal-nav-btn" id="calPrevBtn" aria-label="Previous month">
@@ -341,7 +339,10 @@
           <!-- Notes widget -->
           <div class="widget notes-widget" id="widget-notes">
             <div class="widget-top-row">
-              <span class="widget-label">Notes</span>
+              <span class="widget-title">
+                <svg class="widget-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span class="widget-label">Notes</span>
+              </span>
               <button class="widget-action-btn" id="addNoteBtn" data-tip="New note">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
@@ -352,16 +353,13 @@
           <!-- Reminders widget -->
           <div class="widget reminders-widget" id="widget-reminders">
             <div class="widget-top-row">
-              <span class="widget-label">Reminders</span>
-              <div style="display:flex;gap:6px;align-items:center">
-                <button class="widget-action-btn" id="remindersAddBtn" data-tip="Add reminder">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
-                <button class="edit-btn" id="remindersOpenBtn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="2" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="18" y="3" width="5" height="16" rx="1"/></svg>
-                  Nestodo
-                </button>
-              </div>
+              <span class="widget-title">
+                <svg class="widget-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <span class="widget-label">Reminders</span>
+              </span>
+              <button class="widget-action-btn" id="remindersAddBtn" data-tip="Add reminder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
             </div>
             <div class="reminders-list" id="remindersList"></div>
           </div>
@@ -369,7 +367,10 @@
           <!-- Focus Timer widget -->
           <div class="widget timer-widget" id="widget-timer">
             <div class="widget-top-row">
-              <span class="widget-label">Focus Timer</span>
+              <span class="widget-title">
+                <svg class="widget-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="widget-label">Focus Timer</span>
+              </span>
               <div class="timer-presets">
                 <button class="preset-btn active" data-min="25" data-type="focus">25m</button>
                 <button class="preset-btn" data-min="15" data-type="focus">15m</button>
@@ -434,7 +435,6 @@
           </button>
         </div>
       </div>
-      <div class="bm-ws-tabs" id="bmWsTabs"></div>
       <div class="bm-toolbar" id="bmToolbar">
         <div class="bm-folder-filters" id="bmFolderFilters"></div>
         <div class="bm-sort-group">
@@ -648,53 +648,6 @@
       <div id="habitsList" class="habits-list"></div>
     </div>
 
-    <!-- ===== KANBAN VIEW ===== -->
-    <div id="view-kanban" class="view">
-      <div class="view-header">
-        <div class="view-header-left">
-          <button class="view-back-btn" data-tip="Back" aria-label="Go back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <h1>Nestodo</h1>
-        </div>
-      </div>
-      <div class="kanban-board" id="kanbanBoard">
-        <div class="kanban-col col-todo" id="kanban-todo">
-          <div class="kanban-col-header">
-            <span class="kanban-col-title">To Do</span>
-            <span class="kanban-col-count" id="kanban-todo-count">0</span>
-          </div>
-          <div class="kanban-cards" id="kanban-todo-cards"></div>
-          <button class="kanban-add-card" data-col="todo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add card
-          </button>
-        </div>
-        <div class="kanban-col col-doing" id="kanban-doing">
-          <div class="kanban-col-header">
-            <span class="kanban-col-title">In Progress</span>
-            <span class="kanban-col-count" id="kanban-doing-count">0</span>
-          </div>
-          <div class="kanban-cards" id="kanban-doing-cards"></div>
-          <button class="kanban-add-card" data-col="doing">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add card
-          </button>
-        </div>
-        <div class="kanban-col col-done" id="kanban-done">
-          <div class="kanban-col-header">
-            <span class="kanban-col-title">Done</span>
-            <span class="kanban-col-count" id="kanban-done-count">0</span>
-          </div>
-          <div class="kanban-cards" id="kanban-done-cards"></div>
-          <button class="kanban-add-card" data-col="done">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add card
-          </button>
-        </div>
-      </div>
-    </div>
-
   </div><!-- /content-wrapper -->
 </main><!-- /main -->
 
@@ -831,20 +784,16 @@
         <input type="text" id="kbSearch" class="settings-input settings-input-sm" value="/" maxlength="20" placeholder="/">
       </div>
       <div class="settings-row">
-        <div class="settings-label"><span>Toggle Focus Timer</span><small>Default: Alt+T</small></div>
+        <div class="settings-label"><span>Toggle Focus Timer</span><small>Default: Alt+T (or Cmd+T on Mac)</small></div>
         <input type="text" id="kbTimer" class="settings-input settings-input-sm" value="Alt+T" maxlength="20" placeholder="Alt+T">
       </div>
       <div class="settings-row">
-        <div class="settings-label"><span>New Quick Note</span><small>Default: Alt+N</small></div>
+        <div class="settings-label"><span>New Quick Note</span><small>Default: Alt+N (or Cmd+N on Mac)</small></div>
         <input type="text" id="kbNote" class="settings-input settings-input-sm" value="Alt+N" maxlength="20" placeholder="Alt+N">
       </div>
       <div class="settings-row">
-        <div class="settings-label"><span>Open Nestodo</span><small>Default: Alt+K</small></div>
+        <div class="settings-label"><span>Open Nestodo</span><small>Default: Alt+K (or Cmd+K on Mac)</small></div>
         <input type="text" id="kbTask" class="settings-input settings-input-sm" value="Alt+K" maxlength="20" placeholder="Alt+K">
-      </div>
-      <div class="settings-row">
-        <div class="settings-label"><span>Switch Workspace 1–9</span><small>Always: Alt+1 … Alt+9</small></div>
-        <span class="settings-label-note">Built-in</span>
       </div>
       <button class="settings-action-btn" id="saveShortcutsBtn">Save Shortcuts</button>
     </div>
@@ -905,28 +854,18 @@
           Import Data
         </button>
         <input type="file" id="importFileInput" accept=".json" style="display:none">
-        <div class="settings-sub-label" style="margin-top:8px">Workspaces</div>
-        <button class="settings-action-btn" id="exportWorkspaceBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export Current Workspace
-        </button>
-        <button class="settings-action-btn" id="importWorkspaceBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Import Workspace from File
-        </button>
-        <input type="file" id="importWorkspaceFileInput" accept=".json" style="display:none">
         <div class="settings-sub-label" style="margin-top:8px">Clear Specific Data</div>
         <button class="settings-action-btn danger-soft" id="clearNotesBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Clear All Notes (current workspace)
+          Clear All Notes
         </button>
         <button class="settings-action-btn danger-soft" id="clearTasksBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Clear All Nestodo (current workspace)
+          Clear All Nestodo
         </button>
         <button class="settings-action-btn danger-soft" id="clearQuickAccessBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Clear Quick Access (current workspace)
+          Clear Quick Access
         </button>
         <button class="settings-action-btn danger-soft" id="clearTrashBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1025,36 +964,6 @@
 </div>
 
 <!-- ===== MODALS ===== -->
-
-<!-- Workspace Modal -->
-<div class="modal-overlay" id="workspaceModal" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="workspaceModalTitle">New Workspace</h3>
-      <button class="modal-close" data-modal="workspaceModal" aria-label="Close workspace dialog">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <label for="workspaceName">Name</label>
-      <input type="text" id="workspaceName" placeholder="e.g. Personal, Work…" class="modal-input" autocomplete="off">
-      <label id="wsIconLabel">Icon</label>
-      <div class="emoji-picker" id="emojiPicker" role="radiogroup" aria-labelledby="wsIconLabel">
-        <span data-emoji="🏠" role="radio" aria-label="Home" tabindex="0">🏠</span><span data-emoji="💼" role="radio" aria-label="Work" tabindex="0">💼</span>
-        <span data-emoji="📚" role="radio" aria-label="Study" tabindex="0">📚</span><span data-emoji="🗂️" role="radio" aria-label="Files" tabindex="0">🗂️</span>
-        <span data-emoji="💡" role="radio" aria-label="Ideas" tabindex="0">💡</span><span data-emoji="🎮" role="radio" aria-label="Gaming" tabindex="0">🎮</span>
-        <span data-emoji="🎨" role="radio" aria-label="Art" tabindex="0">🎨</span><span data-emoji="🔬" role="radio" aria-label="Science" tabindex="0">🔬</span>
-        <span data-emoji="🚀" role="radio" aria-label="Launch" tabindex="0">🚀</span><span data-emoji="💰" role="radio" aria-label="Finance" tabindex="0">💰</span>
-        <span data-emoji="🌍" role="radio" aria-label="World" tabindex="0">🌍</span><span data-emoji="🎵" role="radio" aria-label="Music" tabindex="0">🎵</span>
-      </div>
-      <input type="hidden" id="selectedEmoji" value="🏠">
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" data-modal="workspaceModal">Cancel</button>
-      <button class="btn-primary" id="saveWorkspaceBtn">Create</button>
-    </div>
-  </div>
-</div>
 
 <!-- Note Modal -->
 <div class="modal-overlay" id="noteModal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle">
@@ -1255,7 +1164,8 @@
       <input type="text" id="sbPromptInput" class="modal-input" maxlength="40">
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" data-modal="sbPromptModal">Cancel</button>
+      <button class="btn-secondary" data-modal="sbPromptModal" style="margin-right:auto">Cancel</button>
+      <button class="btn-danger" id="sbPromptDeleteBtn" style="display:none">Delete</button>
       <button class="btn-primary" id="sbPromptSaveBtn">Save</button>
     </div>
   </div>
@@ -1346,7 +1256,7 @@
 <div class="modal-overlay" id="wsBmChooserModal" role="dialog" aria-modal="true" aria-labelledby="wsBmChooserTitle">
   <div class="modal" style="max-width:340px">
     <div class="modal-header">
-      <h3 id="wsBmChooserTitle">Add to Workspace</h3>
+      <h3 id="wsBmChooserTitle">Add Bookmark</h3>
       <button class="modal-close" data-modal="wsBmChooserModal" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -1420,27 +1330,6 @@
   </div>
 </div>
 
-<!-- Manage Workspaces Modal -->
-<div class="modal-overlay" id="manageWorkspacesModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Manage Workspaces</h3>
-      <button class="modal-close" data-modal="manageWorkspacesModal" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" style="padding:8px 12px">
-      <div id="manageWsList"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-primary" id="manageWsAddBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Workspace
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- Smart Organize Modal -->
 <div class="modal-overlay" id="smartOrganizeModal">
   <div class="modal modal-lg">
@@ -1453,7 +1342,7 @@
     <div class="modal-body" id="organizeModalBody" style="max-height:55vh"></div>
     <div class="modal-footer">
       <button class="btn-secondary" data-modal="smartOrganizeModal">Cancel</button>
-      <button class="btn-primary" id="applyOrganizeBtn" style="display:none">Add to Workspaces</button>
+      <button class="btn-primary" id="applyOrganizeBtn" style="display:none">Add Bookmarks</button>
     </div>
   </div>
 </div>
@@ -1566,7 +1455,7 @@
 </div>
 
 <!-- ===== KANBAN ADD CARD MODAL ===== -->
-<div class="modal-overlay" id="kanbanCardModal">
+<div class="modal-overlay" id="kanbanCardModal" role="dialog" aria-modal="true" aria-labelledby="kanbanCardModalTitle">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
       <h3 id="kanbanCardModalTitle">Add Card</h3>
@@ -1609,7 +1498,7 @@
 </div>
 
 <!-- ===== ADD/EDIT REMINDER MODAL (standalone — not a Nestodo card) ===== -->
-<div class="modal-overlay" id="reminderModal">
+<div class="modal-overlay" id="reminderModal" role="dialog" aria-modal="true" aria-labelledby="reminderModalTitle">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
       <h3 id="reminderModalTitle">Add Reminder</h3>
@@ -1625,6 +1514,53 @@
       <button class="btn-secondary danger-soft" id="reminderDeleteBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" data-modal="reminderModal">Cancel</button>
       <button class="btn-primary" id="reminderSaveBtn">Add Reminder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NESTODO MODAL (large — replaces the old full-page board view) ===== -->
+<div class="modal-overlay" id="nestodoModal" role="dialog" aria-modal="true" aria-labelledby="nestodoModalTitle">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h3 id="nestodoModalTitle">Nestodo</h3>
+      <button class="modal-close" data-modal="nestodoModal" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body modal-body-flush">
+      <div class="kanban-board" id="kanbanBoard">
+        <div class="kanban-col col-todo" id="kanban-todo">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">To Do</span>
+            <span class="kanban-col-count" id="kanban-todo-count">0</span>
+          </div>
+          <div class="kanban-cards" id="kanban-todo-cards"></div>
+          <button class="kanban-add-card" data-col="todo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add card
+          </button>
+        </div>
+        <div class="kanban-col col-doing" id="kanban-doing">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">In Progress</span>
+            <span class="kanban-col-count" id="kanban-doing-count">0</span>
+          </div>
+          <div class="kanban-cards" id="kanban-doing-cards"></div>
+          <button class="kanban-add-card" data-col="doing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add card
+          </button>
+        </div>
+        <div class="kanban-col col-done" id="kanban-done">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">Done</span>
+            <span class="kanban-col-count" id="kanban-done-count">0</span>
+          </div>
+          <div class="kanban-cards" id="kanban-done-cards"></div>
+          <button class="kanban-add-card" data-col="done">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add card
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

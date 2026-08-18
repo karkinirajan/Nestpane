@@ -6,11 +6,11 @@ function init() {
 
   let currentUrl = '';
   let currentTitle = '';
-  let workspaces = [];
-  let wsData = {};
+  let quickAccess = [];
+  let folders = [];
+  let importedBookmarks = [];
   let destMode = 'quick';
   let creatingNewFolder = false;
-  let selectedWsId = null;
   let selectedFolder = null;
 
   // ── Combobox factory ──────────────────────────────────────────────────────
@@ -74,17 +74,6 @@ function init() {
   }
 
   // ── Init combos ───────────────────────────────────────────────────────────
-  const wsCombo = makeCombo({
-    triggerId: 'wsTrigger', valId: 'wsVal', dropId: 'wsDrop', listId: 'wsList',
-    placeholder: 'Select workspace…',
-    onSelect: wsId => {
-      selectedWsId = +wsId;
-      folderCombo.reset();
-      selectedFolder = null;
-      populateFolders(+wsId);
-    }
-  });
-
   const folderCombo = makeCombo({
     triggerId: 'folderTrigger', valId: 'folderVal', dropId: 'folderDrop', listId: 'folderList',
     placeholder: 'Select folder…',
@@ -100,10 +89,9 @@ function init() {
   }
 
   // ── Populate folder combobox ──────────────────────────────────────────────
-  function populateFolders(wsId) {
-    const data = wsData[wsId] || {};
-    const named = (data.folders || []).map(f => f.name || f);
-    const fromBm = (data.importedBookmarks || []).map(b => b.folderName).filter(Boolean);
+  function populateFolders() {
+    const named = folders.map(f => f.name || f);
+    const fromBm = importedBookmarks.map(b => b.folderName).filter(Boolean);
     const all = [...new Set([...named, ...fromBm])];
     folderCombo.setItems(all.map(name => ({ value: name, label: name })));
   }
@@ -115,16 +103,12 @@ function init() {
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  chrome.storage.local.get(['workspaces', 'wsData', 'habits', '_timerState'], (st) => {
+  chrome.storage.local.get(['kanban', 'habits', '_timerState'], (st) => {
     const today = new Date().toISOString().slice(0, 10);
-    // Tasks
-    let totalTasks = 0, doneTasks = 0;
-    (st.workspaces || []).forEach(ws => {
-      ((st.wsData || {})[ws.id]?.tasks || []).forEach(t => {
-        totalTasks++;
-        if (t.done) doneTasks++;
-      });
-    });
+    // Tasks (Nestodo board)
+    const kb = st.kanban || {};
+    const doneTasks = (kb.done || []).length;
+    const totalTasks = doneTasks + (kb.todo || []).length + (kb.doing || []).length;
     const tasksEl = el('dashTasksVal');
     const tasksSub = el('dashTasksSub');
     if (tasksEl) tasksEl.textContent = `${doneTasks}/${totalTasks}`;
@@ -161,7 +145,7 @@ function init() {
   // ── Load tab + storage ────────────────────────────────────────────────────
   Promise.all([
     new Promise(res => chrome.tabs.query({ active: true, currentWindow: true }, res)),
-    new Promise(res => chrome.storage.local.get(['workspaces', 'wsData'], res)),
+    new Promise(res => chrome.storage.local.get(['quickAccess', 'folders', 'importedBookmarks'], res)),
   ]).then(([[tab], stored]) => {
     const mainForm = el('mainForm');
     const pageTitle = el('pageTitle');
@@ -194,19 +178,10 @@ function init() {
       }
     }
 
-    workspaces = stored.workspaces || [];
-    wsData = stored.wsData || {};
-
-    if (!workspaces.length) {
-      mainForm.innerHTML = '<div class="empty">No workspaces found.<br>Open a new tab to set up Nestpane first.</div>';
-      return;
-    }
-
-    wsCombo.setItems(workspaces.map(ws => ({
-      value: String(ws.id),
-      label: ws.name,
-      emoji: ws.emoji || '',
-    })));
+    quickAccess = stored.quickAccess || [];
+    folders = stored.folders || [];
+    importedBookmarks = stored.importedBookmarks || [];
+    populateFolders();
   }).catch(err => {
     console.warn('Nestpane popup load error:', err);
   });
@@ -250,48 +225,40 @@ function init() {
   if (saveBtn) saveBtn.addEventListener('click', async () => {
     const titleInput = el('titleInput');
     const title = (titleInput ? titleInput.value.trim() : '') || currentTitle;
-    const wsId = selectedWsId;
 
     if (!title || !currentUrl) { showToast('Missing title or URL.', 'err'); return; }
     if (currentUrl.startsWith('chrome://') || currentUrl.startsWith('chrome-extension://')) {
       showToast("This page can't be bookmarked.", 'err'); return;
     }
-    if (!wsId) { showToast('Select a workspace.', 'err'); return; }
-
-    if (!wsData[wsId]) wsData[wsId] = { quickAccess: [], notes: [], tasks: [], folders: [], importedBookmarks: [] };
-    const data = wsData[wsId];
 
     if (destMode === 'quick') {
-      if ((data.quickAccess || []).some(b => b.url === currentUrl)) {
+      if (quickAccess.some(b => b.url === currentUrl)) {
         showToast('Already in Quick Access.', 'err'); return;
       }
-      if (!data.quickAccess) data.quickAccess = [];
-      data.quickAccess.push({ id: Date.now(), name: title, url: currentUrl });
+      quickAccess.push({ id: Date.now(), name: title, url: currentUrl });
     } else {
       let folderName;
       if (creatingNewFolder) {
         const inp = el('newFolderInput');
         folderName = inp ? inp.value.trim() : '';
         if (!folderName) { showToast('Enter a folder name.', 'err'); return; }
-        if (!data.folders) data.folders = [];
-        if (!data.folders.some(f => (f.name || f) === folderName)) {
-          data.folders.push({ name: folderName });
+        if (!folders.some(f => (f.name || f) === folderName)) {
+          folders.push({ name: folderName });
         }
       } else {
         folderName = selectedFolder;
         if (!folderName) { showToast('Select a folder.', 'err'); return; }
       }
-      if ((data.importedBookmarks || []).some(b => b.url === currentUrl && b.folderName === folderName)) {
+      if (importedBookmarks.some(b => b.url === currentUrl && b.folderName === folderName)) {
         showToast('Already in that folder.', 'err'); return;
       }
-      if (!data.importedBookmarks) data.importedBookmarks = [];
-      data.importedBookmarks.push({ id: 'p_' + Date.now(), title, url: currentUrl, folderName });
+      importedBookmarks.push({ id: 'p_' + Date.now(), title, url: currentUrl, folderName });
     }
 
     saveBtn.disabled = true;
     try {
       await new Promise((res, rej) => {
-        chrome.storage.local.set({ wsData }, () => {
+        chrome.storage.local.set({ quickAccess, folders, importedBookmarks }, () => {
           chrome.runtime.lastError ? rej(chrome.runtime.lastError) : res();
         });
       });
