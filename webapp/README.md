@@ -1,7 +1,7 @@
-# 🟧 NestPane
+# 🟧 Nestpane
 
 <div align="center">
-  <img src="assets/logo.svg" alt="NestPane Logo" width="120" height="120">
+  <img src="logo.svg" alt="Nestpane Logo" width="120" height="120">
   <h3>Your browser's new happy place.</h3>
   <p>A sleek, dark-mode, productivity-focused Chrome New Tab extension and landing page.</p>
   
@@ -13,13 +13,13 @@
 ---
 
 ## 📖 Overview
-NestPane replaces your default Chrome new tab screen with a beautifully designed, customizable dashboard. Built with a privacy-first approach, all your data (to-dos, bookmarks, widgets) stays local on your browser. No tracking, no telemetry.
+Nestpane replaces your default Chrome new tab screen with a beautifully designed, customizable dashboard. Built with a privacy-first approach, all your data (to-dos, bookmarks, widgets) stays local on your browser. No tracking, no telemetry.
 
-This repository contains the official NestPane landing site and comprehensive legal pages, built with pure HTML, Tailwind CSS, and Vanilla JS.
+This repository contains the official Nestpane landing site and comprehensive legal pages, built with pure HTML, Tailwind CSS, and Vanilla JS.
 
 ## 📄 Pages Included
 - **`index.html`** — The main landing page with Hero, Features, Interactive Mockup, and FAQ.
-- **`about.html`** — The mission statement and design philosophy behind NestPane.
+- **`about.html`** — The mission statement and design philosophy behind Nestpane.
 - **`privacy.html`** — Comprehensive, GDPR/CCPA compliant Privacy Policy.
 - **`terms.html`** — Complete Terms of Service governing the use of the extension and site.
 
@@ -27,7 +27,7 @@ This repository contains the official NestPane landing site and comprehensive le
 
 ## 🎨 Design System & Branding
 
-NestPane relies on a dual-font system and a strict dark-mode color palette to balance modern tech aesthetics with high readability.
+Nestpane relies on a dual-font system and a strict dark-mode color palette to balance modern tech aesthetics with high readability.
 
 ### Typography
 | Role | Font | Usage | Tracking (Letter-Spacing) |
@@ -55,7 +55,7 @@ NestPane relies on a dual-font system and a strict dark-mode color palette to ba
 
 ### Logo & Branding Concept
 - **The Monogram:** The icon features the letters "NP" constructed from a grid of small, mathematically precise square blocks, contained within a larger rounded orange square. This represents "building blocks," modularity, and structure.
-- **Wordmark:** The text "NestPane" uses the Space Grotesk font with a tight tracking of `-0.02em`.
+- **Wordmark:** The text "Nestpane" uses the Space Grotesk font with a tight tracking of `-0.02em`.
   - "Nest" is colored in pure White (`#FFFFFF`).
   - "Pane" is colored in the Primary Accent Orange (`#FF6B00`).
 
@@ -90,15 +90,14 @@ Pill-shaped (`rounded-full`), utilizing hover glows for primary CTAs.
 
 ```text
 nestpane/
-├── index.html          # Landing page
-├── about.html          # About / Mission page
-├── privacy.html        # Comprehensive Privacy Policy
-├── terms.html          # Comprehensive Terms of Service
-├── README.md           # You are here
-├── assets/
-│   ├── logo.svg        # Mosaic NP Box Logo (SVG)
-│   └── icons/
-│       └── ui-icons.svg# SVG Sprite sheet for UI elements
+├── index.html                        # Landing page
+├── about.html                        # About / Mission page
+├── privacy.html                      # Comprehensive Privacy Policy
+├── terms.html                        # Comprehensive Terms of Service
+├── README.md                         # You are here
+├── favicon.svg                       # Browser tab favicon
+├── logo.svg / logo.png               # Nest bowl logo (SVG source / PNG raster)
+└── googleee397e5ec21b3ad7.html       # Google Search Console site-ownership verification file
 ```
 
 ## 🚀 Local Development
@@ -128,7 +127,7 @@ This site is configured for zero-config static hosting on Netlify.
 
 ## 📄 License
 
-© 2023 NestPane. All rights reserved. 
-The source code, design elements, and branding for NestPane are proprietary. You may not copy, modify, distribute, or use the NestPane logo or UI for personal or commercial purposes without prior written consent. 
+© 2026 Nestpane. All rights reserved. 
+The source code, design elements, and branding for Nestpane are proprietary. You may not copy, modify, distribute, or use the Nestpane logo or UI for personal or commercial purposes without prior written consent. 
 
 For licensing inquiries, please contact [kneeraazon.com](https://kneeraazon.com).
