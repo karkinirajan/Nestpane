@@ -54,7 +54,7 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 |---|---|---|
 | Runtime | Chrome Extension (Manifest V3) | Extension host, permissions, storage |
 | UI | Vanilla HTML, CSS, JavaScript (ES2022) | No framework, no build transpiler |
-| Auth | `chrome.identity.getAuthToken()` (Chrome Extension-type OAuth client) | Sign in with Google, no client secret — Chrome-only, does not work in Chromium forks |
+| Auth | `chrome.identity.getAuthToken()` (Chrome Extension-type client), falling back to `chrome.identity.launchWebAuthFlow()` (Web application-type client) | Sign in with Google, no client secret in either path — native path is Chrome-only, fallback covers Brave/Vivaldi/Opera/Arc/etc. |
 | Storage | `chrome.storage.local` | All user data and tokens, local only |
 | Sync | Google Drive REST API v3 (`appdata` scope) | Optional cloud backup |
 | End-to-end encryption | WebCrypto (`crypto.subtle`, PBKDF2 + AES-GCM) | Optional passphrase-based encryption of cloud backups |
@@ -156,8 +156,9 @@ This project has no server and no environment variables. All configuration is em
 
 | Config | File | Key | Notes |
 |---|---|---|---|
-| Google OAuth Client ID | `manifest.json` | `oauth2.client_id` | Public identifier, safe to commit. Chrome Extension-type client — Google issues no client secret for this type at all |
-| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
+| Google OAuth Client ID (native, Chrome) | `manifest.json` | `oauth2.client_id` | Public identifier, safe to commit. Chrome Extension-type client — Google issues no client secret for this type at all |
+| Google OAuth Client ID (fallback, all other Chromium browsers) | `app.js` | `WEB_AUTH_CLIENT_ID` | Public identifier, safe to commit. Web application-type client used only by `chrome.identity.launchWebAuthFlow()` — see [Google OAuth Setup](#google-oauth-setup) |
+| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata`, `calendar.events.readonly` — read by both the native and fallback auth paths |
 | Expected extension ID | `app.js` / `build.js` | `EXPECTED_EXTENSION_ID` / `PUBLISHED_EXTENSION_ID` | The CWS-assigned item ID; a mismatch only logs a warning, it never blocks sign-in |
 | Weather endpoint | `app.js` | wttr.in URL | No key required |
 | Quotes | Bundled static list (`HERO_QUOTES` in `app.js`) | No network request |
@@ -173,24 +174,35 @@ This project has no server and no environment variables. All configuration is em
 
 ### How the auth flow works
 
+Nestpane tries two independent sign-in paths, in order, so Google sign-in and Drive sync work in every Chromium-based browser, not just Google Chrome:
+
+**1. Native path (Google Chrome only)**
+
 1. User clicks **Sign in with Google** in the sidebar (this also requests the `identity`/`identity.email` optional permissions just-in-time, if not already granted).
 2. `chrome.identity.getAuthToken({interactive: true})` shows Chrome's native account picker/consent UI — no separate tab, no manual OAuth redirect.
 3. Chrome returns an access token and caches it internally — no client secret involved anywhere in this exchange.
 4. Chrome manages token expiry and silent refresh itself; the extension just calls `getAuthToken({interactive: false})` again whenever it needs a token, and gets a valid one back (or `null` if the grant was revoked).
-5. Sign-out (and "Clear All Data") both revoke the grant server-side via `oauth2.googleapis.com/revoke` **and** evict it from Chrome's cache via `chrome.identity.removeCachedAuthToken`.
 
-**Important limitation:** `chrome.identity.getAuthToken()` only works in actual Google Chrome — it depends on Chrome's own Google API keys and profile/sign-in system. It does not work in Brave, Edge, Vivaldi, or other Chromium forks; Google sign-in and Drive sync are Chrome-only features as a result.
+This only works in actual Google Chrome — it depends on Google API keys baked into Chrome itself. It fails outright in Brave, Vivaldi, Opera, Arc, and other Chromium forks (Brave, for instance, is detected up front via `navigator.brave.isBrave()` and skipped straight to the fallback below — see `brave/brave-browser#38066`).
 
-### Setting up your own OAuth Client
+**2. Fallback path (Brave, Vivaldi, Opera, Arc, or any browser where the native path fails)**
 
-If you fork this project, you must create your own Google OAuth client. The client ID in this repo belongs to the original author's GCP project.
+1. `chrome.identity.launchWebAuthFlow()` opens Google's standard OAuth consent page in a browser-controlled popup and watches for the redirect to `chrome.identity.getRedirectURL()` (`https://<extension-id>.chromiumapp.org/`) — this is a plain extensions API every Chromium-based browser implements the same way.
+2. Uses the implicit grant (`response_type=token`) against a **second**, `Web application`-type OAuth client (`WEB_AUTH_CLIENT_ID` in `app.js`) — the access token comes back directly in the redirect URL's fragment, so there's no client secret and no backend needed to exchange a code for a token.
+3. The token is cached in memory only (implicit-grant tokens have no refresh token) and silently re-requested (`prompt=none`) while still valid; a genuinely expired token just resolves to `null`, same as the native path.
+
+Sign-out (and "Clear All Data") revoke the grant server-side via `oauth2.googleapis.com/revoke` **and** evict it from whichever cache is holding it (Chrome's native cache, or the in-memory fallback token).
+
+### Setting up your own OAuth Clients
+
+If you fork this project, you must create your own Google OAuth clients — the client IDs in this repo belong to the original author's GCP project. You need **both** of the following; the native client covers Chrome, the web-application client covers every other Chromium-based browser.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
-2. Enable the **Google Drive API**.
-3. Configure the **OAuth consent screen** (External, add `drive.appdata`, `userinfo.email`, `userinfo.profile` scopes, add yourself as a test user).
-4. Create an **OAuth 2.0 Client ID** → Application type: **Chrome Extension** (required — this is the only type the code supports; no client secret is issued for it).
-5. Add your extension ID to the **Application ID** field. Your extension ID appears on `chrome://extensions`.
-6. Copy the Client ID into `manifest.json`'s `oauth2.client_id`. No redirect URI setup needed — this client type binds to the extension ID directly, and `getAuthToken()` doesn't use a redirect flow at all.
+2. Enable the **Google Drive API** and, if you use the optional Calendar widget, the **Google Calendar API**.
+3. Configure the **OAuth consent screen** (External, add `drive.appdata`, `userinfo.email`, `userinfo.profile`, and `calendar.events.readonly` scopes, add yourself as a test user).
+4. **Native client (Chrome):** Create an **OAuth 2.0 Client ID** → Application type: **Chrome Extension**. Add your extension ID to the **Application ID** field (found on `chrome://extensions`). Copy the Client ID into `manifest.json`'s `oauth2.client_id`. No redirect URI setup needed — this client type binds to the extension ID directly.
+5. **Fallback client (everyone else):** Create a second **OAuth 2.0 Client ID** → Application type: **Web application**. Under **Authorized redirect URIs**, add exactly `https://<your-extension-id>.chromiumapp.org/` (same extension ID as above, trailing slash included). Copy the Client ID into `app.js`'s `WEB_AUTH_CLIENT_ID` constant.
+6. Both client IDs are public identifiers, not secrets — Google issues no `client_secret` for either type used here, so both are safe to commit.
 
 ### Finding your Extension ID
 
@@ -310,7 +322,7 @@ Bump `version` in both `manifest.json` and `package.json` (they must match — t
 | "Sign in" button does nothing, or shows a permission-error toast | The `identity`/`identity.email` optional permission wasn't granted — try again and approve the browser's permission prompt |
 | Sign-in fails immediately every time | Extension ID mismatch — the Chrome Extension OAuth client is bound to one specific extension ID; check `EXPECTED_EXTENSION_ID` in `app.js` against `chrome://extensions` |
 | Sign-in shows "access_denied" | Add your Google account as a Test User on the OAuth consent screen in Google Cloud Console |
-| Sign-in doesn't work at all, on Brave/Edge/Vivaldi/etc. | Expected — `chrome.identity.getAuthToken()` only works in actual Google Chrome, not other Chromium forks |
+| Sign-in doesn't work on Brave/Vivaldi/Opera/Arc/etc. | Should work via the `launchWebAuthFlow()` fallback — check that `WEB_AUTH_CLIENT_ID` in `app.js` is set to your own Web application-type client, and that its authorized redirect URI exactly matches `https://<your-extension-id>.chromiumapp.org/` |
 | Weather shows "--°C" | Check that `wttr.in` is reachable; verify `host_permissions` in `manifest.json` |
 | Data not syncing | Confirm you are signed in; check that the Drive API is enabled in your Google Cloud project |
 | Popup shows "No workspaces found" | Open a new tab first to initialise extension data, then try the popup |
