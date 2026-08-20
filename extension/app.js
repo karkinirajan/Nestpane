@@ -4,12 +4,18 @@
 //  Author: kneeraazon.com
 // =============================================
 
-// OAuth 2.0 credentials: the client_id lives in manifest.json's "oauth2"
-// block (Google Cloud Console client type "Chrome Extension"), not here.
-// This client type is bound to the extension ID and issues no client_secret
-// at all — sign-in and token refresh both go through chrome.identity.getAuthToken()
-// below, so there's no secret to leak and no manual token-exchange/refresh
-// logic to maintain.
+// OAuth 2.0 credentials: the native client_id lives in manifest.json's
+// "oauth2" block (Google Cloud Console client type "Chrome Extension"), not
+// here. That client type is bound to the extension ID and issues no
+// client_secret at all. It only works through Chrome's own
+// chrome.identity.getAuthToken() machinery, though, which depends on
+// Google API keys baked into Google Chrome itself — Brave, Vivaldi, Opera,
+// Arc, and other Chromium forks don't have them. WEB_AUTH_CLIENT_ID below
+// (a second, "Web application"-type client) backs a fallback sign-in path
+// built on chrome.identity.launchWebAuthFlow(), a plain extensions API
+// every Chromium-based browser implements the same way — see the "GOOGLE
+// AUTH + DRIVE CLOUD SYNC" section. Neither client type is issued a
+// client_secret, so there is nothing secret to leak in either constant.
 
 // ===== CHROME API WRAPPER =====
 const IS_CHROME = typeof chrome !== "undefined" && !!chrome.runtime?.id;
@@ -28,8 +34,8 @@ const EXPECTED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 if (IS_CHROME && chrome.runtime.id !== EXPECTED_EXTENSION_ID) {
   console.warn(
     `[Nestpane] Running as extension ID "${chrome.runtime.id}", expected "${EXPECTED_EXTENSION_ID}". ` +
-      "Google sign-in will fail unless this ID is registered on the Chrome Extension OAuth client " +
-      "in Google Cloud Console, or manifest.json's \"key\" is corrected to produce the expected ID.",
+    "Google sign-in will fail unless this ID is registered on the Chrome Extension OAuth client " +
+    "in Google Cloud Console, or manifest.json's \"key\" is corrected to produce the expected ID.",
   );
 }
 
@@ -43,7 +49,7 @@ const API = {
         (Array.isArray(keys) ? keys : [keys]).forEach((k) => {
           try {
             out[k] = JSON.parse(localStorage.getItem("ft2_" + k));
-          } catch (e) {}
+          } catch { }
         });
         res(out);
       }
@@ -68,7 +74,7 @@ const API = {
         (Array.isArray(keys) ? keys : [keys]).forEach((k) => {
           try {
             out[k] = JSON.parse(localStorage.getItem("ftL_" + k));
-          } catch (e) {}
+          } catch { }
         });
         res(out);
       }
@@ -308,7 +314,7 @@ const API = {
               res(info && info.email ? info : null);
             },
           );
-        } catch (e) {
+        } catch {
           res(null);
         }
       } else {
@@ -446,179 +452,179 @@ const SIDEBAR_ADDABLE_VIEWS = [
 // Fresh installs get one flat starter set — no more per-workspace fixtures
 // (workspaces were removed as a feature; this is what "Home" used to seed).
 const DEFAULT_QUICK_ACCESS = [
-    { id: 101, name: "Gmail",           url: "https://mail.google.com" },
-    { id: 102, name: "Google Calendar", url: "https://calendar.google.com" },
-    { id: 103, name: "Google Drive",    url: "https://drive.google.com" },
-    { id: 104, name: "YouTube",         url: "https://youtube.com" },
-    { id: 105, name: "Google Maps",     url: "https://maps.google.com" },
-    { id: 106, name: "Amazon",          url: "https://amazon.com" },
-    { id: 107, name: "Wikipedia",       url: "https://wikipedia.org" },
-    { id: 108, name: "Reddit",          url: "https://reddit.com" },
-    { id: 109, name: "LinkedIn",        url: "https://linkedin.com/feed" },
-    { id: 110, name: "Netflix",         url: "https://netflix.com" },
+  { id: 101, name: "Gmail", url: "https://mail.google.com" },
+  { id: 102, name: "Google Calendar", url: "https://calendar.google.com" },
+  { id: 103, name: "Google Drive", url: "https://drive.google.com" },
+  { id: 104, name: "YouTube", url: "https://youtube.com" },
+  { id: 105, name: "Google Maps", url: "https://maps.google.com" },
+  { id: 106, name: "Amazon", url: "https://amazon.com" },
+  { id: 107, name: "Wikipedia", url: "https://wikipedia.org" },
+  { id: 108, name: "Reddit", url: "https://reddit.com" },
+  { id: 109, name: "LinkedIn", url: "https://linkedin.com/feed" },
+  { id: 110, name: "Netflix", url: "https://netflix.com" },
 ];
 
 const DEFAULT_FOLDERS = [{ name: "Google" }, { name: "Social Media" }];
 
 const DEFAULT_IMPORTED_BOOKMARKS = [
-    // Google Services
-    {
-      id: "ws1_001",
-      title: "Google",
-      url: "https://google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_002",
-      title: "Gmail",
-      url: "https://mail.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_003",
-      title: "YouTube",
-      url: "https://youtube.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_004",
-      title: "Google Drive",
-      url: "https://drive.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_005",
-      title: "Google Maps",
-      url: "https://maps.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_006",
-      title: "Google Photos",
-      url: "https://photos.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_007",
-      title: "Google Docs",
-      url: "https://docs.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_008",
-      title: "Google Sheets",
-      url: "https://sheets.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_009",
-      title: "Google Slides",
-      url: "https://slides.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_010",
-      title: "Google Calendar",
-      url: "https://calendar.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_011",
-      title: "Google Meet",
-      url: "https://meet.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_012",
-      title: "Google Translate",
-      url: "https://translate.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_013",
-      title: "Google News",
-      url: "https://news.google.com",
-      folderName: "Google",
-    },
-    {
-      id: "ws1_014",
-      title: "Google Forms",
-      url: "https://forms.google.com",
-      folderName: "Google",
-    },
-    // Social Media
-    {
-      id: "ws1_101",
-      title: "Facebook",
-      url: "https://facebook.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_102",
-      title: "X (Twitter)",
-      url: "https://x.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_103",
-      title: "Instagram",
-      url: "https://instagram.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_104",
-      title: "LinkedIn",
-      url: "https://linkedin.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_105",
-      title: "Reddit",
-      url: "https://reddit.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_106",
-      title: "TikTok",
-      url: "https://tiktok.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_107",
-      title: "Pinterest",
-      url: "https://pinterest.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_108",
-      title: "WhatsApp Web",
-      url: "https://web.whatsapp.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_109",
-      title: "Telegram Web",
-      url: "https://web.telegram.org",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_110",
-      title: "Discord",
-      url: "https://discord.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_111",
-      title: "Snapchat",
-      url: "https://snapchat.com",
-      folderName: "Social Media",
-    },
-    {
-      id: "ws1_112",
-      title: "Threads",
-      url: "https://threads.net",
-      folderName: "Social Media",
-    },
+  // Google Services
+  {
+    id: "ws1_001",
+    title: "Google",
+    url: "https://google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_002",
+    title: "Gmail",
+    url: "https://mail.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_003",
+    title: "YouTube",
+    url: "https://youtube.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_004",
+    title: "Google Drive",
+    url: "https://drive.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_005",
+    title: "Google Maps",
+    url: "https://maps.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_006",
+    title: "Google Photos",
+    url: "https://photos.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_007",
+    title: "Google Docs",
+    url: "https://docs.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_008",
+    title: "Google Sheets",
+    url: "https://sheets.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_009",
+    title: "Google Slides",
+    url: "https://slides.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_010",
+    title: "Google Calendar",
+    url: "https://calendar.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_011",
+    title: "Google Meet",
+    url: "https://meet.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_012",
+    title: "Google Translate",
+    url: "https://translate.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_013",
+    title: "Google News",
+    url: "https://news.google.com",
+    folderName: "Google",
+  },
+  {
+    id: "ws1_014",
+    title: "Google Forms",
+    url: "https://forms.google.com",
+    folderName: "Google",
+  },
+  // Social Media
+  {
+    id: "ws1_101",
+    title: "Facebook",
+    url: "https://facebook.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_102",
+    title: "X (Twitter)",
+    url: "https://x.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_103",
+    title: "Instagram",
+    url: "https://instagram.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_104",
+    title: "LinkedIn",
+    url: "https://linkedin.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_105",
+    title: "Reddit",
+    url: "https://reddit.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_106",
+    title: "TikTok",
+    url: "https://tiktok.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_107",
+    title: "Pinterest",
+    url: "https://pinterest.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_108",
+    title: "WhatsApp Web",
+    url: "https://web.whatsapp.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_109",
+    title: "Telegram Web",
+    url: "https://web.telegram.org",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_110",
+    title: "Discord",
+    url: "https://discord.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_111",
+    title: "Snapchat",
+    url: "https://snapchat.com",
+    folderName: "Social Media",
+  },
+  {
+    id: "ws1_112",
+    title: "Threads",
+    url: "https://threads.net",
+    folderName: "Social Media",
+  },
 ];
 
 // Same shape/ids _migrateLegacyTasksIntoKanban used to produce at runtime —
@@ -952,10 +958,10 @@ function _flattenLegacyWorkspaceData(raw) {
   let reminders = remindersAlreadyFlat ? [...raw.reminders] : [];
   const kanban = kanbanAlreadyFlat
     ? {
-        todo: Array.isArray(raw.kanban.todo) ? [...raw.kanban.todo] : [],
-        doing: Array.isArray(raw.kanban.doing) ? [...raw.kanban.doing] : [],
-        done: Array.isArray(raw.kanban.done) ? [...raw.kanban.done] : [],
-      }
+      todo: Array.isArray(raw.kanban.todo) ? [...raw.kanban.todo] : [],
+      doing: Array.isArray(raw.kanban.doing) ? [...raw.kanban.doing] : [],
+      done: Array.isArray(raw.kanban.done) ? [...raw.kanban.done] : [],
+    }
     : { todo: [], doing: [], done: [] };
 
   wsIds.forEach((id) => {
@@ -1061,20 +1067,20 @@ async function loadState() {
   S._qaDeleted = new Set(Array.isArray(d._qaDeleted) ? d._qaDeleted : []);
   S.settings = d.settings
     ? {
-        ...S.settings,
-        ...d.settings,
-        widgets: { ...S.settings.widgets, ...(d.settings.widgets || {}) },
-        sbLinks: {
-          ...S.settings.sbLinks,
-          ...(d.settings.sbLinks || {}),
-          // Per-group: keep saved links, but top up to at least 10 with any
-          // newly-added defaults the user hasn't already got (by URL).
-          others: _topUpSbGroup(d.settings.sbLinks?.others, S.settings.sbLinks.others),
-          google: _topUpSbGroup(d.settings.sbLinks?.google, S.settings.sbLinks.google),
-          projects: _topUpSbGroup(d.settings.sbLinks?.projects, S.settings.sbLinks.projects),
-          socials: _topUpSbGroup(d.settings.sbLinks?.socials, S.settings.sbLinks.socials),
-        },
-      }
+      ...S.settings,
+      ...d.settings,
+      widgets: { ...S.settings.widgets, ...(d.settings.widgets || {}) },
+      sbLinks: {
+        ...S.settings.sbLinks,
+        ...(d.settings.sbLinks || {}),
+        // Per-group: keep saved links, but top up to at least 10 with any
+        // newly-added defaults the user hasn't already got (by URL).
+        others: _topUpSbGroup(d.settings.sbLinks?.others, S.settings.sbLinks.others),
+        google: _topUpSbGroup(d.settings.sbLinks?.google, S.settings.sbLinks.google),
+        projects: _topUpSbGroup(d.settings.sbLinks?.projects, S.settings.sbLinks.projects),
+        socials: _topUpSbGroup(d.settings.sbLinks?.socials, S.settings.sbLinks.socials),
+      },
+    }
     : S.settings;
   // Self-heal duplicate sidebar links (e.g. left over from id-based merges
   // across versions where default link ids were renumbered).
@@ -1219,10 +1225,10 @@ const el = (id) => document.getElementById(id);
 const escH = (s) =>
   s
     ? String(s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
     : "";
 
 // Normalize a user-supplied URL: prepend https:// if missing, block unsafe schemes.
@@ -1265,34 +1271,6 @@ const fmtBytes = (b) => {
   const i = Math.floor(Math.log(b) / Math.log(k));
   return (b / Math.pow(k, i)).toFixed(1) + " " + s[i];
 };
-const fileIcon = (e) =>
-  ({
-    pdf: "📄",
-    zip: "📦",
-    rar: "📦",
-    jpg: "🖼️",
-    jpeg: "🖼️",
-    png: "🖼️",
-    gif: "🖼️",
-    webp: "🖼️",
-    mp4: "🎬",
-    mkv: "🎬",
-    mp3: "🎵",
-    wav: "🎵",
-    doc: "📝",
-    docx: "📝",
-    txt: "📝",
-    xls: "📊",
-    xlsx: "📊",
-    csv: "📊",
-    exe: "⚙️",
-    dmg: "⚙️",
-    js: "💻",
-    ts: "💻",
-    py: "💻",
-    html: "💻",
-    css: "💻",
-  })[e] || "📁";
 function debounce(fn, d) {
   let t;
   return (...a) => {
@@ -1371,10 +1349,9 @@ function allWsFolderNames() {
 }
 
 // ===== CLOCK =====
-let clockInterval = null;
 function initClock() {
   updateClock();
-  clockInterval = setInterval(updateClock, 1000);
+  setInterval(updateClock, 1000);
 }
 function updateClock() {
   const n = new Date();
@@ -1504,7 +1481,7 @@ async function detectByIP() {
         return true;
       }
     }
-  } catch {}
+  } catch { }
   // Fallback: let wttr.in detect from the extension's outgoing IP
   await fetchWeather(undefined);
   return false;
@@ -1578,7 +1555,7 @@ async function autoDetectWeather() {
         }
       }
     },
-    () => {},
+    () => { },
     { timeout: 7000, maximumAge: 600000 },
   );
 }
@@ -1687,28 +1664,57 @@ const Drive = {
   _status: "idle",
 };
 
-// ── Google auth via chrome.identity.getAuthToken() ───────────────────────
-// Uses the "oauth2" client_id declared in manifest.json (Google Cloud
-// Console client type "Chrome Extension" — no client_secret exists for this
-// type). Chrome owns the token cache and refresh entirely: non-interactive
-// calls return a cached/silently-refreshed token or null; interactive calls
-// show Chrome's native account picker/consent UI. This replaces the old
-// manual PKCE + token-exchange + refresh + cross-tab-lock machinery, which
-// existed only to work around not using this API.
+// ── Google auth: native Chrome path + cross-browser fallback ─────────────
+// Two independent sign-in paths, tried in order:
+//
+// 1. chrome.identity.getAuthToken() — uses the "oauth2" client_id declared
+//    in manifest.json (client type "Chrome Extension", no client_secret).
+//    Chrome owns the token cache and refresh entirely: non-interactive calls
+//    return a cached/silently-refreshed token or null; interactive calls
+//    show Chrome's native account picker/consent UI. Best UX, but only
+//    works in actual Google Chrome — it depends on Google API keys baked
+//    into Chrome itself.
+// 2. chrome.identity.launchWebAuthFlow() — a plain extensions API (open a
+//    URL, watch for the redirect) that every Chromium-based browser
+//    implements identically, so it's used as the fallback for Brave,
+//    Vivaldi, Opera, Arc, and any other Chrome fork. Uses a second,
+//    "Web application"-type OAuth client (WEB_AUTH_CLIENT_ID below) via the
+//    implicit grant (response_type=token) — no client_secret involved, and
+//    no backend to exchange a code for a token since there isn't one.
+//    Tokens from this path have no refresh token, so they're cached
+//    in-memory only and silently re-requested (prompt=none) while they're
+//    still valid; once genuinely expired the caller just gets null, same
+//    as the native path returning no cached token.
 let _lastAuthTokenError = null;
+let _useWebAuthFallback = false; // sticky once the native path is known not to work here
+let _webAuthToken = null;
+let _webAuthTokenExpiresAt = 0;
 
-function getAuthToken(interactive = false) {
+// Replace with your own Google Cloud Console OAuth client of type
+// "Web application" (Credentials → Create Credentials → OAuth client ID).
+// Add this exact redirect URI to it: chrome.identity.getRedirectURL() at
+// runtime — e.g. https://aokkcpfoompjgeknhbkphogfcjjlbpol.chromiumapp.org/
+// for the published extension ID. This is a public client identifier, not a
+// secret — Google issues no client_secret for either OAuth client type used
+// in this file, so it's safe to commit, same as manifest.json's client_id.
+const WEB_AUTH_CLIENT_ID = "4118060860-mplosc15s8q4h49htl88knv6b2fkjhb4.apps.googleusercontent.com";
+
+// A real Chrome "user clicked Cancel" failure always carries this exact
+// message — anything else (missing API, rejected request, etc.) means the
+// native path itself doesn't work in this browser, not that the user
+// declined, so only this specific message should stop without falling back.
+function _isRealChromeCancel(msg) {
+  return /did not approve access/i.test(msg || "");
+}
+
+function _nativeGetAuthToken(interactive) {
   return new Promise((resolve) => {
-    if (!IS_CHROME || !chrome.identity) {
-      resolve(null);
-      return;
-    }
     chrome.identity.getAuthToken({ interactive }, (result) => {
       if (chrome.runtime.lastError || !result) {
         _lastAuthTokenError = chrome.runtime.lastError?.message || null;
         if (chrome.runtime.lastError && interactive) {
           console.warn(
-            "[Nestpane] Google sign-in failed or was cancelled.",
+            "[Nestpane] Native Google sign-in failed or was cancelled.",
             chrome.runtime.lastError.message,
           );
         }
@@ -1723,14 +1729,69 @@ function getAuthToken(interactive = false) {
   });
 }
 
+function _parseImplicitToken(redirectUrl) {
+  try {
+    const params = new URLSearchParams(new URL(redirectUrl).hash.slice(1));
+    return { token: params.get("access_token"), expiresIn: Number(params.get("expires_in")) || 3600 };
+  } catch {
+    return { token: null, expiresIn: 0 };
+  }
+}
+
+function _webAuthFlowToken(interactive) {
+  return new Promise((resolve) => {
+    if (!chrome.identity?.launchWebAuthFlow) {
+      resolve(null);
+      return;
+    }
+    // Reuse a still-valid cached token for silent calls instead of opening
+    // a fresh auth window on every background sync tick.
+    if (!interactive && _webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
+      resolve(_webAuthToken);
+      return;
+    }
+    const scopes = chrome.runtime.getManifest()?.oauth2?.scopes || [];
+    const authUrl =
+      "https://accounts.google.com/o/oauth2/v2/auth?" +
+      new URLSearchParams({
+        client_id: WEB_AUTH_CLIENT_ID,
+        response_type: "token",
+        redirect_uri: chrome.identity.getRedirectURL(),
+        scope: scopes.join(" "),
+        prompt: interactive ? "select_account" : "none",
+      }).toString();
+
+    chrome.identity.launchWebAuthFlow({ url: authUrl, interactive }, (redirectedTo) => {
+      if (chrome.runtime.lastError || !redirectedTo) {
+        _lastAuthTokenError = chrome.runtime.lastError?.message || null;
+        if (chrome.runtime.lastError && interactive) {
+          console.warn(
+            "[Nestpane] Fallback Google sign-in failed or was cancelled.",
+            chrome.runtime.lastError.message,
+          );
+        }
+        resolve(null);
+        return;
+      }
+      const { token, expiresIn } = _parseImplicitToken(redirectedTo);
+      if (token) {
+        _lastAuthTokenError = null;
+        _webAuthToken = token;
+        _webAuthTokenExpiresAt = Date.now() + Math.max(expiresIn - 120, 60) * 1000;
+      }
+      resolve(token);
+    });
+  });
+}
+
 // Brave self-identifies via navigator.brave.isBrave() (Brave's own official
 // detection API — https://github.com/brave/brave-browser/wiki/Detecting-Brave-Users).
 // chrome.identity.getAuthToken() needs Google's proprietary API keys baked
-// into real Google Chrome; Brave lacks them and its internal fallback sends a
-// request Google's servers reject with "Custom URI scheme is not supported on
-// Chrome apps" — a known, currently unresolved Brave limitation with no
-// workaround (brave/brave-browser#38066). Detect it up front so users get an
-// honest message instead of Google's confusing "Access blocked" error page.
+// into real Google Chrome; Brave lacks them and its internal fallback sends
+// a request Google's servers reject with "Custom URI scheme is not
+// supported on Chrome apps" (a known, unresolved Brave limitation —
+// brave/brave-browser#38066). Detected up front purely to skip straight to
+// the working fallback instead of flashing a broken native picker first.
 async function _isBrave() {
   try {
     return !!(await navigator.brave?.isBrave?.());
@@ -1739,12 +1800,33 @@ async function _isBrave() {
   }
 }
 
-// Evicts a specific token from Chrome's cache (e.g. after the API rejects it
-// as expired/revoked) so the next getAuthToken() call fetches a fresh one
-// instead of handing back the same bad token again.
+async function getAuthToken(interactive = false) {
+  if (!IS_CHROME || !chrome.identity) return null;
+
+  const skipNative = _useWebAuthFallback || (await _isBrave());
+  if (!skipNative && chrome.identity.getAuthToken) {
+    const native = await _nativeGetAuthToken(interactive);
+    if (native) return native;
+    if (!interactive || _isRealChromeCancel(_lastAuthTokenError)) return null;
+    // Failed for a reason other than "the user cancelled" — this browser
+    // likely doesn't support chrome.identity.getAuthToken() at all. Stop
+    // retrying the native path for the rest of this session.
+    _useWebAuthFallback = true;
+  }
+
+  return _webAuthFlowToken(interactive);
+}
+
+// Evicts a specific token from both possible caches (Chrome's native one,
+// and the in-memory fallback one) so the next getAuthToken() call fetches
+// a fresh token instead of handing back the same bad one again.
 function _forgetToken(token) {
   return new Promise((resolve) => {
-    if (!IS_CHROME || !chrome.identity || !token) {
+    if (token && token === _webAuthToken) {
+      _webAuthToken = null;
+      _webAuthTokenExpiresAt = 0;
+    }
+    if (!IS_CHROME || !chrome.identity?.removeCachedAuthToken || !token) {
       resolve();
       return;
     }
@@ -1802,8 +1884,8 @@ function setSyncStatus(status, detail = "") {
 
   // Footer button elements
   const ftrName = el("sbFtrName");
-  const ftrSub  = el("sbFtrSub");
-  const ftrDot  = el("sbFtrDot");
+  const ftrSub = el("sbFtrSub");
+  const ftrDot = el("sbFtrDot");
   if (ftrDot) ftrDot.className = "sb-ftr-dot";
   if (ftrSub) ftrSub.className = "sb-ftr-sub";
   const uname = S.user.name || S.user.googleName || S.googleUser?.email?.split("@")[0] || detail?.split("@")[0] || "";
@@ -1815,7 +1897,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "";
     el("syncNowBtn").style.display = "none";
     if (ftrName) ftrName.textContent = "Connect Drive";
-    if (ftrSub)  { ftrSub.textContent = "Sign in to sync"; ftrSub.classList.add("sync-err"); }
+    if (ftrSub) { ftrSub.textContent = "Sign in to sync"; ftrSub.classList.add("sync-err"); }
   } else if (status === "needs-auth") {
     el("syncIconCloud").style.display = "";
     card.classList.add("syncing");
@@ -1826,7 +1908,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").textContent = "Connect Drive";
     el("syncNowBtn").style.display = "none";
     if (ftrName) ftrName.textContent = displayName;
-    if (ftrSub)  { ftrSub.textContent = "Connect Drive"; ftrSub.classList.add("sync-err"); }
+    if (ftrSub) { ftrSub.textContent = "Connect Drive"; ftrSub.classList.add("sync-err"); }
   } else if (status === "syncing") {
     el("syncIconSpin").style.display = "";
     card.classList.add("syncing");
@@ -1835,8 +1917,8 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "none";
     if (ftrName) ftrName.textContent = uname || "Syncing…";
-    if (ftrSub)  ftrSub.textContent  = "Syncing…";
-    if (ftrDot)  ftrDot.classList.add("syncing");
+    if (ftrSub) ftrSub.textContent = "Syncing…";
+    if (ftrDot) ftrDot.classList.add("syncing");
   } else if (status === "synced") {
     el("syncIconOk").style.display = "";
     card.classList.add("synced");
@@ -1848,8 +1930,8 @@ function setSyncStatus(status, detail = "") {
     _showManualSyncBtns(true);
     _updateSyncTimestamp();
     if (ftrName) ftrName.textContent = uname || "Synced";
-    if (ftrSub)  { ftrSub.textContent = `Synced ${ago}`; ftrSub.classList.add("sync-ok"); }
-    if (ftrDot)  ftrDot.classList.add("synced");
+    if (ftrSub) { ftrSub.textContent = `Synced ${ago}`; ftrSub.classList.add("sync-ok"); }
+    if (ftrDot) ftrDot.classList.add("synced");
   } else if (status === "error") {
     el("syncIconErr").style.display = "";
     card.classList.add("error");
@@ -1858,8 +1940,8 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Sync error";
-    if (ftrSub)  { ftrSub.textContent = "Sync failed"; ftrSub.classList.add("sync-err"); }
-    if (ftrDot)  ftrDot.classList.add("error");
+    if (ftrSub) { ftrSub.textContent = "Sync failed"; ftrSub.classList.add("sync-err"); }
+    if (ftrDot) ftrDot.classList.add("error");
   } else if (status === "offline") {
     el("syncIconCloud").style.display = "";
     if (title) title.textContent = "Offline";
@@ -1867,7 +1949,7 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Offline";
-    if (ftrSub)  { ftrSub.textContent = "Offline"; ftrSub.classList.add("sync-err"); }
+    if (ftrSub) { ftrSub.textContent = "Offline"; ftrSub.classList.add("sync-err"); }
   } else {
     // idle / connected
     el("syncIconCloud").style.display = "";
@@ -1877,8 +1959,8 @@ function setSyncStatus(status, detail = "") {
     el("signInBtn").style.display = "none";
     el("syncNowBtn").style.display = "";
     if (ftrName) ftrName.textContent = uname || "Connected";
-    if (ftrSub)  { ftrSub.textContent = "Ready to sync"; ftrSub.classList.add("sync-ok"); }
-    if (ftrDot)  ftrDot.classList.add("synced");
+    if (ftrSub) { ftrSub.textContent = "Ready to sync"; ftrSub.classList.add("sync-ok"); }
+    if (ftrDot) ftrDot.classList.add("synced");
   }
 }
 
@@ -1904,7 +1986,7 @@ async function findDriveFiles(token) {
     if (!r.ok) return [];
     const d = await r.json();
     return (d.files || []).map((f) => f.id);
-  } catch {}
+  } catch { }
   return [];
 }
 
@@ -2649,7 +2731,7 @@ async function _wipeAndReuploadCloud(token) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-    } catch {}
+    } catch { }
   }
   Drive._fileId = null; // force the next push to POST a brand-new file
   return await _doPush(token);
@@ -2725,10 +2807,6 @@ async function signIn() {
     openModal("profileModal");
     return;
   }
-  if (await _isBrave()) {
-    showToast("Google sign-in only works in Google Chrome — Brave isn't supported.", "error");
-    return;
-  }
   // chrome.identity is undefined until the (now-optional) "identity"
   // permission is granted — request it BEFORE checking for the namespace,
   // not after, or a fresh install could never pass this check at all.
@@ -2738,11 +2816,14 @@ async function signIn() {
     return;
   }
   setSyncStatus("syncing");
+  // getAuthToken() tries Chrome's native picker first, then transparently
+  // falls back to the cross-browser web-auth-flow (Brave, Vivaldi, Opera,
+  // Arc, etc.) — no browser-specific branching needed here.
   const token = await getAuthToken(true); // interactive = true
   if (!token) {
     setSyncStatus("signed-out");
-    if (_lastAuthTokenError) {
-      showToast("Google sign-in failed — this browser may not fully support it. Try Google Chrome.", "error");
+    if (_lastAuthTokenError && !_isRealChromeCancel(_lastAuthTokenError)) {
+      showToast("Google sign-in failed. Please try again.", "error");
     } else {
       showToast("Sign-in cancelled");
     }
@@ -2779,7 +2860,7 @@ async function _revokeGoogleAccess() {
     // Revoke on Google's servers
     await fetch(`https://oauth2.googleapis.com/revoke?token=${token}`, {
       method: "POST",
-    }).catch(() => {});
+    }).catch(() => { });
     // Remove from Chrome's token cache
     await _forgetToken(token);
   }
@@ -3347,54 +3428,6 @@ function renderSidebarFolders() {
   /* folders feature removed */
 }
 
-// FIX #6 — Folders click opens modal
-function renderFolders(folders) {
-  const grid = el("foldersGrid");
-  if (!folders || !folders.length) {
-    grid.innerHTML =
-      '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📂</div><div class="empty-state-text">No bookmark folders found</div></div>';
-    return;
-  }
-  const colors = [
-    "#e11d48",
-    "#7c3aed",
-    "#059669",
-    "#f59e0b",
-    "#3b82f6",
-    "#ec4899",
-  ];
-  grid.innerHTML = folders
-    .slice(0, 5)
-    .map((f, i) => {
-      const color = colors[i % colors.length];
-      const prev = f.items.slice(0, 4);
-      const extra = f.items.length - prev.length;
-      const favs = prev
-        .map((it) => `<img class="favicon-img" src="${favSrc(it.url)}" alt="">`)
-        .join("");
-      return `
-      <div class="folder-card" data-fid="${escH(f.id)}">
-        <div class="folder-card-top">
-          <div class="folder-card-icon" style="background:${color}22">
-            <span style="font-size:16px">📁</span>
-          </div>
-          <div class="folder-card-text">
-            <div class="folder-card-name">${escH(f.title)}</div>
-            <div class="folder-card-count">${f.items.length} bookmark${f.items.length !== 1 ? "s" : ""}</div>
-          </div>
-        </div>
-        <div class="folder-favicons">
-          ${favs}
-          ${extra > 0 ? `<div class="favicon-more">+${extra}</div>` : ""}
-        </div>
-      </div>`;
-    })
-    .join("");
-  grid.querySelectorAll(".folder-card[data-fid]").forEach((card) => {
-    card.addEventListener("click", () => openFolderModal(card.dataset.fid));
-  });
-}
-
 // FIX #6 — Folder modal actually shows bookmarks and they're clickable
 function openFolderModal(folderId) {
   const folder = S.allBookmarks.find((f) => f.id === folderId);
@@ -3443,14 +3476,13 @@ function openFolderModal(folderId) {
         </div>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:.4"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       </a>
-      ${
-        IS_CHROME
-          ? `
+      ${IS_CHROME
+            ? `
         <button class="folder-modal-action-btn" data-bmid="${escH(item.id)}" data-action="edit" data-tip="Edit bookmark">${editIcon}</button>
         <button class="folder-modal-action-btn folder-modal-del-btn" data-bmid="${escH(item.id)}" data-action="del" data-tip="Delete bookmark">${delIcon}</button>
       `
-          : ""
-      }
+            : ""
+          }
     </div>`,
       )
       .join("") +
@@ -3548,21 +3580,20 @@ function renderAllBookmarks(folders) {
         <span class="bm-folder-chevron">▶</span>
         <div class="bm-folder-icon-wrap">📁</div>
         <span class="bm-folder-name">${escH(f.title)}</span>
-        ${
-          IS_CHROME
-            ? `
+        ${IS_CHROME
+          ? `
           <button class="bm-action-btn" data-action="edit-folder" data-fid="${escH(f.id)}" data-tip="Rename">${editIcon}</button>
           <button class="bm-action-btn bm-del-btn" data-action="delete-folder" data-fid="${escH(f.id)}" data-tip="Delete">${delIcon}</button>
         `
-            : ""
+          : ""
         }
         <span class="bm-folder-count">${f.items.length}</span>
       </div>
       <div class="bm-items">
         <div class="bm-items-inner">
           ${f.items
-            .map(
-              (it) => `
+          .map(
+            (it) => `
             <a href="${escH(safeUrl(it.url) || "#")}" class="bm-item" target="_self">
               <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(it.title || it.url)}</span>
@@ -3572,8 +3603,8 @@ function renderAllBookmarks(folders) {
                 <button class="bm-action-btn bm-del-btn" data-action="delete-bm" data-bmid="${escH(it.id)}" data-tip="Delete">${delIcon}</button>
               </span>` : ""}
             </a>`,
-            )
-            .join("")}
+          )
+          .join("")}
           ${IS_CHROME ? `<button class="bm-add-item-btn" data-action="add-bm" data-fid="${escH(f.id)}">+ Add bookmark</button>` : ""}
         </div>
       </div>
@@ -3990,7 +4021,6 @@ function renderWorkspaceBookmarks() {
 // ===== BOOKMARK CONTEXT MENU =====
 let _ctxMenu = null;
 let _ctxSub = null;
-let _ctxCurrentFolder = null;
 
 function _getOrCreateCtxMenu() {
   if (!_ctxMenu) {
@@ -4059,7 +4089,6 @@ function openFolderCardCtxMenu(btn, folderName, items) {
 
 function openBmCtxMenu(btn, bm, currentFolder) {
   const menu = _getOrCreateCtxMenu();
-  _ctxCurrentFolder = currentFolder;
 
   // Position below/above the button
   const rect = btn.getBoundingClientRect();
@@ -4078,14 +4107,13 @@ function openBmCtxMenu(btn, bm, currentFolder) {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       ${isPinned ? "Unpin from Quick Access" : "Pin to Quick Access"}
     </div>
-    ${
-      otherFolders.length
-        ? `<div class="bm-ctx-item" data-action="move-folder">
+    ${otherFolders.length
+      ? `<div class="bm-ctx-item" data-action="move-folder">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
       Move to folder
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto"><polyline points="9,6 15,12 9,18"/></svg>
     </div>`
-        : ""
+      : ""
     }
     <div class="bm-ctx-sep"></div>
     <div class="bm-ctx-item danger" data-action="delete">
@@ -4592,9 +4620,6 @@ async function loadHistory(q) {
       <div class="history-group-items">
         ${groups[lbl]
           .map((it) => {
-            const initial = escH(
-              (it.title || getDomain(it.url) || "?")[0].toUpperCase(),
-            );
             return `<div class="history-item-wrap">
             <a href="${escH(safeUrl(it.url) || "#")}" class="history-item" target="_blank" rel="noopener">
               <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
@@ -4706,14 +4731,13 @@ async function loadDownloads() {
       <span class="download-name">${escH(fn)}</span>
       <span class="download-meta">${fmtBytes(it.fileSize || 0)}<span class="dl-sep">·</span>${it.startTime ? new Date(it.startTime).toLocaleDateString() : ""}</span>
       <span class="download-status-badge">${stateLabel}</span>
-      ${
-        it.state === "complete"
+      ${it.state === "complete"
           ? `<button class="dl-show-btn" data-dlid="${it.id}" data-tip="Show in folder">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9,14 12,17 15,14"/></svg>
         Show in folder
       </button>`
           : ""
-      }
+        }
     </div>`;
     })
     .join("");
@@ -4802,33 +4826,6 @@ function removeQA(e, id) {
 }
 
 const QA_MAX = 100;
-
-// Maps domain → category label for Quick Access section headers
-const QA_CATEGORY_MAP = {
-  "claude.ai": "AI", "chat.openai.com": "AI", "gemini.google.com": "AI",
-  "perplexity.ai": "AI", "cursor.com": "AI", "bolt.new": "AI",
-  "midjourney.com": "AI", "v0.dev": "AI", "copilot.microsoft.com": "AI",
-  "github.com": "Dev", "vercel.com": "Dev", "supabase.com": "Dev",
-  "cloudflare.com": "Dev", "hub.docker.com": "Dev", "linear.app": "Dev",
-  "stripe.com": "Dev", "dev.to": "Dev", "stackoverflow.com": "Dev",
-  "postman.com": "Dev", "railway.app": "Dev", "render.com": "Dev",
-  "python.org": "Frameworks", "djangoproject.com": "Frameworks",
-  "django-rest-framework.org": "Frameworks", "fastapi.tiangolo.com": "Frameworks",
-  "rust-lang.org": "Frameworks", "react.dev": "Frameworks",
-  "nextjs.org": "Frameworks", "tailwindcss.com": "Frameworks",
-  "notion.so": "Productivity", "readwise.io": "Productivity",
-  "raindrop.io": "Productivity", "lu.ma": "Productivity",
-  "upwork.com": "Productivity", "producthunt.com": "Productivity",
-  "mobbin.com": "Productivity", "n8n.io": "Productivity",
-  "hamropatro.com": "Productivity",
-  "x.com": "Socials", "twitter.com": "Socials", "linkedin.com": "Socials",
-  "instagram.com": "Socials", "reddit.com": "Socials",
-  "discord.com": "Socials", "youtube.com": "Socials",
-  "mail.google.com": "Google", "drive.google.com": "Google",
-  "calendar.google.com": "Google", "docs.google.com": "Google",
-  "meet.google.com": "Google", "sheets.google.com": "Google",
-  "photos.google.com": "Google",
-};
 
 function addQA(name, url) {
   const data = wsData();
@@ -5086,13 +5083,12 @@ function renderNotesView() {
       <div class="note-card-content">${escH(n.content)}</div>
       <div class="note-card-footer">
         <span class="note-card-date">${dateStr}</span>
-        ${
-          tags.length
-            ? `<div class="note-card-tags">${tags
-                .slice(0, 3)
-                .map((t) => `<span class="note-card-tag">${escH(t)}</span>`)
-                .join("")}</div>`
-            : ""
+        ${tags.length
+          ? `<div class="note-card-tags">${tags
+            .slice(0, 3)
+            .map((t) => `<span class="note-card-tag">${escH(t)}</span>`)
+            .join("")}</div>`
+          : ""
         }
       </div>
       <button class="note-card-del-btn" data-nid="${n.id}" data-tip="Delete" aria-label="Delete note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -5937,16 +5933,16 @@ function _renderOrganizeResults() {
     <div class="organize-group">
       <div class="organize-group-title">${escH(folderName)} <span class="cmd-domain-tag">${idxs.length}</span></div>
       ${idxs
-        .map((i) => {
-          const r = _organizeResults[i];
-          return `<label class="organize-item">
+          .map((i) => {
+            const r = _organizeResults[i];
+            return `<label class="organize-item">
             <input type="checkbox" checked data-organize-idx="${i}">
             <img src="${favSrc(r.url)}" data-img-fallback="fade" alt="">
             <span class="organize-item-title">${escH(r.title)}</span>
             <span class="organize-item-domain">${escH(getDomain(r.url))}</span>
           </label>`;
-        })
-        .join("")}
+          })
+          .join("")}
     </div>`,
     )
     .join("");
@@ -6338,14 +6334,14 @@ async function applyFocusBlockRules(active) {
   const shouldBlock = active && S.settings.focus?.enabled && sites.length;
   const addRules = shouldBlock
     ? sites.map((domain, i) => ({
-        id: FOCUS_RULE_BASE_ID + i,
-        priority: 1,
-        action: { type: "block" },
-        condition: {
-          urlFilter: `||${domain}`,
-          resourceTypes: ["main_frame"],
-        },
-      }))
+      id: FOCUS_RULE_BASE_ID + i,
+      priority: 1,
+      action: { type: "block" },
+      condition: {
+        urlFilter: `||${domain}`,
+        resourceTypes: ["main_frame"],
+      },
+    }))
     : [];
   try {
     // removeRuleIds may reference ids that don't currently exist — Chrome
@@ -6610,8 +6606,6 @@ async function renderAnalytics() {
   const pendingDisplay = [...(kb.todo || []), ...(kb.doing || [])]
     .map((card) => ({ text: card.title }))
     .slice(0, 6);
-  const now = Date.now();
-  const dayMs = 86400000;
   container.className = "insights-board";
   container.innerHTML = `
 
@@ -6667,21 +6661,20 @@ async function renderAnalytics() {
           <div class="ins-prog-row"><span>${totalTasksDone} done</span><span>${totalTasksPending} pending</span></div>
           <div class="ins-prog-track"><div class="ins-prog-fill" style="width:${taskRate}%"></div></div>
         </div>
-        ${
-          pendingDisplay.length
-            ? pendingDisplay
-                .map(
-                  (t) => `
+        ${pendingDisplay.length
+      ? pendingDisplay
+        .map(
+          (t) => `
             <div class="ins-row">
               <div class="ins-row-left">
                 <div class="ins-dot"></div>
                 <span class="ins-row-label">${escH(t.text)}</span>
               </div>
             </div>`,
-                )
-                .join("")
-            : '<div class="ins-empty">All tasks complete — great work!</div>'
-        }
+        )
+        .join("")
+      : '<div class="ins-empty">All tasks complete — great work!</div>'
+    }
       </div>
 
       <div class="insights-card">
@@ -6689,11 +6682,10 @@ async function renderAnalytics() {
           <span class="insights-card-title">Recent Notes</span>
           <span class="insights-card-badge">${totalNotes}</span>
         </div>
-        ${
-          recentNotes.length
-            ? recentNotes
-                .map(
-                  (n) => `
+        ${recentNotes.length
+      ? recentNotes
+        .map(
+          (n) => `
             <div class="ins-row">
               <div class="ins-row-left">
                 <div class="ins-row-icon" style="background:var(--accent-bg)">
@@ -6706,10 +6698,10 @@ async function renderAnalytics() {
               </div>
               ${n.pinned ? '<span class="ins-pill accent">📌</span>' : ""}
             </div>`,
-                )
-                .join("")
-            : '<div class="ins-empty">No notes yet. Create your first note.</div>'
-        }
+        )
+        .join("")
+      : '<div class="ins-empty">No notes yet. Create your first note.</div>'
+    }
         ${topTags.length ? `<div style="margin-top:8px"><div class="ins-tags">${topTags.map(([t]) => `<span class="ins-tag">#${escH(t)}</span>`).join("")}</div></div>` : ""}
       </div>
 
@@ -6718,23 +6710,22 @@ async function renderAnalytics() {
           <span class="insights-card-title">Habits</span>
           <span class="insights-card-badge${habitsCompletedToday === totalHabits && totalHabits > 0 ? " green" : ""}">${habitsCompletedToday}/${totalHabits} today</span>
         </div>
-        ${
-          S.habits.length
-            ? S.habits
-                .slice(0, 6)
-                .map((h) => {
-                  const done = (h.completedDates || []).includes(today);
-                  const streak = (h.completedDates || []).reduce(
-                    (s, d, i, arr) => {
-                      if (i === 0) return 1;
-                      const prev = new Date(arr[i - 1]);
-                      const cur = new Date(d);
-                      const diff = Math.round((cur - prev) / 86400000);
-                      return diff === 1 ? s + 1 : 1;
-                    },
-                    h.completedDates?.length ? 1 : 0,
-                  );
-                  return `<div class="ins-row">
+        ${S.habits.length
+      ? S.habits
+        .slice(0, 6)
+        .map((h) => {
+          const done = (h.completedDates || []).includes(today);
+          const streak = (h.completedDates || []).reduce(
+            (s, d, i, arr) => {
+              if (i === 0) return 1;
+              const prev = new Date(arr[i - 1]);
+              const cur = new Date(d);
+              const diff = Math.round((cur - prev) / 86400000);
+              return diff === 1 ? s + 1 : 1;
+            },
+            h.completedDates?.length ? 1 : 0,
+          );
+          return `<div class="ins-row">
                 <div class="ins-row-left">
                   <span style="font-size:16px">${h.icon || "✅"}</span>
                   <span class="ins-row-label">${escH(h.name)}</span>
@@ -6744,10 +6735,10 @@ async function renderAnalytics() {
                   <div class="ins-dot${done ? " green" : " muted"}"></div>
                 </div>
               </div>`;
-                })
-                .join("")
-            : '<div class="ins-empty">No habits tracked yet. Add your first habit.</div>'
-        }
+        })
+        .join("")
+      : '<div class="ins-empty">No habits tracked yet. Add your first habit.</div>'
+    }
       </div>
 
     </div>
@@ -6761,22 +6752,21 @@ async function renderAnalytics() {
           <span class="insights-card-title">Bookmark Folders</span>
           <span class="insights-card-badge muted">${totalFolders}</span>
         </div>
-        ${
-          !totalFolders
-            ? '<div class="ins-empty">Visit Bookmarks view to load data.</div>'
-            : topFolders
-                .slice(0, 6)
-                .map((f) => {
-                  const count = (f.items || []).length;
-                  const pct = Math.round((count / maxFolderSize) * 100);
-                  return `<div class="ins-bar-row">
+        ${!totalFolders
+      ? '<div class="ins-empty">Visit Bookmarks view to load data.</div>'
+      : topFolders
+        .slice(0, 6)
+        .map((f) => {
+          const count = (f.items || []).length;
+          const pct = Math.round((count / maxFolderSize) * 100);
+          return `<div class="ins-bar-row">
                 <span class="ins-bar-label">📁 ${escH(f.title)}</span>
                 <div class="ins-bar-track"><div class="ins-bar-fill" style="width:${pct}%"></div></div>
                 <span class="ins-bar-val">${count}</span>
               </div>`;
-                })
-                .join("")
-        }
+        })
+        .join("")
+    }
       </div>
 
       <div class="insights-card">
@@ -6784,21 +6774,19 @@ async function renderAnalytics() {
           <span class="insights-card-title">Account</span>
           <span class="insights-card-badge${gEmail ? "" : " muted"}">${gEmail ? "Signed in" : "Guest"}</span>
         </div>
-        ${
-          gEmail
-            ? `<div class="ins-account-row" style="margin-bottom:12px">
-          ${
-            pic
-              ? `<img src="${escH(pic)}" class="ins-avatar-img">`
-              : `<div class="ins-avatar-letter">${(gName[0] || "G").toUpperCase()}</div>`
-          }
+        ${gEmail
+      ? `<div class="ins-account-row" style="margin-bottom:12px">
+          ${pic
+        ? `<img src="${escH(pic)}" class="ins-avatar-img">`
+        : `<div class="ins-avatar-letter">${(gName[0] || "G").toUpperCase()}</div>`
+      }
           <div style="min-width:0">
             <div class="ins-account-name">${escH(gName)}</div>
             <div style="font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(gEmail)}</div>
           </div>
         </div>`
-            : '<div class="ins-empty" style="margin-bottom:8px">No Google account. Sign in via avatar → profile.</div>'
-        }
+      : '<div class="ins-empty" style="margin-bottom:8px">No Google account. Sign in via avatar → profile.</div>'
+    }
         <div class="ins-row"><span class="ins-row-label">Display name</span><span class="ins-row-sub">${escH(S.user.name || "—")}</span></div>
         ${chromeVer ? `<div class="ins-row"><span class="ins-row-label">Chrome</span><span class="ins-row-sub">v${chromeVer}</span></div>` : ""}
         <div class="ins-row"><span class="ins-row-label">Data version</span><span class="ins-row-sub">Nestpane 1.x</span></div>
@@ -6859,52 +6847,52 @@ async function renderAnalytics() {
       <div class="insights-card">
         <div class="insights-card-hd"><span class="insights-card-title">Focus Time Summary</span></div>
         ${(() => {
-          const sessions = S._focusSessions || {};
-          const minutes = S._focusMinutes || {};
-          const keys = Object.keys(sessions).sort().slice(-7);
-          const totalSessions = keys.reduce((s, k) => s + (sessions[k] || 0), 0);
-          const totalMins = keys.reduce((s, k) => s + (minutes[k] || 0), 0);
-          const avgMins = keys.length ? Math.round(totalMins / keys.length) : 0;
-          return `
+      const sessions = S._focusSessions || {};
+      const minutes = S._focusMinutes || {};
+      const keys = Object.keys(sessions).sort().slice(-7);
+      const totalSessions = keys.reduce((s, k) => s + (sessions[k] || 0), 0);
+      const totalMins = keys.reduce((s, k) => s + (minutes[k] || 0), 0);
+      const avgMins = keys.length ? Math.round(totalMins / keys.length) : 0;
+      return `
             <div class="focus-stat-row"><span>Sessions (7d)</span><strong>${totalSessions}</strong></div>
             <div class="focus-stat-row"><span>Total focus time</span><strong>${totalMins}m</strong></div>
             <div class="focus-stat-row"><span>Daily average</span><strong>${avgMins}m</strong></div>
           `;
-        })()}
+    })()}
       </div>
     </div>
   `;
 
   // Draw focus chart
-  (function() {
+  (function () {
     const canvas = el("focusChart");
     if (!canvas) return;
     const sessions = S._focusSessions || {};
     const today = new Date();
-    const days = Array.from({length: 7}, (_, i) => {
+    const days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
       return _dateKey(d);
     });
     const vals = days.map((d) => sessions[d] || 0);
-    const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", {weekday: "short"}));
+    const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", { weekday: "short" }));
     _drawBarChart(canvas, labels, vals, "Sessions", "var(--accent)");
   })();
 
   // Draw habit chart
-  (function() {
+  (function () {
     const canvas = el("habitChart");
     if (!canvas) return;
     const habits = S.habits || [];
     if (!habits.length) return;
     const today = new Date();
-    const days = Array.from({length: 7}, (_, i) => {
+    const days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
       return _dateKey(d);
     });
     const vals = days.map((day) => habits.filter((h) => (h.days || {})[day]).length);
-    const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", {weekday: "short"}));
+    const labels = days.map((d) => new Date(d + "T00:00:00").toLocaleDateString("en", { weekday: "short" }));
     _drawBarChart(canvas, labels, vals, `/${habits.length}`, "var(--success)");
   })();
 
@@ -7028,15 +7016,15 @@ async function renderAnalytics() {
           </div>
           <div class="ins-vbar-chart">
             ${buckets
-              .map(
-                (b) => `
+            .map(
+              (b) => `
               <div class="ins-vbar-col${b.isToday ? " today" : ""}" data-tip="${b.count.toLocaleString()} pages">
                 <span class="ins-vbar-val">${b.count || ""}</span>
                 <div class="ins-vbar" style="height:${Math.max(3, Math.round((b.count / max) * 90))}px"></div>
                 <span class="ins-vbar-label">${escH(b.label)}</span>
               </div>`,
-              )
-              .join("")}
+            )
+            .join("")}
           </div>
         `;
       },
@@ -7227,7 +7215,7 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   try {
     localStorage.setItem("__nt_theme", theme);
-  } catch (e) {}
+  } catch { }
   const icon = el("themeIcon"),
     label = el("themeLabel");
   if (theme === "light") {
@@ -7268,7 +7256,7 @@ function applyAccent(color) {
   document.documentElement.style.setProperty("--accent-glow", color + "80");
   try {
     localStorage.setItem("__nt_accent", color);
-  } catch (e) {}
+  } catch { }
   _syncAccentSwatchUI(color);
 }
 
@@ -7347,12 +7335,12 @@ function _sanitizeImportedSidebar(sidebar) {
     ...group,
     items: Array.isArray(group?.items)
       ? group.items
-          .map((item) => {
-            if (!item || item.kind !== "link" || !item.url) return item;
-            const clean = safeUrl(item.url);
-            return clean ? { ...item, url: clean } : null;
-          })
-          .filter(Boolean)
+        .map((item) => {
+          if (!item || item.kind !== "link" || !item.url) return item;
+          const clean = safeUrl(item.url);
+          return clean ? { ...item, url: clean } : null;
+        })
+        .filter(Boolean)
       : group?.items,
   }));
 }
@@ -8084,7 +8072,7 @@ function _cmdInitKeyboard() {
     el("cmdEscBadge").addEventListener("click", closeCmdPalette);
 }
 
-function hideSearch() {} // kept for any legacy references
+function hideSearch() { } // kept for any legacy references
 
 // ===== NAVIGATION =====
 function navigateTo(view) {
@@ -8214,8 +8202,8 @@ function renderBmForActiveWorkspace() {
       <div class="bm-items">
         <div class="bm-items-inner">
           ${bms
-            .map(
-              (bm) => `
+          .map(
+            (bm) => `
             <a href="${escH(safeUrl(bm.url) || "#")}" class="bm-item" target="_self">
               <img src="${favSrc(bm.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(bm.title || bm.url)}</span>
@@ -8224,8 +8212,8 @@ function renderBmForActiveWorkspace() {
                 <button class="bm-action-btn bm-del-btn ws-bm-remove" data-bmid="${escH(bm.id)}" data-tip="Remove">${delIcon}</button>
               </span>
             </a>`,
-            )
-            .join("")}
+          )
+          .join("")}
         </div>
       </div>
     </div>`,
@@ -8284,9 +8272,9 @@ function confirm2(title, msg, onOk, onCancel) {
   cancelBtns.forEach((btn) => {
     btn.onclick = onCancel
       ? () => {
-          closeModal("confirmModal");
-          onCancel();
-        }
+        closeModal("confirmModal");
+        onCancel();
+      }
       : null;
   });
   openModal("confirmModal");
@@ -8319,9 +8307,9 @@ function sbPrompt(title, initialValue, onSave, onDelete) {
     deleteBtn.style.display = onDelete ? "" : "none";
     deleteBtn.onclick = onDelete
       ? () => {
-          closeModal("sbPromptModal");
-          onDelete();
-        }
+        closeModal("sbPromptModal");
+        onDelete();
+      }
       : null;
   }
   openModal("sbPromptModal");
@@ -9265,7 +9253,6 @@ function renderHabits() {
       '<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-text">No habits yet. Create your first habit!</div></div>';
     return;
   }
-  const today = _todayKey();
   const weekDays = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
@@ -9569,10 +9556,10 @@ function loadJournalEntry(key) {
       key === _todayKey()
         ? "Today"
         : d.toLocaleDateString("en", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          });
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        });
   }
   const ta = el("journalTextarea");
   if (ta) {
@@ -9681,7 +9668,7 @@ function renderKanban() {
         if (e.target.closest(".kanban-card-del")) return;
         openKanbanCardModal(card.dataset.col, Number(card.dataset.id));
       });
-      card.addEventListener("dragstart", (e) => {
+      card.addEventListener("dragstart", () => {
         S._kanbanDragCard = {
           col: card.dataset.col,
           id: Number(card.dataset.id),
@@ -10357,11 +10344,10 @@ function renderCalEventsList(year, month) {
       <div class="cal-event-dot${source === "google" ? " google" : ""}"></div>
       <span class="cal-event-text">${escH(ev.title)}</span>
       <span style="font-size:10px;color:var(--text-3);flex-shrink:0">${date.getDate()}/${date.getMonth() + 1}</span>
-      ${
-        source === "local"
+      ${source === "local"
           ? `<button class="cal-event-del" data-action="delete-cal-event" data-id="${ev.id}">✕</button>`
           : `<span class="cal-event-src" title="From Google Calendar">G</span>`
-      }
+        }
     </div>`,
     )
     .join("");
