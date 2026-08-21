@@ -11,4 +11,4 @@ try {
     r.style.setProperty('--accent-glow', a + '80');
   }
   if (t) document.documentElement.dataset.theme = t;
-} catch (e) {}
+} catch {}
