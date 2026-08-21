@@ -112,7 +112,7 @@ A static site (no build step, no framework beyond Tailwind via CDN) serving as N
 - **`about.html`** — mission and design philosophy
 - **`privacy.html`** — full data-handling disclosure (what's stored, what's optional, what's never collected)
 - **`terms.html`** — terms of service
-- **`googleee397e5ec21b3ad7.html`** — Google Search Console domain-ownership verification file (do not remove — required for OAuth verification)
+- **`googleee397e5ec21b3ad7.html`** — Google Search Console domain-ownership verification file. **Never delete, rename, or edit this file's contents.** Search Console verified ownership of `https://nestpane.netlify.app/` against it (HTML file method) — removing it, or a deploy that stops serving it at this exact path, silently breaks that verification and reopens the OAuth "home page is not registered to you" review issue. If you ever add a custom domain or otherwise restructure `webapp/`, add a second verification method (DNS TXT record or meta tag, via Search Console → Settings → Ownership verification) before touching this file.
 
 ### Design system
 

@@ -1697,7 +1697,7 @@ let _webAuthTokenExpiresAt = 0;
 // for the published extension ID. This is a public client identifier, not a
 // secret — Google issues no client_secret for either OAuth client type used
 // in this file, so it's safe to commit, same as manifest.json's client_id.
-const WEB_AUTH_CLIENT_ID = "4118060860-mplosc15s8q4h49htl88knv6b2fkjhb4.apps.googleusercontent.com";
+const WEB_AUTH_CLIENT_ID = "296619954590-aqc37amrpvqv5m16i5cu4ceob43bfjsm.apps.googleusercontent.com";
 
 // A real Chrome "user clicked Cancel" failure always carries this exact
 // message — anything else (missing API, rejected request, etc.) means the
