@@ -100,6 +100,8 @@ nestpane/
 └── googleee397e5ec21b3ad7.html       # Google Search Console site-ownership verification file
 ```
 
+> ⚠️ **Do not delete, rename, or edit `googleee397e5ec21b3ad7.html`.** Google Search Console verified ownership of `https://nestpane.netlify.app/` against this exact file (HTML file method, confirmed 2026-08-21). Removing it, or any deploy that stops serving it at this path, silently un-verifies the property and reopens the Google OAuth consent screen's "home page is not registered to you" review issue. Before restructuring this folder or moving to a custom domain, add a second verification method (DNS TXT record or meta tag) via Search Console → **Settings → Ownership verification** first.
+
 ## 🚀 Local Development
 
 This site is built with pure HTML, Tailwind CSS (via CDN), and Vanilla JS. No build tools are required.
