@@ -100,7 +100,9 @@ nestpane/
 └── googleee397e5ec21b3ad7.html       # Google Search Console site-ownership verification file
 ```
 
-> ⚠️ **Do not delete, rename, or edit `googleee397e5ec21b3ad7.html`.** Google Search Console verified ownership of `https://nestpane.netlify.app/` against this exact file (HTML file method, confirmed 2026-08-21). Removing it, or any deploy that stops serving it at this path, silently un-verifies the property and reopens the Google OAuth consent screen's "home page is not registered to you" review issue. Before restructuring this folder or moving to a custom domain, add a second verification method (DNS TXT record or meta tag) via Search Console → **Settings → Ownership verification** first.
+> ⚠️ **Do not delete `googleee397e5ec21b3ad7.html`** — it's a legacy Search Console verification file for the old `nestpane.netlify.app` URL-prefix property. It's harmless to keep and still resolves fine, but it's **no longer the active verification** backing the OAuth consent screen.
+>
+> **The site is now served at `nestpane.kneeraazon.com`**, not `nestpane.netlify.app` (though the latter still resolves to the same deployment). Google's OAuth verification rejects homepages hosted on shared platform subdomains like `netlify.app` — see [Google's guidance](https://support.google.com/cloud/answer/13807376) — no matter how many times Search Console's URL-prefix method verifies successfully. The fix was moving to a subdomain of an existing owned domain (DNS on Cloudflare, CNAME'd to `nestpane.netlify.app`), verified in Search Console as a **Domain property** (covers every subdomain automatically, unlike URL-prefix). If you change the custom domain again, update this file's references, `index.html`'s canonical/og tags, the self-links in `privacy.html`/`terms.html`, and the OAuth consent screen fields all together.
 
 ## 🚀 Local Development
 

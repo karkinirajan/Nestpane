@@ -72,10 +72,12 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 ## Project Structure
 
 This repo is a monorepo with two independently-built projects: this extension, and a
-static marketing/legal site in the sibling [`webapp/`](../webapp/) folder (deployed to
-Netlify at `nestpane.netlify.app` — the landing page, privacy policy, and terms of
-service that the OAuth consent screen and Chrome Web Store listing link to). They share
-no build step or dependencies; each is self-contained in its own folder.
+static marketing/legal site in the sibling [`webapp/`](../webapp/) folder (deployed on
+Netlify, served at `nestpane.kneeraazon.com` — a custom domain, required because Google's
+OAuth verification rejects homepages on shared platform subdomains like the default
+`nestpane.netlify.app` — the landing page, privacy policy, and terms of service that the
+OAuth consent screen and Chrome Web Store listing link to). They share no build step or
+dependencies; each is self-contained in its own folder.
 
 ```
 nestpane/

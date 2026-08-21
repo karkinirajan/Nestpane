@@ -7,12 +7,12 @@ This is a **monorepo** containing two independent, self-contained projects that 
 | Folder | What it is | Deployed to |
 |---|---|---|
 | [`extension/`](extension/) | The Chrome MV3 extension itself — the actual product | Chrome Web Store |
-| [`webapp/`](webapp/) | The public marketing site, privacy policy, and terms of service | Netlify — [nestpane.netlify.app](https://nestpane.netlify.app/) |
+| [`webapp/`](webapp/) | The public marketing site, privacy policy, and terms of service | Netlify — [nestpane.kneeraazon.com](https://nestpane.kneeraazon.com/) |
 
 They share no build step, no dependencies, and no source code. The link between them is that the extension's OAuth consent screen and Chrome Web Store listing point to the pages hosted from `webapp/` (privacy policy, terms, and the app name/purpose shown on the homepage must stay consistent with what's configured in Google Cloud Console).
 
 - **Chrome Web Store listing:** [chromewebstore.google.com/detail/nestpane](https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol)
-- **Website:** [nestpane.netlify.app](https://nestpane.netlify.app/)
+- **Website:** [nestpane.kneeraazon.com](https://nestpane.kneeraazon.com/) — a custom subdomain of an existing owned domain, pointed at the same Netlify deployment (`nestpane.netlify.app` still resolves too, but the custom domain is what's registered on the OAuth consent screen, since Google's verification requires a homepage domain you can prove ownership of via Search Console — a shared platform subdomain like `netlify.app` doesn't qualify).
 
 ---
 
@@ -112,7 +112,7 @@ A static site (no build step, no framework beyond Tailwind via CDN) serving as N
 - **`about.html`** — mission and design philosophy
 - **`privacy.html`** — full data-handling disclosure (what's stored, what's optional, what's never collected)
 - **`terms.html`** — terms of service
-- **`googleee397e5ec21b3ad7.html`** — Google Search Console domain-ownership verification file. **Never delete, rename, or edit this file's contents.** Search Console verified ownership of `https://nestpane.netlify.app/` against it (HTML file method) — removing it, or a deploy that stops serving it at this exact path, silently breaks that verification and reopens the OAuth "home page is not registered to you" review issue. If you ever add a custom domain or otherwise restructure `webapp/`, add a second verification method (DNS TXT record or meta tag, via Search Console → Settings → Ownership verification) before touching this file.
+- **`googleee397e5ec21b3ad7.html`** — legacy Google Search Console verification file for the old `nestpane.netlify.app` URL-prefix property. **Do not delete it** — it's harmless to keep and still serves fine, but it's no longer the property backing the OAuth consent screen. The current, active verification is the `kneeraazon.com` **Domain property** in Search Console (verified via a DNS TXT record at the domain's DNS provider), which covers `nestpane.kneeraazon.com` and every other subdomain automatically — that's what the consent screen's Homepage/Authorized domain fields point to now (see [Custom domain migration](#custom-domain-migration) below).
 
 ### Design system
 
@@ -131,6 +131,12 @@ No build step, no dependencies — plain HTML files.
 ### Deployment (Netlify)
 
 Netlify auto-deploys from `main` with zero build configuration — pushing to `main` is the entire deploy process. No manual Netlify CLI steps are needed for normal changes.
+
+### Custom domain migration
+
+The site is served at **`nestpane.kneeraazon.com`** (a subdomain of an existing owned domain, DNS on Cloudflare, CNAME'd to `nestpane.netlify.app`), not Netlify's default `nestpane.netlify.app` subdomain — even though the latter still resolves to the same deployment. This is required, not cosmetic: Google's OAuth verification explicitly rejects app homepages hosted on shared platform subdomains (`netlify.app`, `vercel.app`, `github.io`, etc.) with *"The website of your home page URL is not registered to you"* — see [Google's homepage verification guidance](https://support.google.com/cloud/answer/13807376), which states homepages "should not be hosted on a third-party platform where you can't verify that you own your subdomain." Search Console's URL-prefix verification method technically succeeds on a `netlify.app` subdomain, but Google's OAuth reviewers reject it anyway on resubmission regardless — the only working fix is a domain you control the DNS for, verified as a **Domain property** (not URL-prefix) in Search Console.
+
+If you ever change the custom domain again, update: `webapp/index.html`'s `og:url`/canonical tags, the self-referential links in `webapp/privacy.html` and `webapp/terms.html`, `extension/newtab.html`'s footer Privacy/Terms links, and the OAuth consent screen's Authorized domain / Homepage / Privacy Policy / Terms of Service fields — all at once, or verification breaks again.
 
 ---
 
