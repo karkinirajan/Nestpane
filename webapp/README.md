@@ -131,7 +131,8 @@ This site is configured for zero-config static hosting on Netlify.
 
 ## 📄 License
 
-© 2026 Nestpane. All rights reserved. 
-The source code, design elements, and branding for Nestpane are proprietary. You may not copy, modify, distribute, or use the Nestpane logo or UI for personal or commercial purposes without prior written consent. 
+Nestpane is open source under the [MIT License](https://github.com/karkinirajan/Nestpane/blob/main/LICENSE) — use, modify, and redistribute it freely, including commercially, as long as the copyright notice is kept.
 
-For licensing inquiries, please contact [kneeraazon.com](https://kneeraazon.com).
+The **Nestpane name and logo** are the project's brand identity and aren't covered by the code license — please don't use them to imply a modified or unofficial build is the official Nestpane product.
+
+For questions, please contact [kneeraazon.com](https://kneeraazon.com).
