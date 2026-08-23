@@ -13,13 +13,10 @@
 </head>
 <body>
 
-<!-- Skip to main content (accessibility) -->
 <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-<!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
 
-  <!-- Brand + collapse toggle -->
   <div class="sb-brand">
     <img class="sb-logo-img" src="icons/favicon.png" alt="Nestpane logo" aria-hidden="true">
     <span class="sb-brand-name" aria-hidden="true">Nestpane</span>
@@ -32,29 +29,24 @@
     </button>
   </div>
 
-  <!-- Scrollable nav -->
   <div class="sb-nav-wrap">
     <nav class="sb-nav" id="sbNav" role="menubar" aria-label="Navigation groups">
 
-      <!-- 0. DASHBOARD — standalone, non-deletable -->
       <a href="#" class="sb-item sb-main-item" data-view="home">
         <svg class="sb-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
         <span class="sb-group-label">Dashboard</span>
       </a>
 
-      <!-- Data-driven groups render here via renderSidebar() -->
       <div id="sbGroupsContainer"></div>
 
-    </nav><!-- /sb-nav -->
+    </nav>
 
-  </div><!-- /sb-nav-wrap -->
+  </div>
 
-  <!-- SIDEBAR FOOTER -->
   <div class="sb-footer">
 
-    <!-- User / Sync item -->
     <div class="sb-footer-user-wrap" id="sbFooterUserWrap">
-      <!-- Popup (the sync card, now anchored above this button) -->
+
       <div class="sb-sync" id="syncCard">
         <div class="sb-sync-top">
           <div class="sb-sync-icon" id="syncIconEl">
@@ -84,7 +76,7 @@
           <span class="sb-sync-ts" id="sbSyncTs"></span>
         </div>
       </div>
-      <!-- Trigger button -->
+
       <button class="sb-footer-btn sb-footer-user-btn" id="syncFooterBtn" data-tip="Sync status">
         <div class="sb-ftr-avatar" id="sbFtrAvatar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
@@ -107,12 +99,10 @@
     </button>
   </div>
 
-</aside><!-- /sidebar -->
+</aside>
 
-<!-- ===== MAIN ===== -->
 <main class="main" id="app" role="main">
 
-  <!-- TOPBAR -->
   <header class="topbar" role="banner">
     <button class="search-trigger" id="searchTriggerBtn" aria-label="Open search palette (press /)">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -125,18 +115,16 @@
       </button>
     </div>
     <div class="topbar-actions">
-      <!-- topSettingsBtn kept as no-op stub for JS compat -->
+
       <button id="topSettingsBtn" style="display:none" tabindex="-1" aria-hidden="true"></button>
 
       <div class="topbar-sep"></div>
 
-      <!-- Theme toggle -->
       <button class="topbar-btn topbar-theme-btn" id="themeBtn" data-tip="Toggle theme" aria-label="Toggle theme">
         <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <span id="themeLabel" class="topbar-theme-label">Dark</span>
       </button>
 
-      <!-- User avatar -->
       <button class="topbar-avatar-btn" id="userAvatarBtn" aria-label="Profile">
         <div class="avatar" id="userAvatar">U</div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
@@ -144,21 +132,17 @@
     </div>
   </header>
 
-  <!-- Hidden file input for wallpaper upload -->
   <input type="file" id="heroBgUploadInput" accept="image/*" style="display:none">
 
-  <!-- CONTENT -->
   <div class="content-wrapper" id="mainContent" tabindex="-1">
 
-    <!-- ===== HOME VIEW ===== -->
     <div id="view-home" class="view active">
 
-      <!-- Hero -->
       <section class="hero" id="heroSection">
-        <!-- Wallpaper layer -->
+
         <div class="hero-bg-img" id="heroBgImg"></div>
         <div class="hero-overlay"></div>
-        <!-- Wallpaper controls (top-right of hero) -->
+
         <div class="hero-wp-controls" id="heroWpControls">
           <button class="hero-wp-btn" id="refreshWallpaperBtn" title="New photo wallpaper">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
@@ -173,7 +157,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
-        <!-- Quote column (left) -->
+
         <div class="hero-quote-col" id="heroQuoteCol">
           <div class="hero-quote-mark">"</div>
           <p class="hero-quote-text" id="heroQuoteText" spellcheck="false">Loading…</p>
@@ -194,7 +178,6 @@
           </div>
         </div>
 
-        <!-- Clock column (center) -->
         <div class="hero-body">
           <p class="greeting" id="greetingText">Good evening! 👋</p>
           <div class="clock-row">
@@ -204,7 +187,6 @@
           <p class="date-line" id="dateDisplay">Loading…</p>
         </div>
 
-        <!-- Weather column (right) -->
         <div class="weather-widget" id="weatherWidget" tabindex="0">
           <button type="button" class="weather-current" aria-label="Change weather location">
             <span class="weather-icon" id="weatherIcon">⛅</span>
@@ -226,10 +208,8 @@
         </div>
       </section>
 
-      <!-- Home Body -->
       <div class="home-content">
 
-        <!-- Workspace Bookmarks -->
         <section class="section" id="wsBmSection" style="display:none">
           <div class="section-title-row">
             <h2 class="section-title">Bookmarks</h2>
@@ -241,10 +221,8 @@
           <div id="wsBmGrid"></div>
         </section>
 
-        <!-- Quick Access + To-Do (two columns) -->
         <section class="section qa-todo-row">
 
-          <!-- Left: Quick Access -->
           <div class="qa-dash-col">
             <div class="section-title-row" style="margin-bottom:12px">
               <div style="display:flex;align-items:center;gap:10px">
@@ -265,7 +243,6 @@
             <div class="quick-access-grid" id="quickAccessGrid" data-qa-mode="icon"></div>
           </div>
 
-          <!-- Right: To-Do from Kanban -->
           <div class="kanban-dash-wrap" id="widget-todo">
             <div class="section-title-row" style="margin-bottom:10px">
               <h2 class="section-title">To Do</h2>
@@ -284,7 +261,6 @@
 
         </section>
 
-        <!-- AI Daily Briefing -->
         <section class="section ai-briefing-section" id="aiBriefingSection" style="display:none">
           <div class="section-title-row">
             <h2 class="section-title" style="display:flex;align-items:center;gap:6px">
@@ -303,10 +279,8 @@
           </div>
         </section>
 
-        <!-- Widgets — pinned to bottom -->
         <div class="widgets-row" id="widgetsRow">
 
-          <!-- Calendar widget -->
           <div class="widget calendar-widget" id="widget-calendar">
             <div class="widget-top-row">
               <span class="widget-title">
@@ -314,10 +288,6 @@
                 <span class="widget-label">Calendar</span>
               </span>
               <div style="display:flex;gap:6px;align-items:center">
-                <button class="cal-gsync-btn gcal-disconnected" id="calGsyncBtn" data-tip="Connect Google Calendar" aria-label="Google Calendar sync status">
-                  <div class="spinner spinner-sm" id="calGsyncSpinner" style="display:none"></div>
-                  <svg id="calGsyncIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </button>
                 <button class="widget-action-btn" id="addCalEventBtn" data-tip="Add event">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
@@ -336,7 +306,6 @@
             <div class="cal-events-list" id="calEventsList"></div>
           </div>
 
-          <!-- Notes widget -->
           <div class="widget notes-widget" id="widget-notes">
             <div class="widget-top-row">
               <span class="widget-title">
@@ -350,7 +319,6 @@
             <div class="notes-list" id="notesList"></div>
           </div>
 
-          <!-- Reminders widget -->
           <div class="widget reminders-widget" id="widget-reminders">
             <div class="widget-top-row">
               <span class="widget-title">
@@ -364,7 +332,6 @@
             <div class="reminders-list" id="remindersList"></div>
           </div>
 
-          <!-- Focus Timer widget -->
           <div class="widget timer-widget" id="widget-timer">
             <div class="widget-top-row">
               <span class="widget-title">
@@ -409,11 +376,10 @@
             </div>
           </div>
 
-        </div><!-- /widgets-row -->
-      </div><!-- /home-content -->
-    </div><!-- /view-home -->
+        </div>
+      </div>
+    </div>
 
-    <!-- ===== BOOKMARKS VIEW ===== -->
     <div id="view-bookmarks" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -454,7 +420,6 @@
       <div id="allBookmarksList" class="bookmarks-list-full"></div>
     </div>
 
-    <!-- ===== HISTORY VIEW ===== -->
     <div id="view-history" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -475,7 +440,6 @@
       <div id="historyList" class="history-list"></div>
     </div>
 
-    <!-- ===== DOWNLOADS VIEW ===== -->
     <div id="view-downloads" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -491,7 +455,6 @@
       <div id="downloadsList" class="downloads-list"></div>
     </div>
 
-    <!-- ===== NOTES VIEW ===== -->
     <div id="view-notes" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -516,7 +479,6 @@
       <div id="notesViewList" class="notes-view-list"></div>
     </div>
 
-    <!-- ===== TRASH VIEW ===== -->
     <div id="view-trash" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -530,7 +492,6 @@
       <div id="trashList" class="trash-list"></div>
     </div>
 
-    <!-- ===== INSIGHTS VIEW ===== -->
     <div id="view-analytics" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -543,7 +504,6 @@
       <div id="analyticsContent" class="insights-board"></div>
     </div>
 
-    <!-- ===== READING QUEUE VIEW ===== -->
     <div id="view-reading" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -562,7 +522,6 @@
       <div id="readingList" class="reading-list"></div>
     </div>
 
-    <!-- ===== TAB SESSIONS VIEW ===== -->
     <div id="view-sessions" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -581,7 +540,6 @@
       <div id="sessionsList" class="sessions-list"></div>
     </div>
 
-    <!-- ===== DAILY JOURNAL VIEW ===== -->
     <div id="view-journal" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -629,7 +587,6 @@
       </div>
     </div>
 
-    <!-- ===== HABITS VIEW ===== -->
     <div id="view-habits" class="view">
       <div class="view-header">
         <div class="view-header-left">
@@ -648,10 +605,9 @@
       <div id="habitsList" class="habits-list"></div>
     </div>
 
-  </div><!-- /content-wrapper -->
-</main><!-- /main -->
+  </div>
+</main>
 
-<!-- ===== SETTINGS PANEL ===== -->
 <div class="settings-overlay" id="settingsOverlay"></div>
 <aside class="settings-panel" id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsPanelTitle">
   <div class="settings-header">
@@ -906,7 +862,6 @@
   </div>
 </aside>
 
-<!-- Command Palette -->
 <div id="cmdPaletteOverlay" role="dialog" aria-modal="true" aria-label="Command palette">
   <div id="cmdPalette">
     <div class="cmd-search-row">
@@ -925,7 +880,6 @@
   </div>
 </div>
 
-<!-- FAB -->
 <button class="fab" id="fabBtn" data-tip="Quick Add" aria-label="Quick add">
   <svg class="fab-icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   <svg class="fab-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -963,9 +917,6 @@
   </button>
 </div>
 
-<!-- ===== MODALS ===== -->
-
-<!-- Note Modal -->
 <div class="modal-overlay" id="noteModal" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle">
   <div class="modal note-editor-modal">
     <div class="note-editor-topbar">
@@ -1010,7 +961,6 @@
   </div>
 </div>
 
-<!-- Quick Access Modal -->
 <div class="modal-overlay" id="quickAccessModal" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
   <div class="modal">
     <div class="modal-header">
@@ -1032,7 +982,6 @@
   </div>
 </div>
 
-<!-- Focus Mode Modal -->
 <div class="modal-overlay" id="focusModeModal" role="dialog" aria-modal="true" aria-labelledby="focusModeModalTitle">
   <div class="modal">
     <div class="modal-header">
@@ -1062,7 +1011,6 @@
   </div>
 </div>
 
-<!-- Profile Modal -->
 <div class="modal-overlay" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
   <div class="modal">
     <div class="modal-header">
@@ -1089,7 +1037,6 @@
   </div>
 </div>
 
-<!-- Folder Detail Modal -->
 <div class="modal-overlay" id="folderModal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -1111,7 +1058,6 @@
   </div>
 </div>
 
-<!-- Hero Background Color Modal -->
 <div class="modal-overlay" id="heroColorModal" role="dialog" aria-modal="true" aria-labelledby="heroColorModalTitle">
   <div class="modal" style="max-width:320px">
     <div class="modal-header">
@@ -1131,7 +1077,6 @@
   </div>
 </div>
 
-<!-- Confirm Modal -->
 <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -1150,8 +1095,6 @@
   </div>
 </div>
 
-<!-- Generic single-field rename/add prompt — replaces window.prompt() so
-     these flows match the rest of the app's custom modal styling. -->
 <div class="modal-overlay" id="sbPromptModal" role="dialog" aria-modal="true" aria-labelledby="sbPromptTitle">
   <div class="modal" style="max-width:360px">
     <div class="modal-header">
@@ -1171,7 +1114,6 @@
   </div>
 </div>
 
-<!-- Weather Location Modal -->
 <div class="modal-overlay" id="weatherLocationModal" role="dialog" aria-modal="true" aria-labelledby="weatherLocationTitle">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -1204,7 +1146,6 @@
   </div>
 </div>
 
-<!-- Bookmark Add/Edit Modal -->
 <div class="modal-overlay" id="bookmarkEditModal" role="dialog" aria-modal="true" aria-labelledby="bookmarkEditModalTitle">
   <div class="modal">
     <div class="modal-header">
@@ -1232,7 +1173,6 @@
   </div>
 </div>
 
-<!-- Folder Add/Edit Modal -->
 <div class="modal-overlay" id="folderEditModal" role="dialog" aria-modal="true" aria-labelledby="folderEditModalTitle">
   <div class="modal">
     <div class="modal-header">
@@ -1252,7 +1192,6 @@
   </div>
 </div>
 
-<!-- Workspace Bookmark Chooser -->
 <div class="modal-overlay" id="wsBmChooserModal" role="dialog" aria-modal="true" aria-labelledby="wsBmChooserTitle">
   <div class="modal" style="max-width:340px">
     <div class="modal-header">
@@ -1276,7 +1215,6 @@
   </div>
 </div>
 
-<!-- Workspace Folder Create/Edit Modal -->
 <div class="modal-overlay" id="wsFolderEditModal" role="dialog" aria-modal="true" aria-labelledby="wsFolderEditTitle">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -1296,7 +1234,6 @@
   </div>
 </div>
 
-<!-- Workspace Bookmark Add/Edit Modal -->
 <div class="modal-overlay" id="wsBookmarkEditModal" role="dialog" aria-modal="true" aria-labelledby="wsBookmarkEditTitle">
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
@@ -1330,7 +1267,6 @@
   </div>
 </div>
 
-<!-- Smart Organize Modal -->
 <div class="modal-overlay" id="smartOrganizeModal">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -1347,7 +1283,6 @@
   </div>
 </div>
 
-<!-- Voice Capture Modal -->
 <div class="modal-overlay" id="voiceCaptureModal" role="dialog" aria-modal="true" aria-labelledby="voiceCaptureTitle">
   <div class="modal">
     <div class="modal-header">
@@ -1374,7 +1309,6 @@
   </div>
 </div>
 
-<!-- QA Replace Modal -->
 <div class="modal-overlay" id="qaReplaceModal">
   <div class="modal" style="width:380px">
     <div class="modal-header">
@@ -1393,7 +1327,6 @@
   </div>
 </div>
 
-<!-- ===== ADD SIDEBAR LINK MODAL ===== -->
 <div class="modal-overlay" id="sbAddLinkModal">
   <div class="modal">
     <div class="modal-header">
@@ -1414,7 +1347,6 @@
   </div>
 </div>
 
-<!-- ===== HABIT MODAL ===== -->
 <div class="modal-overlay" id="habitModal">
   <div class="modal">
     <div class="modal-header">
@@ -1434,7 +1366,6 @@
   </div>
 </div>
 
-<!-- ===== READING QUEUE MODAL ===== -->
 <div class="modal-overlay" id="readingModal">
   <div class="modal">
     <div class="modal-header">
@@ -1454,7 +1385,6 @@
   </div>
 </div>
 
-<!-- ===== KANBAN ADD CARD MODAL ===== -->
 <div class="modal-overlay" id="kanbanCardModal" role="dialog" aria-modal="true" aria-labelledby="kanbanCardModalTitle">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
@@ -1462,7 +1392,7 @@
       <button class="modal-close" data-modal="kanbanCardModal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <!-- AI parse mode -->
+
       <div id="kanbanAiSection">
         <div class="kanban-ai-header">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
@@ -1476,7 +1406,7 @@
         <div id="kanbanAiResult" class="kanban-ai-result" style="display:none"></div>
         <div class="kanban-ai-or"><span>or add manually</span></div>
       </div>
-      <!-- Manual mode -->
+
       <label>Card Title</label>
       <input type="text" id="kanbanCardTitleInput" class="modal-input" placeholder="e.g. Fix login bug">
       <label>Notes (optional)</label>
@@ -1497,7 +1427,6 @@
   </div>
 </div>
 
-<!-- ===== ADD/EDIT REMINDER MODAL (standalone — not a Nestodo card) ===== -->
 <div class="modal-overlay" id="reminderModal" role="dialog" aria-modal="true" aria-labelledby="reminderModalTitle">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -1518,7 +1447,6 @@
   </div>
 </div>
 
-<!-- ===== NESTODO MODAL (large — replaces the old full-page board view) ===== -->
 <div class="modal-overlay" id="nestodoModal" role="dialog" aria-modal="true" aria-labelledby="nestodoModalTitle">
   <div class="modal modal-xl">
     <div class="modal-header">
@@ -1565,7 +1493,6 @@
   </div>
 </div>
 
-<!-- Calendar Event / Schedule Modal -->
 <div class="modal-overlay" id="calEventModal">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -1585,16 +1512,16 @@
         <button class="schedule-type-btn" data-stype="custom">Custom days</button>
       </div>
       <div class="schedule-options">
-        <!-- Once: just a date -->
+
         <div class="schedule-field visible" id="sfOnce">
           <label>Date</label>
           <input type="date" id="calEventDate" class="modal-input">
         </div>
-        <!-- Daily: no extra input needed -->
+
         <div class="schedule-field" id="sfDaily">
           <div style="font-size:12px;color:var(--text-3)">Repeats every day starting from today.</div>
         </div>
-        <!-- Weekly: pick day of week -->
+
         <div class="schedule-field" id="sfWeekly">
           <label>Day of week</label>
           <select id="calEventWeekday" class="modal-input modal-select">
@@ -1607,7 +1534,7 @@
             <option value="0">Sunday</option>
           </select>
         </div>
-        <!-- Custom: every N days (≥ 6) -->
+
         <div class="schedule-field" id="sfCustom">
           <label>Every how many days? <span style="color:var(--text-3);font-weight:400">(min 6)</span></label>
           <input type="number" id="calEventCustomDays" class="modal-input" min="6" value="7" placeholder="e.g. 14">

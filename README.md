@@ -1,6 +1,6 @@
 # Nestpane
 
-Nestpane replaces Chrome's blank new tab page with a local-first productivity dashboard — bookmarks, notes, a Kanban-style task board (Nestodo), a focus timer, habit tracking, and more — plus two entirely optional Google integrations (a read-only Calendar view and an encrypted Drive backup). No account is required, there is no backend server, and all data lives in the browser unless you explicitly turn on Drive sync.
+Nestpane replaces Chrome's blank new tab page with a local-first productivity dashboard — bookmarks, notes, a Kanban-style task board (Nestodo), a focus timer, habit tracking, and more — plus one entirely optional Google integration (an encrypted Drive backup). No account is required, there is no backend server, and all data lives in the browser unless you explicitly turn on Drive sync.
 
 This is a **monorepo** containing two independent, self-contained projects that ship separately:
 
@@ -59,7 +59,7 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 - **Reminders** — standalone date/time reminders, independent of Nestodo cards
 - **Voice Quick-Capture** — speak a note or task using the Web Speech API
 - **Focus Timer** — Pomodoro-style 5/15/25-minute timer with an optional distracting-site blocker
-- **Calendar** — mini monthly calendar with one-time, daily, weekly, and custom-interval events, plus an optional read-only Google Calendar widget
+- **Calendar** — mini monthly calendar with one-time, daily, weekly, and custom-interval events
 - **Daily Journal** — date-stamped entries with mood tagging and word count
 - **Habit Tracker** — daily habit streaks with completion history
 - **Mood Tracker** — daily emoji log with optional notes
@@ -108,7 +108,7 @@ A static site (no build step, no framework beyond Tailwind via CDN) serving as N
 
 ### Pages
 
-- **`index.html`** — landing page: hero, a "Purpose of Nestpane" section explaining what the extension does and exactly what its two optional Google scopes are used for, and a 6-card feature grid
+- **`index.html`** — landing page: hero, a "Purpose of Nestpane" section explaining what the extension does and exactly what its optional Google scope is used for, and a 5-card feature grid
 - **`about.html`** — mission and design philosophy
 - **`privacy.html`** — full data-handling disclosure (what's stored, what's optional, what's never collected)
 - **`terms.html`** — terms of service
