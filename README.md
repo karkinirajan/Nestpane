@@ -24,7 +24,7 @@ nestpane/
 ├── extension/              The Chrome extension (Manifest V3)
 │   ├── README.md            Full extension documentation (features, OAuth setup, build, deploy, permissions)
 │   ├── manifest.json         Name, version, permissions, OAuth client, icons
-│   ├── app.js                 All application logic (~10,500 lines)
+│   ├── app.js                 All application logic (~8,600 lines, comment-free)
 │   ├── newtab.html            New tab page — full dashboard markup
 │   ├── style.css              Design system and component styles
 │   ├── popup.html / popup.js  Toolbar popup — quick-save a bookmark
@@ -52,7 +52,8 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 
 ### Features
 
-- **Bookmarks & Quick Access** — import Chrome bookmarks, organize into folders, pin frequently-used sites as one-click shortcuts, search, sort, and manage via context menu
+- **Bookmarks & Quick Access** — import Chrome bookmarks, organize into folders, pin frequently-used sites as one-click shortcuts (30 curated defaults across Google, socials, AI tools, and popular sites), search, sort, and manage via context menu
+- **Grouped sidebar** — collapsible Home/Personal/Google/Socials/AI groups, each seeded with sensible default links and views, fully customizable (add/remove/reorder groups and items)
 - **Smart Organize** — one click sorts your open tabs into existing bookmark folders using an LLM (requires your own Anthropic API key)
 - **Notes** — tagged notes with pin, full-text search, and a rich editor
 - **Nestodo** — a Kanban-style task board (To Do / In Progress / Done) with due-date reminders
@@ -71,13 +72,13 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 - **AI Daily Briefing** — short LLM-generated morning summary of weather and pending tasks
 - **Motivational quotes**, **custom wallpaper**, and a **theme marketplace** (Gruvbox-inspired dark/light, plus Nord, Dracula, Catppuccin, Solarized, and a custom accent color picker)
 - **Unified command palette** (`/`) — search bookmarks, notes, tasks, history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action
-- **Google Drive sync (optional)** — backs up your data to a private, hidden `drive.appdata` folder only Nestpane can see
+- **Google Drive sync (optional)** — backs up your data to a private, hidden `drive.appdata` folder only Nestpane can see, with sign-in that works in Chrome and every other Chromium-based browser (Brave, Vivaldi, Opera, Arc, Edge)
 - **End-to-end encryption (optional)** — passphrase-based AES-GCM encryption layer on top of Drive backups (PBKDF2, 600,000 iterations)
 - **Extension popup** — one-click bookmark save from any page via the toolbar button
 
 ### Tech stack
 
-Chrome Extension (Manifest V3) · vanilla JS/HTML/CSS (no framework) · `chrome.identity.getAuthToken()` for Google sign-in (no client secret) · `chrome.storage.local` for all data · Google Drive REST API v3 (`appdata` scope) for optional sync · WebCrypto for optional E2E encryption · Anthropic Messages API for optional AI features · Web Speech API for voice capture · `chrome.declarativeNetRequest` for focus-mode site blocking · esbuild for release minification.
+Chrome Extension (Manifest V3) · vanilla JS/HTML/CSS (no framework) · `chrome.identity.getAuthToken()` for native Chrome sign-in, falling back to `chrome.identity.launchWebAuthFlow()` for every other Chromium-based browser (no client secret in either path) · `chrome.storage.local` for all data · Google Drive REST API v3 (`appdata` scope) for optional sync · WebCrypto for optional E2E encryption · Anthropic Messages API for optional AI features · Web Speech API for voice capture · `chrome.declarativeNetRequest` for focus-mode site blocking · esbuild for release minification (source ships comment-free for the smallest possible package).
 
 ### Quick start (local development)
 
@@ -155,11 +156,15 @@ If you change the logo, app name, or requested OAuth scopes, update both project
 
 ## Contributing
 
+Nestpane is open source and contributions are welcome — bug reports, feature requests, and pull requests alike. No build step is required to get started (see [Quick start](#quick-start-local-development) above); just load the `extension/` folder unpacked and start editing.
+
 Each project has its own detailed README with full setup, environment, permissions, and troubleshooting docs:
 
 - **[`extension/README.md`](extension/README.md)** — features, tech stack, Google OAuth client setup, build/deploy, required permissions, security notes, troubleshooting
 - **[`webapp/README.md`](webapp/README.md)** — design system, page inventory, deployment
 
+Since Google OAuth sign-in requires your own client IDs bound to your own extension ID (see [`extension/README.md`](extension/README.md#google-oauth-setup)), Drive sync won't work out of the box on a fork — everything else runs fully offline with zero setup.
+
 ## License
 
-© 2026 Nestpane. All rights reserved. See [`webapp/terms.html`](webapp/terms.html) for full terms.
+[MIT](LICENSE) — free to use, modify, and redistribute, including commercially, as long as the copyright notice is kept. The **Nestpane name and logo** are the project's brand identity and aren't covered by the code license. See [`webapp/terms.html`](webapp/terms.html) for full terms.
