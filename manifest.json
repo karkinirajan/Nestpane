@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nestpane",
-  "version": "1.9.6",
+  "version": "1.9.8",
   "description": "Replaces the new tab with a local-first dashboard: bookmarks, notes, tasks, focus timer, optional Drive sync.",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
@@ -25,8 +25,7 @@
     "scopes": [
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/drive.appdata",
-      "https://www.googleapis.com/auth/calendar.events.readonly"
+      "https://www.googleapis.com/auth/drive.appdata"
     ]
   },
   "permissions": [

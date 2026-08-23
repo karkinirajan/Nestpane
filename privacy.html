@@ -223,22 +223,13 @@
     <li><code>userinfo.email</code> and <code>userinfo.profile</code> — to show your name/email in the sidebar</li>
     <li><code>drive.appdata</code> — to read and write a single backup file in your Drive's hidden, app-specific data
       folder</li>
-    <li><code>calendar.events.readonly</code> — to display your upcoming Google Calendar events in the Calendar widget</li>
   </ul>
   <p>
     The <code>drive.appdata</code> scope is intentionally restrictive: it grants access <strong>only</strong> to a
     hidden
     folder that belongs to Nestpane — it cannot see, list, or modify any other file in your Google Drive.
     The access token is never sent anywhere except Google's own token endpoints (<code>oauth2.googleapis.com</code>)
-    and Drive/Calendar APIs (<code>www.googleapis.com</code>).
-  </p>
-  <p>
-    <strong>Calendar access is read-only.</strong> Nestpane fetches events from your primary calendar for a rolling
-    window (roughly a week in the past to two months ahead) purely to display them in the Calendar widget — it
-    never creates, edits, or deletes anything on your Google Calendar. Fetched events are cached locally in
-    <code>chrome.storage.local</code> so the widget still shows your last-known schedule when offline; this cache
-    is never included in your Drive backup (Google Calendar is already the source of truth, so backing it up a
-    second time would be redundant) and is cleared immediately when you sign out.
+    and the Drive API (<code>www.googleapis.com</code>).
   </p>
   <p>
     <strong>Optional end-to-end encryption:</strong> if you set a passphrase, your Drive backup is encrypted
