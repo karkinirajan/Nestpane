@@ -18,7 +18,7 @@
     --border:#252b3d;
     --border-hover:#353d58;
     --text:#e2e5f0;
-    --text-muted:#707ba0; /* raised from #5a6380 — was 3.28:1, now ~4.6:1 on --bg */
+    --text-muted:#707ba0;
     --text-sub:#8891a8;
     --radius:12px;
     --radius-sm:8px;
@@ -31,7 +31,6 @@
     overflow:hidden;
   }
 
-  /* ── Header ── */
   .header{
     display:flex;align-items:center;gap:9px;
     padding:13px 16px 11px;
@@ -50,7 +49,6 @@
     padding:2px 9px;border-radius:99px;border:1px solid var(--border);
   }
 
-  /* ── Page card ── */
   .page-card{
     margin:12px 14px 4px;
     background:var(--bg-card);
@@ -76,7 +74,6 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;
   }
 
-  /* ── Form ── */
   .form{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
 
   .field{display:flex;flex-direction:column;gap:5px}
@@ -93,7 +90,6 @@
   input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
   input::placeholder{color:var(--text-muted)}
 
-  /* ── Combobox ── */
   .combo{position:relative}
   .combo-trigger{
     width:100%;background:var(--bg-input);border:1.5px solid var(--border);
@@ -141,7 +137,6 @@
   .combo-item-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .combo-empty{padding:12px 10px;text-align:center;color:var(--text-muted);font-size:12px}
 
-  /* ── Destination pills ── */
   .dest-row{display:flex;gap:7px}
   .dest-btn{
     flex:1;padding:8.5px 10px;border-radius:var(--radius-sm);
@@ -156,7 +151,6 @@
     color:var(--accent-light);box-shadow:0 0 0 2px var(--accent-bg);
   }
 
-  /* ── Folder row ── */
   .folder-row{display:flex;gap:7px;align-items:flex-end}
   .folder-row .field,.folder-row .combo-wrap{flex:1;min-width:0}
   .new-folder-btn{
@@ -170,10 +164,8 @@
   .new-folder-btn:hover{border-color:var(--border-hover);color:var(--text)}
   .new-folder-btn.active{border-color:var(--accent);color:var(--accent-light)}
 
-  /* ── Divider ── */
   .divider{height:1px;background:var(--border);margin:1px 0}
 
-  /* ── Save button ── */
   .save-btn{
     width:100%;padding:11px;border-radius:var(--radius-sm);
     background:var(--accent);border:none;color:#fff;
@@ -187,10 +179,8 @@
   .save-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
   .save-btn:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
 
-  /* ── Visually hidden (screen reader only) ── */
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-  /* ── Toast ── */
   .toast{
     margin:0 14px 12px;padding:9px 12px;border-radius:var(--radius-sm);
     font-size:12px;font-weight:600;text-align:center;display:none;
@@ -199,7 +189,7 @@
   .toast.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.28);color:#fca5a5}
   .toast.show{display:block}
   .empty{text-align:center;padding:24px 16px;color:var(--text-muted);font-size:12px;line-height:1.8}
-  /* ── Mini dashboard ── */
+
   .mini-dash{display:flex;gap:6px;padding:10px 14px 2px}
   .mini-stat{
     flex:1;background:var(--bg-card);border:1px solid var(--border);
@@ -213,7 +203,6 @@
 </head>
 <body>
 
-<!-- Mini dashboard -->
 <div class="mini-dash" id="miniDash" aria-label="Today's snapshot">
   <div class="mini-stat" id="dashTimer">
     <div class="mini-stat-val" id="dashTimerVal">—</div>

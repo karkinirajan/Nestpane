@@ -160,7 +160,7 @@ This project has no server and no environment variables. All configuration is em
 |---|---|---|---|
 | Google OAuth Client ID (native, Chrome) | `manifest.json` | `oauth2.client_id` | Public identifier, safe to commit. Chrome Extension-type client — Google issues no client secret for this type at all |
 | Google OAuth Client ID (fallback, all other Chromium browsers) | `app.js` | `WEB_AUTH_CLIENT_ID` | Public identifier, safe to commit. Web application-type client used only by `chrome.identity.launchWebAuthFlow()` — see [Google OAuth Setup](#google-oauth-setup) |
-| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata`, `calendar.events.readonly` — read by both the native and fallback auth paths |
+| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` — read by both the native and fallback auth paths |
 | Expected extension ID | `app.js` / `build.js` | `EXPECTED_EXTENSION_ID` / `PUBLISHED_EXTENSION_ID` | The CWS-assigned item ID; a mismatch only logs a warning, it never blocks sign-in |
 | Weather endpoint | `app.js` | wttr.in URL | No key required |
 | Quotes | Bundled static list (`HERO_QUOTES` in `app.js`) | No network request |
@@ -200,8 +200,8 @@ Sign-out (and "Clear All Data") revoke the grant server-side via `oauth2.googlea
 If you fork this project, you must create your own Google OAuth clients — the client IDs in this repo belong to the original author's GCP project. You need **both** of the following; the native client covers Chrome, the web-application client covers every other Chromium-based browser.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
-2. Enable the **Google Drive API** and, if you use the optional Calendar widget, the **Google Calendar API**.
-3. Configure the **OAuth consent screen** (External, add `drive.appdata`, `userinfo.email`, `userinfo.profile`, and `calendar.events.readonly` scopes, add yourself as a test user).
+2. Enable the **Google Drive API**.
+3. Configure the **OAuth consent screen** (External, add `drive.appdata`, `userinfo.email`, and `userinfo.profile` scopes, add yourself as a test user).
 4. **Native client (Chrome):** Create an **OAuth 2.0 Client ID** → Application type: **Chrome Extension**. Add your extension ID to the **Application ID** field (found on `chrome://extensions`). Copy the Client ID into `manifest.json`'s `oauth2.client_id`. No redirect URI setup needed — this client type binds to the extension ID directly.
 5. **Fallback client (everyone else):** Create a second **OAuth 2.0 Client ID** → Application type: **Web application**. Under **Authorized redirect URIs**, add exactly `https://<your-extension-id>.chromiumapp.org/` (same extension ID as above, trailing slash included). Copy the Client ID into `app.js`'s `WEB_AUTH_CLIENT_ID` constant.
 6. Both client IDs are public identifiers, not secrets — Google issues no `client_secret` for either type used here, so both are safe to commit.

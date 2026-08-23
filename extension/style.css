@@ -1,10 +1,5 @@
-/* ============================================================
-   Nestpane — Design System v2
-   ============================================================ */
-
-/* ── 1. TOKENS — Gruvbox Dark ────────────────────────────── */
 :root {
-  /* ── Color Palette ── */
+
   --bg:          #1d2021;
   --surface:     #282828;
   --surface-2:   #32302f;
@@ -24,7 +19,6 @@
   --success-bg:  rgba(184,187,38,.12);
   --error-bg:    rgba(251,73,52,.12);
 
-  /* ── Chart Colors ── */
   --chart-1:     #fe8019;
   --chart-2:     #fabd2f;
   --chart-3:     #b8bb26;
@@ -38,22 +32,19 @@
   --chart-5-bg:  rgba(211,134,155,.15);
   --chart-6-bg:  rgba(142,192,124,.15);
 
-  /* ── Spacing & Sizing ── */
   --radius:      12px;
   --radius-sm:   8px;
   --radius-xs:   6px;
   --radius-pill: 999px;
-  --sb-w:        237px; /* 224px + ~6% */
+  --sb-w:        237px;
   --sb-wc:       58px;
   --sb-trans:    260ms cubic-bezier(.4,0,.2,1);
   --topbar-h:    52px;
 
-  /* ── Typography — Font ── */
   --font:        'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:   'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
   --font-serif:  'Playfair Display', Georgia, serif;
 
-  /* ── Typography — Scale (raw sizes used for tokens below) ── */
   --text-xs:     11px;
   --text-sm:     12.5px;
   --text-md:     13.5px;
@@ -61,19 +52,16 @@
   --text-lg:     17px;
   --text-xl:     20px;
 
-  /* ── Typography — Weight ── */
   --fw-normal:   400;
   --fw-medium:   500;
   --fw-semi:     600;
   --fw-bold:     700;
   --fw-black:    800;
 
-  /* ── Typography — Line Height ── */
   --lh-tight:    1.3;
   --lh-base:     1.55;
   --lh-loose:    1.7;
 
-  /* ── Typography Tokens ── */
   --ty-display-xl:  clamp(2rem, 4vw, 3rem);
   --ty-display-lg:  clamp(1.6rem, 3vw, 2.2rem);
   --ty-display-md:  clamp(1.3rem, 2.5vw, 1.75rem);
@@ -108,7 +96,7 @@
   --error:       #9d0006;
   --success-bg:  rgba(121,116,14,.1);
   --error-bg:    rgba(157,0,6,.1);
-  /* chart colors adjusted for light bg contrast */
+
   --chart-1:     #af3a03;
   --chart-2:     #b57614;
   --chart-3:     #79740e;
@@ -123,11 +111,9 @@
   --chart-6-bg:  rgba(66,123,88,.12);
 }
 
-/* ── 2. RESET ────────────────────────────────────────────── */
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 html { height:100%; }
 
-/* Visually hidden — accessible to screen readers */
 .sr-only {
   position: absolute; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden;
@@ -157,7 +143,6 @@ input, textarea, select { font-family: inherit; }
 svg { flex-shrink: 0; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
-/* ── 3. LAYOUT ───────────────────────────────────────────── */
 .main {
   flex: 1;
   display: flex;
@@ -173,7 +158,6 @@ svg { flex-shrink: 0; }
 .content-wrapper::-webkit-scrollbar-track { background:transparent; }
 .content-wrapper::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:var(--radius-pill); }
 
-/* ── 4. SIDEBAR ──────────────────────────────────────────── */
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -202,7 +186,7 @@ svg { flex-shrink: 0; }
   flex-shrink: 0;
   object-fit: contain;
 }
-/* legacy text logo fallback */
+
 .sb-logo {
   width: 22px; height: 22px;
   background: var(--accent);
@@ -224,7 +208,7 @@ svg { flex-shrink: 0; }
   max-width: 140px;
 }
 .sidebar-collapsed .sb-brand-name { opacity:0; max-width:0; max-height:0; pointer-events:none; }
-/* Collapse toggle button inside brand */
+
 .sb-collapse-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; flex-shrink: 0;
@@ -235,13 +219,10 @@ svg { flex-shrink: 0; }
 }
 .sb-collapse-btn:hover { background: var(--surface-2); color: var(--text); }
 .sb-collapse-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-/* Collapsed state: the toggle is the only visible way to get the sidebar
-   back — keep it brighter than the muted default so it stays discoverable
-   at a glance instead of blending into the other icon-only buttons. */
+
 .sidebar-collapsed .sb-collapse-btn { color: var(--text-2); }
 .sidebar-collapsed .sb-collapse-btn:hover { color: var(--accent-2); background: var(--accent-bg); }
-/* Collapsed: stack the logo above a full-width toggle row, matching the
-   size/shape of other collapsed sidebar group buttons (.sb-group-btn). */
+
 .sidebar-collapsed .sb-brand {
   flex-direction: column;
   align-items: center;
@@ -257,13 +238,11 @@ svg { flex-shrink: 0; }
   margin-left: 0;
 }
 
-/* Nav wrap */
 .sb-nav-wrap { flex:1; overflow-y:auto; overflow-x:hidden; padding:8px 0 4px; }
 .sb-nav-wrap::-webkit-scrollbar { width:3px; }
 .sb-nav-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:var(--radius-pill); }
 .sb-nav { display:flex; flex-direction:column; gap:1px; }
 
-/* ── 5. SIDEBAR GROUPS ───────────────────────────────────── */
 .sb-group { display:flex; flex-direction:column; }
 
 .sb-group-btn {
@@ -301,8 +280,6 @@ svg { flex-shrink: 0; }
 .sb-group.open > .sb-group-items { max-height: 320px; overflow-y: auto; }
 .sidebar-collapsed .sb-group-items { max-height: 0 !important; }
 
-/* Collapsed-sidebar flyout: shows a group's items in a floating panel
-   instead of the dead max-height:0 accordion. */
 .sb-flyout {
   position: fixed;
   z-index: 250;
@@ -333,7 +310,6 @@ svg { flex-shrink: 0; }
   border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
 }
 
-/* ── 6. SIDEBAR ITEMS ────────────────────────────────────── */
 .sb-item {
   display: flex; align-items: center; gap: 9px;
   padding: 6px 12px 6px 30px;
@@ -360,8 +336,6 @@ svg { flex-shrink: 0; }
 .sidebar-collapsed .sb-item-label { opacity:0; max-width:0; pointer-events:none; }
 .sb-action-item { background:none; }
 
-/* Standalone top-level nav item (e.g. Kanban Board) — styled like a group
-   header but navigates directly on click, no expand/collapse step. */
 .sb-main-item {
   padding: 7px 10px 7px 12px;
   font-size: var(--ty-caption); font-weight: var(--fw-bold);
@@ -398,10 +372,8 @@ svg { flex-shrink: 0; }
 }
 .sb-work-action:hover { background:var(--surface-2); color:var(--text-2); border-color:var(--border-2); }
 
-/* ── 7. SIDEBAR FOLDERS — removed ───────────────────────── */
 .sb-folders,.sb-folders-head,.sidebar-folders-wrap,.sidebar-folder-item,.sb-icon-btn { display:none; }
 
-/* ── SYNC POPUP (anchored above footer user button) ─────── */
 .sb-footer-user-wrap { position: relative; }
 .sb-sync {
   position: fixed; width: 224px;
@@ -436,7 +408,6 @@ svg { flex-shrink: 0; }
 @keyframes spin { to { transform:rotate(360deg); } }
 #syncIconSpin { animation:spin 1s linear infinite; transform-origin:center; }
 
-/* ── FOOTER USER BUTTON ──────────────────────────────────── */
 .sb-footer-user-btn { align-items: center; border-top: 1px solid var(--border); margin-bottom: 2px; }
 .sb-ftr-avatar {
   width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
@@ -456,7 +427,6 @@ svg { flex-shrink: 0; }
 .sb-ftr-dot.syncing { background: var(--accent-2); }
 .sb-ftr-dot.error   { background: var(--error); }
 
-/* ── 8. SIDEBAR FOOTER ───────────────────────────────────── */
 .sb-footer {
   border-top: 1px solid var(--border);
   padding: 6px 8px 10px;
@@ -481,7 +451,7 @@ svg { flex-shrink: 0; }
 .sidebar-collapsed .sb-ftr-user-info,
 .sidebar-collapsed .sb-ftr-dot { display: none; }
 .sidebar-collapsed .sb-footer-user-btn { border-top: none; justify-content: center; padding: 9px 0; }
-/* legacy footer hidden */
+
 .sb-foot { display:none; }
 
 .sb-toggle-collapse { display:block; }
@@ -489,7 +459,6 @@ svg { flex-shrink: 0; }
 .sidebar-collapsed .sb-toggle-collapse { display:none; }
 .sidebar-collapsed .sb-toggle-expand { display:block; }
 
-/* ── 9. TOPBAR ───────────────────────────────────────────── */
 .topbar {
   height: var(--topbar-h);
   display: flex; align-items: center; gap: 10px; padding: 0 18px;
@@ -510,7 +479,6 @@ svg { flex-shrink: 0; }
   background:var(--surface-2); border:1px solid var(--border-2); border-radius:4px; padding:1px 5px; flex-shrink:0;
 }
 
-/* Topbar action cluster (Smart Organize button) */
 .topbar-ws { display: flex; align-items: center; gap: 4px; margin-left: 14px; }
 .topbar-ws-btn {
   display: flex; align-items: center; justify-content: center;
@@ -528,14 +496,11 @@ svg { flex-shrink: 0; }
 .topbar-btn:hover { background:var(--surface-2); color:var(--text); }
 .topbar-btn.active { color:var(--accent); }
 
-/* Topbar separator */
 .topbar-sep { width:1px; height:20px; background:var(--border-2); margin:0 4px; flex-shrink:0; }
 
-/* Theme toggle with label */
 .topbar-theme-btn { width:auto; gap:5px; padding:0 8px; font-size: var(--ty-body-sm); font-weight: var(--fw-semi); color:var(--text-2); }
 .topbar-theme-label { white-space:nowrap; }
 
-/* Avatar button (topbar) */
 .topbar-avatar-btn {
   display:flex; align-items:center; gap:4px;
   padding:3px 6px 3px 3px; border-radius:var(--radius-pill);
@@ -545,7 +510,6 @@ svg { flex-shrink: 0; }
 .topbar-avatar-btn:hover { border-color:var(--border-2); background:var(--surface-3); }
 .topbar-avatar-btn .avatar { width:26px; height:26px; border-radius:50%; font-size:12px; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
-/* ── 10. HERO ────────────────────────────────────────────── */
 .hero {
   position:relative;
   background: var(--bg);
@@ -558,7 +522,6 @@ svg { flex-shrink: 0; }
   min-height:380px;
 }
 
-/* Wallpaper background image layer */
 .hero-bg-img {
   position:absolute; inset:0;
   background-size:cover; background-position:center;
@@ -567,7 +530,6 @@ svg { flex-shrink: 0; }
   z-index:0;
 }
 
-/* Dark gradient overlay for readability */
 .hero-overlay {
   position:absolute; inset:0; z-index:1;
   background: linear-gradient(
@@ -582,7 +544,6 @@ svg { flex-shrink: 0; }
   background: linear-gradient(105deg, rgba(255,255,255,.52) 0%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.1) 100%);
 }
 
-/* Wallpaper control buttons — bottom-left, never touches weather */
 .hero-wp-controls {
   position:absolute; bottom:14px; left:14px; z-index:4;
   display:flex; gap:6px; opacity:0; transition:opacity .2s;
@@ -598,10 +559,8 @@ svg { flex-shrink: 0; }
 .hero-wp-btn:hover { background:rgba(0,0,0,.65); border-color:rgba(255,255,255,.4); }
 .hero-wp-btn-reset { color:rgba(255,120,100,.85); }
 
-/* Color palette — lives inside heroColorModal, so no anchored positioning
-   needed (fixes it colliding with the hero quote when opened as a popover) */
 .hero-color-palette { display:flex; flex-wrap:wrap; gap:10px; }
-/* All color buttons (swatches + custom) share the same base */
+
 .hero-color-swatch,
 .hero-color-custom-input {
   width:28px; height:28px; border-radius:50%; cursor:pointer;
@@ -614,8 +573,7 @@ svg { flex-shrink: 0; }
 .hero-color-swatch.active { border-color:var(--text); transform:scale(1.08); box-shadow:0 0 0 2px rgba(255,255,255,.15); }
 .hero-color-swatch:focus-visible,
 .hero-color-custom-input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-/* Native color input override — styled as a circular rainbow swatch,
-   matching the accent-color custom picker in Settings */
+
 .hero-color-custom-input {
   padding:0;
   background: conic-gradient(from 0deg, #fb4934, #fabd2f, #b8bb26, #8ec07c, #83a598, #d3869b, #fb4934);
@@ -642,7 +600,6 @@ svg { flex-shrink: 0; }
 .clock-ampm { font-size: var(--ty-title-md); font-weight: var(--fw-medium); color:var(--text-2); }
 .date-line { font-size: var(--ty-title-md); font-weight: var(--fw-medium); color:var(--text-2); margin-top:5px; }
 
-/* Hero quote column (left) */
 .hero-quote-col {
   position:relative; z-index:2;
   display:flex; flex-direction:column; gap:12px;
@@ -682,7 +639,6 @@ svg { flex-shrink: 0; }
 .hero-quote-save-btn { border-color:rgba(254,128,25,.5); color:var(--accent); }
 .hero-quote-save-btn:hover { background:rgba(254,128,25,.2); }
 
-/* Editable state */
 .hero-quote-col.editing .hero-quote-text,
 .hero-quote-col.editing .hero-quote-author {
   outline:none;
@@ -695,7 +651,6 @@ svg { flex-shrink: 0; }
 [data-theme="light"] .hero-quote-col.editing .hero-quote-author { color:rgba(10,10,10,.9); }
 .hero-quote-col.editing .hero-quote-actions { opacity:1; }
 
-/* Weather widget — right column of 3-col hero grid */
 .weather-widget {
   display:flex; flex-direction:column; gap:10px;
   background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
@@ -736,16 +691,15 @@ svg { flex-shrink: 0; }
 .wf-hi { font-size:12.5px; font-weight:700; color:var(--text); }
 .wf-lo { font-size:11px; color:var(--text-3); }
 
-/* ── 11. HOME CONTENT ────────────────────────────────────── */
 .home-content { padding:20px 22px 0; display:flex; flex-direction:column; gap:20px; flex:1; }
 .section { display:flex; flex-direction:column; }
 .section-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .qa-half-wrap { width:50%; display:flex; flex-direction:column; }
-/* Two-column Quick Access + To-Do row */
+
 .qa-todo-row { flex-direction:row; gap:0; align-items:flex-start; }
 .qa-dash-col { flex:0 0 calc(66.666% - 10px); min-width:0; display:flex; flex-direction:column; border-right:1.5px solid var(--border); padding-right:20px; }
 .kanban-dash-wrap { flex:0 0 calc(33.333% - 10px); min-width:0; display:flex; flex-direction:column; padding-left:20px; }
-/* To-Do list inside kanban dash widget */
+
 .kd-todo-list { display:flex; flex-direction:column; gap:5px; max-height:340px; overflow-y:auto; }
 .kd-todo-list::-webkit-scrollbar { width:3px; }
 .kd-todo-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
@@ -766,15 +720,11 @@ svg { flex-shrink: 0; }
 }
 .edit-btn:hover { background:var(--surface-3); color:var(--text); border-color:var(--border-2); }
 
-/* AI Daily Briefing */
 .ai-briefing-section { padding:16px 18px; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:14px; }
 .ai-briefing-section .section-title { display:flex; align-items:center; gap:6px; color:var(--accent-2); }
 .ai-briefing-body { font-size:13.5px; line-height:1.65; color:var(--text-2); }
 .ai-briefing-setup { font-size:13px; color:var(--text-3); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 
-/* ── 12. QUICK ACCESS ────────────────────────────────────── */
-
-/* Mode toggle buttons */
 .qa-mode-btns { display:flex; gap:3px; }
 .qa-mode-btn {
   width:26px; height:26px; display:flex; align-items:center; justify-content:center;
@@ -784,13 +734,11 @@ svg { flex-shrink: 0; }
 .qa-mode-btn.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent-2); }
 .qa-mode-btn:hover:not(.active) { border-color:var(--border-2); color:var(--text-2); }
 
-/* Grid layout — changes per mode */
 .quick-access-grid { display:grid; gap:10px; justify-content:center; }
 .quick-access-grid[data-qa-mode="icon"] { grid-template-columns:repeat(auto-fill,minmax(64px,64px)); }
 .quick-access-grid[data-qa-mode="icon-name"] { grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); }
 .quick-access-grid[data-qa-mode="icon-name-desc"] { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
 
-/* QA card */
 .qa-card {
   display:flex; flex-direction:column; align-items:center; gap:6px;
   padding:14px 8px 11px; background:var(--surface); border:1.5px solid var(--border);
@@ -807,18 +755,15 @@ svg { flex-shrink: 0; }
 .qa-name { font-size:11.5px; font-weight:500; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
 .qa-desc { font-size:10px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
 
-/* Mode-based visibility */
 .quick-access-grid[data-qa-mode="icon"] .qa-name,
 .quick-access-grid[data-qa-mode="icon"] .qa-desc { display:none; }
 .quick-access-grid[data-qa-mode="icon"] .qa-card { padding:12px 6px; }
 .quick-access-grid[data-qa-mode="icon-name"] .qa-desc { display:none; }
 
-/* Add card */
 .qa-add-card { border-style:dashed; border-color:var(--border-2); color:var(--text-3); }
 .qa-add-card:hover { border-color:var(--accent); color:var(--accent); }
 .qa-add-icon { font-size:22px; }
 
-/* ... menu button — hidden by default, revealed on card hover for instant edit access */
 .qa-menu-btn {
   position:absolute; top:4px; right:4px;
   width:20px; height:20px; display:none;
@@ -830,7 +775,6 @@ svg { flex-shrink: 0; }
 .qa-menu-btn:hover { background:var(--surface-3); color:var(--text); }
 .qa-card:hover .qa-menu-btn { display:flex; }
 
-/* ── 13. BOOKMARKS ────────────────────────────────────────── */
 .folder-card {
   background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius);
   padding:14px 14px 10px; cursor:pointer; transition:border-color .15s,transform .12s,box-shadow .15s;
@@ -849,10 +793,8 @@ svg { flex-shrink: 0; }
 .favicon-img { width:18px; height:18px; border-radius:4px; object-fit:contain; }
 .folder-more { font-size:11px; color:var(--text-3); margin-top:6px; }
 
-/* ── 14. WIDGETS ─────────────────────────────────────────── */
 #wsBmSection { display:none !important; }
 
-/* Widgets pinned to bottom of viewport */
 .widgets-row {
   display:grid;
   grid-auto-flow:column;
@@ -895,7 +837,6 @@ svg { flex-shrink: 0; }
 .note-item-preview { font-size:11px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 .note-pinned-dot { width:5px; height:5px; background:var(--accent); border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
 
-/* Reminders widget — Nestodo cards that carry a remindAt timestamp */
 .reminders-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; }
 .reminders-list::-webkit-scrollbar { width:3px; }
 .reminders-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
@@ -912,12 +853,10 @@ svg { flex-shrink: 0; }
 .reminder-item:hover .reminder-clear-btn { opacity:1; }
 .reminder-clear-btn:hover { color:var(--error); background:var(--error-bg); }
 
-/* Reminder badge — shown on Nestodo cards (board + dashboard widget) that have a remindAt */
 .reminder-badge { display:inline-block; margin-top:6px; font-size:10.5px; font-weight:500; color:var(--accent-2); background:var(--accent-bg); border-radius:var(--radius-pill); padding:2px 8px; }
 .reminder-badge.overdue { color:var(--error); background:var(--error-bg); }
 .kd-todo-item .reminder-badge { margin-top:0; flex-shrink:0; }
 
-/* Add/Edit Card modal — reminder field */
 .reminder-field-row { margin-top:10px; display:flex; flex-direction:column; gap:8px; }
 .reminder-toggle-label { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text-2); cursor:pointer; }
 .btn-secondary.danger-soft { color:var(--error); border-color:rgba(239,68,68,.2); background:var(--error-bg); }
@@ -940,7 +879,6 @@ svg { flex-shrink: 0; }
 .timer-focus-btn:hover { border-color:var(--border-2); color:var(--text-2); }
 .timer-focus-btn.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent-2); }
 
-/* ── 15. VIEWS ───────────────────────────────────────────── */
 .view { display:none; }
 .view.active { display:flex; flex-direction:column; min-height:100%; }
 .view-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 14px; flex-shrink:0; }
@@ -958,7 +896,6 @@ svg { flex-shrink: 0; }
 .spinner { width:18px; height:18px; border:2px solid var(--border-2); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
-/* Bookmarks */
 .bm-ws-tabs { display:flex; gap:4px; padding:0 22px 10px; overflow-x:auto; flex-shrink:0; }
 .bm-ws-tab { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:var(--radius-pill); font-size:12.5px; font-weight:500; color:var(--text-2); background:var(--surface-2); border:1.5px solid var(--border); cursor:pointer; transition:all .12s; white-space:nowrap; }
 .bm-ws-tab:hover { border-color:var(--border-2); color:var(--text); }
@@ -995,7 +932,6 @@ svg { flex-shrink: 0; }
 .bm-action-btn:hover { background:var(--surface-2); color:var(--text-2); border-color:var(--border-2); }
 .bm-action-btn.danger:hover { background:var(--error-bg); color:var(--error); }
 
-/* History */
 .history-list { padding:0 22px 32px; display:flex; flex-direction:column; }
 .history-date-group { display:flex; flex-direction:column; }
 .history-date-label { font-size: var(--ty-overline); font-weight:var(--fw-bold); text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); padding:16px 0 4px 12px; }
@@ -1021,7 +957,6 @@ svg { flex-shrink: 0; }
 .history-item-wrap:hover .history-delete-btn { opacity:1; }
 .history-delete-btn:hover { background:var(--error-bg); color:var(--error); }
 
-/* Downloads */
 .downloads-list { padding:0 22px 32px; display:flex; flex-direction:column; gap:0; }
 .download-item {
   display:flex; align-items:center; gap:10px;
@@ -1057,7 +992,6 @@ svg { flex-shrink: 0; }
 .dl-show-btn:hover { background:var(--surface-2); color:var(--text); }
 .dl-sep { margin:0 5px; color:var(--border-2); }
 
-/* Notes view */
 .notes-view-toolbar { display:flex; align-items:center; gap:10px; padding:0 22px 12px; flex-wrap:wrap; }
 .notes-search-wrap { display:flex; align-items:center; gap:7px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-xs); padding:7px 11px; flex:1; min-width:160px; max-width:280px; }
 .notes-search-wrap svg { color:var(--text-3); flex-shrink:0; }
@@ -1074,15 +1008,15 @@ svg { flex-shrink: 0; }
 .note-card.pinned { border-color:var(--accent); }
 .note-card-pin { font-size:11px; position:absolute; top:10px; right:36px; }
 .note-card-title { font-size: var(--ty-title-sm); font-weight: var(--fw-semi); color: var(--text); line-height: var(--lh-tight); letter-spacing: -0.01em; }
-/* JS renders note-card-content; keep preview as alias */
+
 .note-card-preview,
 .note-card-content { font-size:var(--text-sm); color:var(--text-2); line-height:var(--lh-base); flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
-/* JS renders note-card-footer; keep meta as alias */
+
 .note-card-meta,
 .note-card-footer { font-size:var(--text-xs); color:var(--text-3); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-top:auto; }
 .note-card-date { font-size:var(--text-xs); color:var(--text-3); }
 .note-card-tags { display:flex; flex-wrap:wrap; gap:4px; }
-/* JS renders note-card-tag; keep note-tag as alias */
+
 .note-tag,
 .note-card-tag { font-size:10.5px; padding:2px 8px; background:var(--accent-bg); color:var(--accent-2); border-radius:var(--radius-pill); font-weight:var(--fw-medium); }
 .note-pin-indicator { color:var(--accent); font-size:10px; }
@@ -1096,7 +1030,6 @@ svg { flex-shrink: 0; }
 .note-card:hover .note-card-del-btn { opacity:1; }
 .note-card-del-btn:hover { background:var(--error-bg); color:var(--error); }
 
-/* Trash */
 .trash-list { padding:0 22px 32px; display:flex; flex-direction:column; gap:4px; }
 .trash-item { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); transition:border-color .12s; }
 .trash-item:hover { border-color:var(--border-2); }
@@ -1110,9 +1043,6 @@ svg { flex-shrink: 0; }
 .restore-btn { padding:4px 10px; border:1px solid var(--border-2); border-radius:var(--radius-xs); font-size:12px; color:var(--text-2); transition:all .1s; flex-shrink:0; }
 .restore-btn:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
 
-/* ── INSIGHTS BOARD ─────────────────────────────────────────── */
-
-/* The view fills the flex column; the board fills the view */
 #view-analytics { flex:1; }
 #analyticsContent.insights-board {
   flex:1;
@@ -1124,7 +1054,6 @@ svg { flex-shrink: 0; }
   box-sizing:border-box;
 }
 
-/* KPI strip — 7 equal tiles across full width */
 .insights-kpi-strip {
   display:grid;
   grid-template-columns:repeat(7,1fr);
@@ -1152,7 +1081,6 @@ svg { flex-shrink: 0; }
 .insights-kpi-trend { font-size: var(--ty-caption); color: var(--success); display: flex; align-items: center; gap: 3px; margin-top: 2px; font-weight: var(--fw-medium); }
 .insights-kpi-trend.neutral { color: var(--text-3); }
 
-/* Section heading */
 .insights-section-hd {
   font-size: var(--ty-overline);
   font-weight: var(--fw-bold);
@@ -1166,7 +1094,6 @@ svg { flex-shrink: 0; }
   background: var(--border-2); flex-shrink: 0;
 }
 
-/* Cards grid — fluid 3-up by default, collapses gracefully */
 .insights-cards-row {
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -1193,14 +1120,12 @@ svg { flex-shrink: 0; }
 .insights-card-badge.green { background:var(--success-bg); color:var(--success); }
 .insights-card-badge.muted { background:var(--surface-2); color:var(--text-3); }
 
-/* Progress bar */
 .ins-prog-wrap { display:flex; flex-direction:column; gap:6px; }
 .ins-prog-row { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-2); margin-bottom:2px; }
 .ins-prog-track { height:6px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden; }
 .ins-prog-fill { height:100%; border-radius:var(--radius-pill); background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .5s ease; }
 .ins-prog-fill.green { background:linear-gradient(90deg,var(--success),#8fb820); }
 
-/* Data rows */
 .ins-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:12.5px; border-bottom:1px solid var(--border); gap:8px; min-width:0; }
 .ins-row:last-child { border-bottom:none; padding-bottom:0; }
 .ins-row-left { display:flex; align-items:center; gap:8px; min-width:0; flex:1; }
@@ -1210,14 +1135,12 @@ svg { flex-shrink: 0; }
 .ins-pill { font-size:11px; font-weight:600; padding:2px 7px; border-radius:var(--radius-pill); background:var(--surface-2); color:var(--text-2); flex-shrink:0; }
 .ins-pill.accent { background:var(--accent-bg); color:var(--accent-2); }
 
-/* Bar chart row */
 .ins-bar-row { display:flex; align-items:center; gap:10px; padding:4px 0; min-width:0; }
 .ins-bar-label { font-size:12px; color:var(--text-2); width:110px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:5px; }
 .ins-bar-track { flex:1; height:5px; background:var(--surface-2); border-radius:var(--radius-pill); overflow:hidden; min-width:0; }
 .ins-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:var(--radius-pill); transition:width .4s ease; }
 .ins-bar-val { font-size:11px; color:var(--text-3); width:28px; text-align:right; flex-shrink:0; }
 
-/* Vertical bar chart (site activity trend) */
 .ins-vbar-chart { display:flex; align-items:flex-end; gap:6px; height:120px; padding:8px 2px 0; }
 .ins-vbar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; height:100%; min-width:0; }
 .ins-vbar { width:100%; max-width:22px; background:linear-gradient(180deg,var(--accent-2),var(--accent)); border-radius:4px 4px 2px 2px; transition:height .4s ease; }
@@ -1226,25 +1149,20 @@ svg { flex-shrink: 0; }
 .ins-vbar-col.today .ins-vbar-label { color:var(--text); font-weight:700; }
 .ins-vbar-val { font-size:10px; color:var(--text-3); line-height:1; min-height:12px; }
 
-/* Tags */
 .ins-tags { display:flex; flex-wrap:wrap; gap:5px; }
 .ins-tag { font-size:11px; padding:3px 9px; border-radius:var(--radius-pill); background:var(--surface-2); border:1px solid var(--border); color:var(--text-2); }
 
-/* Account block */
 .ins-account-row { display:flex; align-items:center; gap:12px; }
 .ins-avatar-img { width:42px; height:42px; border-radius:50%; object-fit:cover; flex-shrink:0; border:2px solid var(--border-2); }
 .ins-avatar-letter { width:42px; height:42px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; flex-shrink:0; }
 .ins-account-name { font-size:13.5px; font-weight:600; color:var(--text); }
 
-/* Dot */
 .ins-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; }
 .ins-dot.green { background:var(--success); }
 .ins-dot.muted { background:var(--border-2); }
 
-/* Empty state inside card */
 .ins-empty { font-size:12px; color:var(--text-3); font-style:italic; padding:4px 0; }
 
-/* Legacy an- selectors (used in async JS blocks) */
 .an-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; padding:0 22px 32px; }
 .an-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px; }
 .an-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); margin-bottom:8px; }
@@ -1254,12 +1172,10 @@ svg { flex-shrink: 0; }
 .an-row:last-child { border-bottom:none; }
 .an-muted { color:var(--text-2); }
 
-/* Empty state */
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:48px 22px; color:var(--text-3); text-align:center; }
 .empty-state-icon { font-size:36px; opacity:.5; }
 .empty-state-text { font-size: var(--ty-body-sm); color: var(--text-3); }
 
-/* ── 16. SETTINGS PANEL ──────────────────────────────────── */
 .settings-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(3px); z-index:200; opacity:0; pointer-events:none; transition:opacity .2s; }
 .settings-overlay.open { opacity:1; pointer-events:all; }
 .settings-panel { position:fixed; top:0; right:0; bottom:0; width:360px; background:var(--surface); border-left:1px solid var(--border); z-index:201; display:flex; flex-direction:column; transform:translateX(100%); transition:transform .25s cubic-bezier(.4,0,.2,1); }
@@ -1306,7 +1222,7 @@ svg { flex-shrink: 0; }
 .color-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2.5px solid transparent; transition:transform .12s,border-color .12s; }
 .color-swatch.active { border-color:var(--text); transform:scale(1.15); }
 .color-swatch:hover { transform:scale(1.1); }
-/* Native color input styled as a circular swatch, matching presets */
+
 .accent-color-custom-input {
   padding:0; background:
     conic-gradient(from 0deg, #fb4934, #fabd2f, #b8bb26, #8ec07c, #83a598, #d3869b, #fb4934);
@@ -1323,7 +1239,6 @@ svg { flex-shrink: 0; }
 .switch input:checked+.slider { background:var(--accent); border-color:var(--accent); }
 .switch input:checked+.slider::before { transform:translateX(15px); background:#fff; }
 
-/* ── 16b. THEME MARKETPLACE GRID ─────────────────────────── */
 .theme-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
 .theme-card {
   display:flex; flex-direction:column; align-items:center; gap:7px;
@@ -1336,19 +1251,15 @@ svg { flex-shrink: 0; }
 .theme-card-swatches { display:flex; gap:3px; }
 .theme-card-swatches span { width:14px; height:14px; border-radius:50%; border:1px solid rgba(255,255,255,.15); display:block; }
 
-/* ── 17. MODALS ──────────────────────────────────────────── */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:300; display:none; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.open { display:flex; }
 .modal { background:var(--surface); border:1.5px solid var(--border-2); border-radius:var(--radius); width:100%; max-width:460px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.4); animation:modalIn .18s cubic-bezier(.4,0,.2,1); }
 @keyframes modalIn { from { opacity:0; transform:scale(.95) translateY(8px); } to { opacity:1; transform:none; } }
 .modal-lg { max-width:600px; }
-/* Substantially larger than the standard widget modal footprint — for
-   content that needs real breathing room (the Nestodo board's 3 columns). */
+
 .modal-xl { max-width:min(1240px, 94vw); width:94vw; height:min(760px, 88vh); max-height:88vh; }
 .modal-body-flush { padding:0; display:flex; flex-direction:column; min-height:0; flex:1; }
-/* Nestodo's Add/Edit Card modal opens *from inside* the Nestodo modal — give
-   the container a lower z-index so any normal modal opened on top of it
-   (add card, reminders) always paints above it regardless of DOM order. */
+
 #nestodoModal { z-index:290; }
 .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
 .modal-header h3 { font-size: var(--ty-title-lg); font-weight: var(--fw-bold); color: var(--text); letter-spacing: -0.01em; }
@@ -1447,7 +1358,6 @@ svg { flex-shrink: 0; }
 .ws-bm-chooser-tile { display:flex; flex-direction:column; align-items:center; gap:8px; padding:18px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius); font-size:13px; color:var(--text-2); cursor:pointer; transition:all .12s; }
 .ws-bm-chooser-tile:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
 
-/* Shared "dotted square" drag handle — used for sidebar groups and sidebar items */
 .sb-drag-handle { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; color:var(--text-3); cursor:grab; user-select:none; border-radius:3px; transition:color .1s,background .1s; }
 .sb-drag-handle:hover { color:var(--text-2); background:var(--surface-3); }
 .sb-drag-handle:active { cursor:grabbing; }
@@ -1457,7 +1367,6 @@ svg { flex-shrink: 0; }
 .google-profile-info { display:flex; align-items:center; gap:10px; padding:10px; background:var(--surface-2); border-radius:var(--radius-xs); margin-bottom:4px; }
 .avatar-google-img { width:26px; height:26px; border-radius:50%; object-fit:cover; }
 
-/* ── 18. COMMAND PALETTE ─────────────────────────────────── */
 #cmdPaletteOverlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(5px); z-index:500; display:flex; align-items:flex-start; justify-content:center; padding:80px 20px 20px; opacity:0; pointer-events:none; transition:opacity .18s; }
 #cmdPaletteOverlay.open { opacity:1; pointer-events:all; }
 #cmdPalette { background:var(--surface); border:1.5px solid var(--border-2); border-radius:var(--radius); width:100%; max-width:560px; box-shadow:0 28px 80px rgba(0,0,0,.5); overflow:hidden; transform:translateY(-10px); transition:transform .18s cubic-bezier(.4,0,.2,1); }
@@ -1493,7 +1402,6 @@ svg { flex-shrink: 0; }
 .cmd-hint { font-size:11.5px; color:var(--text-3); display:flex; align-items:center; gap:4px; }
 .cmd-hint kbd { font-family:var(--font); font-size:10px; background:var(--surface-2); border:1px solid var(--border-2); border-radius:4px; padding:1px 5px; color:var(--text-2); }
 
-/* AI command bar */
 .cmd-ai-item { border-bottom:1px solid var(--border); }
 .cmd-ai-icon { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; }
 .cmd-ai-label { flex:1; font-size:13.5px; }
@@ -1510,7 +1418,6 @@ svg { flex-shrink: 0; }
 .cmd-ai-action-btn { font-size:12px; font-weight:500; color:var(--text-2); background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-xs); padding:6px 11px; transition:background .1s,color .1s,border-color .1s; }
 .cmd-ai-action-btn:hover { background:var(--surface-3); color:var(--text); border-color:var(--border-2); }
 
-/* Smart Organize */
 .organize-group { display:flex; flex-direction:column; gap:4px; }
 .organize-group-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); display:flex; align-items:center; gap:6px; padding:6px 2px 2px; }
 .organize-item { display:flex; align-items:center; gap:9px; padding:7px 9px; border:1.5px solid var(--border); border-radius:var(--radius-xs); cursor:pointer; transition:background .1s,border-color .1s; }
@@ -1524,7 +1431,6 @@ svg { flex-shrink: 0; }
 .organize-consent-note { font-size:12px; color:var(--text-3); margin-top:6px; }
 .organize-consent-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
 
-/* ── 19. FAB ─────────────────────────────────────────────── */
 .fab { position:fixed; bottom:24px; right:24px; width:48px; height:48px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 4px 18px var(--accent-glow); z-index:150; transition:transform .18s,box-shadow .18s; }
 .fab:hover { transform:scale(1.06); box-shadow:0 6px 28px var(--accent-glow); }
 .fab.open .fab-icon-plus { display:none; }
@@ -1541,7 +1447,6 @@ svg { flex-shrink: 0; }
 .fab-item-icon--bookmark { background:var(--error-bg); color:var(--error); }
 .fab-item-icon--voice { background:rgba(124,58,237,.12); color:var(--accent-2); }
 
-/* Voice Capture */
 .voice-capture-body { display:flex; flex-direction:column; align-items:center; gap:14px; padding:8px 0 4px; }
 .voice-mic-btn {
   width:64px; height:64px; border-radius:50%; flex-shrink:0;
@@ -1569,7 +1474,6 @@ svg { flex-shrink: 0; }
 .voice-transcript:focus { border-color:var(--accent); }
 .voice-capture-actions { flex-wrap:wrap; }
 
-/* ── 20. TOAST ───────────────────────────────────────────── */
 .toast {
   position:fixed; top:18px; left:50%; transform:translateX(-50%) translateY(-12px);
   z-index:600; padding:9px 18px; border-radius:var(--radius-pill);
@@ -1588,13 +1492,11 @@ svg { flex-shrink: 0; }
 .toast.success { background:var(--surface); border-color:rgba(184,187,38,.35); color:var(--success); }
 .toast.info    { background:var(--surface); border-color:var(--border-2);      color:var(--text-2); }
 
-/* ── 21. TOOLTIPS ────────────────────────────────────────── */
 .tt { position:fixed; z-index:900; background:var(--surface-3); border:1px solid var(--border-2); color:var(--text); font-size:11.5px; font-weight:500; padding:4px 9px; border-radius:var(--radius-xs); pointer-events:none; opacity:0; transition:opacity .12s; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.3); }
 .tt.tt-show { opacity:1; }
 .tt[data-dir="down"] { transform:translateX(-50%); }
 .tt[data-dir="right"] { transform:translateY(-50%); }
 
-/* ── 22. CONTEXT MENU ────────────────────────────────────── */
 .ctx-menu { position:fixed; z-index:400; background:var(--surface); border:1.5px solid var(--border-2); border-radius:var(--radius-sm); box-shadow:0 8px 32px rgba(0,0,0,.35); padding:4px; min-width:160px; animation:modalIn .14s ease; }
 .ctx-item { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:var(--radius-xs); font-size:13px; color:var(--text-2); cursor:pointer; transition:background .1s,color .1s; }
 .ctx-item:hover { background:var(--surface-2); color:var(--text); }
@@ -1602,7 +1504,6 @@ svg { flex-shrink: 0; }
 .ctx-item.danger:hover { background:var(--error-bg); }
 .ctx-divider { height:1px; background:var(--border); margin:3px 0; }
 
-/* bm-ctx-* — bookmark/QA context menu (reuses ctx-menu styles) */
 .bm-ctx-menu,.bm-ctx-sub {
   position:fixed; z-index:400; background:var(--surface);
   border:1.5px solid var(--border-2); border-radius:var(--radius-sm);
@@ -1617,27 +1518,19 @@ svg { flex-shrink: 0; }
 .bm-ctx-item.danger:hover { background:var(--error-bg); }
 .bm-ctx-sep { height:1px; background:var(--border); margin:3px 0; }
 
-/* ── 23. ANIMATIONS ──────────────────────────────────────── */
 @keyframes wsContentOut { to { opacity:0; transform:translateY(6px); } }
 @keyframes wsContentIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
-/* ── 24. COLLAPSED SIDEBAR ───────────────────────────────── */
-/* gap:0 prevents the (hidden but still flex-participating) label/chevron
-   from eating extra space via `gap`, which would push the icon off-center. */
 .sidebar-collapsed .sb-group-btn { justify-content:center; padding:9px 0; gap:0; }
 .sidebar-collapsed .sb-group.tab-active>.sb-group-btn { background:var(--accent-bg); }
 .sidebar-collapsed .sb-group.tab-active>.sb-group-btn .sb-group-icon { color:var(--accent-2); }
 .sidebar-collapsed .sb-folders { display:none; }
-/* #sbg-personal's right-padding compensation (for the missing sb-gplus button)
-   has higher specificity than the collapsed override above — cancel it here
-   so the Personal icon centers like every other collapsed group icon. */
+
 .sidebar-collapsed #sbg-personal .sb-group-btn { padding-right: 0; }
 
-/* Pct bar */
 .pct-bar { height:4px; background:var(--surface-3); border-radius:var(--radius-pill); overflow:hidden; margin-top:8px; }
 .pct-bar-fill { height:100%; background:var(--accent); border-radius:var(--radius-pill); }
 
-/* ── 25. SIDEBAR GROUP HEADER (add/remove management) ─────── */
 .sb-group-hd { display:flex; align-items:center; }
 .sb-group-hd .sb-group-btn { flex:1; min-width:0; }
 .sb-gplus {
@@ -1650,12 +1543,7 @@ svg { flex-shrink: 0; }
 .sb-group-hd:hover .sb-gplus { opacity:1; }
 .sb-gplus:hover { background:var(--surface-2); color:var(--accent-2); }
 .sidebar-collapsed .sb-gplus { display:none; }
-/* Edit-mode controls have no room on the ~56px collapsed rail, and the edit
-   toggle in particular must not sit next to the collapse toggle — the
-   collapsed brand row shows the collapse toggle only. The collapse handler
-   also forces S.sidebarEditMode off, so these should never have anything to
-   hide; they are the belt-and-braces half in case edit mode is ever entered
-   or persisted while collapsed. */
+
 .sidebar-collapsed .sb-edit-btn,
 .sidebar-collapsed .sb-group-edit-actions,
 .sidebar-collapsed .sb-item-edit-actions,
@@ -1693,7 +1581,6 @@ svg { flex-shrink: 0; }
 }
 .sb-view-pick-btn:hover { border-color: var(--accent-2); color: var(--accent-2); }
 
-/* ── 26. HABIT TRACKER ───────────────────────────────────── */
 .habits-list { display:flex; flex-direction:column; gap:10px; padding:0 22px 32px; }
 .habit-row {
   display:flex; align-items:center; gap:14px;
@@ -1721,7 +1608,6 @@ svg { flex-shrink: 0; }
 .habit-row:hover .habit-del { opacity:1; }
 .habit-del:hover { background:var(--error-bg); color:var(--error); }
 
-/* ── 27. READING QUEUE ───────────────────────────────────── */
 .reading-list { display:flex; flex-direction:column; gap:8px; padding:0 22px 32px; }
 .reading-item {
   display:flex; align-items:center; gap:12px;
@@ -1758,7 +1644,6 @@ svg { flex-shrink: 0; }
 .reading-item:hover .reading-del { opacity:1; }
 .reading-del:hover { background:var(--error-bg); color:var(--error); }
 
-/* ── 28. TAB SESSIONS ────────────────────────────────────── */
 .sessions-list { display:flex; flex-direction:column; gap:10px; padding:0 22px 32px; }
 .session-card {
   background:var(--surface); border:1.5px solid var(--border);
@@ -1801,7 +1686,6 @@ svg { flex-shrink: 0; }
   max-width:220px; margin-left:auto; padding-left:12px;
 }
 
-/* ── 29. DAILY JOURNAL ───────────────────────────────────── */
 .journal-layout { display:flex; gap:18px; padding:0 22px 32px; align-items:flex-start; }
 .journal-cal { width:220px; flex-shrink:0; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:14px; }
 .journal-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
@@ -1848,17 +1732,13 @@ svg { flex-shrink: 0; }
 .journal-footer { display:flex; align-items:center; justify-content:space-between; }
 .journal-word-count { font-size:12px; color:var(--text-3); }
 
-/* ── 30. KANBAN BOARD ────────────────────────────────────── */
 .kanban-board { display:flex; gap:14px; padding:16px 22px 22px; flex:1; min-height:0; overflow-x:auto; align-items:stretch; }
 .kanban-col {
   flex:1 1 250px; min-width:220px; display:flex; flex-direction:column;
   background:var(--surface-2); border-radius:var(--radius); padding:12px;
   border:1.5px solid var(--border); gap:0;
 }
-/* Inside the Nestodo modal: below ~820px viewport, .modal-xl's 94vw no
-   longer leaves room for 3 columns at their 220px floor (including the
-   768px tablet breakpoint), so stack instead of forcing horizontal scroll
-   inside a dialog. */
+
 @media (max-width: 820px) {
   .kanban-board { flex-direction:column; overflow-x:hidden; overflow-y:auto; }
   .kanban-col { min-width:0; max-height:280px; flex:0 0 auto; }
@@ -1899,7 +1779,6 @@ svg { flex-shrink: 0; }
 .kanban-drop-zone { min-height:8px; border-radius:var(--radius-xs); transition:background .12s; }
 .kanban-drop-zone.over { background:var(--accent-bg); }
 
-/* ── 31. HERO BACKGROUND PRESETS ─────────────────────────── */
 .hero-bg-presets { display:flex; flex-wrap:wrap; gap:8px; }
 .hero-bg-preset {
   width:52px; height:36px; border-radius:var(--radius-xs); cursor:pointer;
@@ -1908,13 +1787,10 @@ svg { flex-shrink: 0; }
 .hero-bg-preset:hover { transform:scale(1.08); }
 .hero-bg-preset.active { border-color:var(--text); }
 
-/* ── 36. ADD LINK MODAL ──────────────────────────────────── */
 .sb-add-link-form { display:flex; flex-direction:column; gap:10px; }
 
-/* ── 37. GRUVBOX sb-logo ─────────────────────────────────── */
 .sb-logo { background:linear-gradient(135deg,var(--accent),var(--accent-2)); }
 
-/* ── 38. CALENDAR WIDGET ─────────────────────────────────── */
 .calendar-widget {}
 .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
 .cal-month-label { font-size:12px; font-weight:600; color:var(--text); }
@@ -1938,28 +1814,8 @@ svg { flex-shrink: 0; }
 .cal-event-text { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cal-event-del { font-size:10px; color:var(--text-3); cursor:pointer; padding:1px 3px; border-radius:2px; background:none; border:none; transition:color .1s; }
 .cal-event-del:hover { color:var(--error); }
-.cal-event-dot.google { background:#4285f4; }
-.cal-event-src { font-size:9px; font-weight:700; color:#4285f4; background:rgba(66,133,244,.14); border-radius:3px; padding:1px 4px; flex-shrink:0; }
 .cal-events-status { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; font-size:11px; color:var(--text-3); padding:8px 4px; text-align:center; }
-.cal-events-status-error { color:var(--error); }
-.cal-events-retry-btn { font-size:10.5px; font-weight:600; color:var(--accent-2); background:var(--accent-bg); border:1px solid transparent; border-radius:var(--radius-xs); padding:2px 8px; transition:background .1s; }
-.cal-events-retry-btn:hover { background:var(--accent-subtle); }
 
-/* Google Calendar sync-status button — small icon whose color/state reflects
-   S._gcalStatus, following the same idea as the sidebar's Drive sync icon. */
-.spinner-sm { width:13px; height:13px; border-width:1.5px; }
-.cal-gsync-btn {
-  width:26px; height:26px; display:flex; align-items:center; justify-content:center;
-  border-radius:var(--radius-xs); border:1px solid var(--border); transition:background .1s,color .1s,border-color .1s;
-  color:var(--text-3); background:none;
-}
-.cal-gsync-btn:hover { background:var(--surface-2); color:var(--text-2); }
-.cal-gsync-btn.gcal-connected { color:#4285f4; border-color:rgba(66,133,244,.3); background:rgba(66,133,244,.08); }
-.cal-gsync-btn.gcal-unauthorized { color:var(--warning); border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.08); }
-.cal-gsync-btn.gcal-error { color:var(--error); border-color:rgba(239,68,68,.25); background:var(--error-bg); }
-.cal-gsync-btn.gcal-offline { color:var(--text-3); border-style:dashed; }
-
-/* ── 39. SCHEDULE MODAL ──────────────────────────────────── */
 .schedule-type-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
 .schedule-type-btn { padding:5px 12px; border-radius:var(--radius-pill); font-size:12px; font-weight:500; border:1.5px solid var(--border); color:var(--text-3); background:none; cursor:pointer; transition:all .12s; }
 .schedule-type-btn.active,.schedule-type-btn:hover { border-color:var(--accent); color:var(--accent-2); background:var(--accent-bg); }
@@ -1968,7 +1824,6 @@ svg { flex-shrink: 0; }
 .schedule-field.visible { display:flex; }
 .schedule-field label { font-size:12px; color:var(--text-3); font-weight:500; }
 
-/* ── 40. CUSTOM COLOR INPUT ──────────────────────────────── */
 .hero-color-custom-row {
   display:flex; align-items:center; gap:8px;
   padding-top:10px; margin-top:2px; width:100%;
@@ -1976,16 +1831,9 @@ svg { flex-shrink: 0; }
 }
 .hero-color-custom-label { font-size:11px; color:var(--text-3); flex-shrink:0; letter-spacing:.03em; }
 
-/* ── 41. LOGOUT BUTTON ───────────────────────────────────── */
 .btn-logout { display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:var(--radius-xs); font-size:12.5px; font-weight:500; color:var(--error); border:1px solid rgba(251,73,52,.35); background:none; cursor:pointer; transition:all .12s; }
 .btn-logout:hover { background:var(--error-bg); border-color:var(--error); }
 
-/* ── 42. RESPONSIVE BREAKPOINTS ──────────────────────────── */
-
-/* md (768px) and narrow lg (≤ 900px):
-   - Hero collapses from 3-col to 2-col; quote column is hidden.
-   - At these widths the sidebar (224px) leaves ~544–676px for content;
-     three equal columns would be too narrow for readable weather + quote. */
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr 1fr;
@@ -1996,8 +1844,6 @@ svg { flex-shrink: 0; }
   .weather-widget { max-width: 100%; }
 }
 
-/* lg (1024px): restore 3-col if content area is wide enough.
-   With the 224px sidebar and some margin, ~800px content is fine for 3 cols. */
 @media (min-width: 901px) and (max-width: 1100px) {
   .hero {
     grid-template-columns: 1fr 1fr 1fr;
@@ -2006,7 +1852,6 @@ svg { flex-shrink: 0; }
   .weather-widget { max-width: 280px; }
 }
 
-/* Widgets row: stack vertically below 850px so notes and tasks don't crush */
 @media (max-width: 850px) {
   .widgets-row {
     grid-auto-flow: row;
@@ -2017,18 +1862,15 @@ svg { flex-shrink: 0; }
   .notes-list, .reminders-list { max-height: 160px; }
 }
 
-/* Topbar: hide theme label at narrow widths to prevent overflow */
 @media (max-width: 850px) {
   .topbar-theme-label { display: none; }
   .topbar-theme-btn { width: 34px; padding: 0; justify-content: center; }
 }
 
-/* Modal: full-width on narrow screens */
 @media (max-width: 520px) {
   .modal, .modal-lg { max-width: calc(100vw - 32px); }
 }
 
-/* ── 43. TYPOGRAPHY UTILITY CLASSES ──────────────────────── */
 .ty-display-xl { font-size: var(--ty-display-xl); font-weight: var(--fw-black); line-height: var(--lh-tight); letter-spacing: -0.03em; }
 .ty-display-lg { font-size: var(--ty-display-lg); font-weight: var(--fw-bold); line-height: var(--lh-tight); letter-spacing: -0.02em; }
 .ty-display-md { font-size: var(--ty-display-md); font-weight: var(--fw-bold); line-height: var(--lh-tight); letter-spacing: -0.01em; }
@@ -2046,11 +1888,9 @@ svg { flex-shrink: 0; }
 .ty-mono       { font-family: var(--font-mono); }
 .ty-serif      { font-family: var(--font-serif); font-style: italic; }
 
-/* ── 44. SVG CHART CONTAINERS ────────────────────────────── */
 .chart-container { width: 100%; position: relative; }
 .chart-svg { width: 100%; display: block; overflow: visible; }
 
-/* Line / area chart */
 .chart-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .chart-area { opacity: 0.18; }
 .chart-dot  { r: 4; transition: r .15s; cursor: pointer; }
@@ -2059,26 +1899,21 @@ svg { flex-shrink: 0; }
 .chart-axis { stroke: var(--border-2); stroke-width: 1; }
 .chart-tick { font-family: var(--font); font-size: 10px; fill: var(--text-3); }
 
-/* Bar chart */
 .chart-bar { rx: 3; transition: opacity .15s; cursor: pointer; }
 .chart-bar:hover { opacity: .8; }
 
-/* Donut chart */
 .donut-track { fill: none; stroke: var(--surface-2); stroke-width: 18; }
 .donut-segment { fill: none; stroke-width: 18; stroke-linecap: round; transition: stroke-width .15s; cursor: pointer; }
 .donut-segment:hover { stroke-width: 22; }
 .donut-center-val { font-family: var(--font); font-weight: var(--fw-black); font-size: 20px; fill: var(--text); dominant-baseline: middle; text-anchor: middle; }
 .donut-center-lbl { font-family: var(--font); font-weight: var(--fw-medium); font-size: 10px; fill: var(--text-3); dominant-baseline: middle; text-anchor: middle; }
 
-/* Chart legend */
 .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; }
 .chart-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
 .chart-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* Tooltip */
 .chart-tooltip-line { stroke: var(--border-2); stroke-width: 1; stroke-dasharray: 3 3; pointer-events: none; }
 
-/* ── 45. ENHANCED SYNC INDICATOR ────────────────────────── */
 @keyframes syncPulse {
   0%,100% { opacity: 1; transform: scale(1); }
   50%      { opacity: .5; transform: scale(.8); }
@@ -2088,7 +1923,6 @@ svg { flex-shrink: 0; }
 @keyframes syncSpinSmooth { to { transform: rotate(360deg); } }
 #syncIconSpin { animation: syncSpinSmooth 1s linear infinite; transform-origin: center; }
 
-/* Sync dot larger pulse ring */
 .sb-ftr-dot { position: relative; }
 .sb-ftr-dot.syncing::after {
   content: ''; position: absolute; inset: -3px; border-radius: 50%;
@@ -2096,7 +1930,6 @@ svg { flex-shrink: 0; }
   animation: syncPulse 1.2s ease-in-out infinite;
 }
 
-/* ── 46. INSIGHTS CHARTS ROW ─────────────────────────────── */
 .insights-charts-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2125,11 +1958,9 @@ svg { flex-shrink: 0; }
 .insights-chart-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); }
 .insights-chart-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent-bg); color: var(--accent-2); }
 
-/* ── 47. SIDEBAR QUICK ACCESS ITEM ENHANCEMENTS ──────────── */
 .sb-item.sb-pinned { color: var(--accent-2); }
 .sb-item.sb-pinned::before { background: var(--accent-2) !important; }
 
-/* KPI card accent bar */
 .insights-kpi { position: relative; overflow: hidden; }
 .insights-kpi::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0;
@@ -2138,11 +1969,9 @@ svg { flex-shrink: 0; }
 }
 .insights-kpi:hover::before { opacity: 1; }
 
-/* ── 48. VIEW HEADERS — Consistent typography ─────────────── */
 .view-header h1 { font-size: var(--ty-heading-xl); font-weight: var(--fw-bold); color: var(--text); letter-spacing: -0.02em; line-height: var(--lh-tight); }
 .view-header .view-header-sub { font-size: var(--ty-body-sm); color: var(--text-3); margin-top: 2px; }
 
-/* ── 49. ENHANCED FOCUS STATES ───────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -2157,8 +1986,6 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* ── 50. SCROLLBAR REFINEMENT ─────────────────────────────── */
-/* ── 51. SKELETON LOADING STATES ─────────────────────────── */
 @keyframes skeletonShimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -2179,7 +2006,6 @@ select:focus-visible {
 .skeleton-title { height: 18px; width: 40%; }
 .skeleton-block { height: 80px; width: 100%; }
 
-/* ── 52. REDUCED MOTION ──────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -2194,7 +2020,6 @@ select:focus-visible {
 ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: var(--radius-pill); }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
-/* ── Timer mode badge + break + stats ─────────────────────────────────── */
 .timer-break-btn { background: var(--surface-3); color: var(--text-2); font-size: 14px; padding: 4px 8px; }
 .timer-break-btn:hover { background: var(--surface-2); }
 .timer-break-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-2); }
@@ -2203,20 +2028,17 @@ select:focus-visible {
 .timer-stat { font-size: 11px; color: var(--text-3); }
 .timer-stat-sep { font-size: 11px; color: var(--border-2); }
 
-/* ── Sync manual push/pull + timestamp ─────────────────────────────────── */
 .sb-sync-manual { display: flex; gap: 6px; }
 .sb-sync-push-btn { background: var(--accent); color: #fff; border: none; display: flex; align-items: center; gap: 5px; }
 .sb-sync-pull-btn { display: flex; align-items: center; gap: 5px; }
 .sb-sync-ts { font-size: 10px; color: var(--text-3); margin-top: 4px; display: block; }
 
-/* ── Note markdown preview & toggle ───────────────────────────────────── */
 .note-md-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .note-md-toolbar #noteTitle { flex: 1; }
 .note-md-toggle { background: var(--surface-3); color: var(--text-2); border: 1px solid var(--border-2); border-radius: var(--radius-xs); font-size: 11.5px; font-weight: 600; padding: 4px 10px; cursor: pointer; transition: all .12s; }
 .note-md-toggle:hover, .note-md-toggle.active { background: var(--accent-bg); color: var(--accent-2); border-color: var(--accent); }
 .note-md-preview { background: var(--surface-3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13.5px; line-height: 1.7; color: var(--text); min-height: 120px; max-height: 260px; overflow-y: auto; word-break: break-word; }
 
-/* ── Markdown renderer output ─────────────────────────────────────────── */
 .md-h1 { font-size: 20px; font-weight: 800; color: var(--text); margin: 8px 0 4px; }
 .md-h2 { font-size: 16px; font-weight: 700; color: var(--text); margin: 7px 0 3px; }
 .md-h3 { font-size: 14px; font-weight: 700; color: var(--text); margin: 6px 0 3px; }
@@ -2228,7 +2050,6 @@ select:focus-visible {
 .md-bq { border-left: 3px solid var(--accent); margin: 6px 0; padding: 4px 10px; color: var(--text-2); font-style: italic; }
 .md-hr { border: none; border-top: 1px solid var(--border-2); margin: 10px 0; }
 
-/* ── AI streaming + conversation history ─────────────────────────────── */
 .cmd-ai-history-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-bg); border: 1px solid var(--accent); border-radius: 99px; font-size: 10.5px; font-weight: 600; color: var(--accent-2); padding: 2px 9px; margin-bottom: 6px; cursor: default; }
 .cmd-ai-clear-btn { background: none; border: none; color: var(--text-3); font-size: 11px; cursor: pointer; text-decoration: underline; margin-left: 4px; }
 .cmd-ai-clear-btn:hover { color: var(--text); }
@@ -2240,7 +2061,6 @@ select:focus-visible {
 .cmd-ai-cursor::after { content: '▋'; animation: blink .7s step-end infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* ── Analytics focus/productivity ─────────────────────────────────────── */
 .prod-chart { display: block; width: 100%; }
 .focus-stat-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
 .focus-stat-row:last-child { border-bottom: none; }
