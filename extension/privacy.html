@@ -105,7 +105,7 @@
 <body>
 
   <h1>Privacy Policy for Nestpane</h1>
-  <p class="updated">Last updated: August 14, 2026 &nbsp;·&nbsp; See also: <a href="terms.html">Terms of Service</a></p>
+  <p class="updated">Last updated: August 25, 2026 &nbsp;·&nbsp; See also: <a href="terms.html">Terms of Service</a></p>
 
   <p>
     Nestpane ("the extension", "we", "our") is a Chrome extension that replaces the new tab
@@ -132,7 +132,7 @@
   <p>Nestpane stores the following in Chrome's <code>storage.local</code>, which is sandboxed to this extension and
     never transmitted anywhere by Nestpane itself unless described in §4–§5 below:</p>
   <ul>
-    <li>Workspaces, bookmarks, notes, and tasks you create or import</li>
+    <li>Bookmarks, notes, and tasks you create or import</li>
     <li>Journal entries, mood logs, and habit-tracker history</li>
     <li>Kanban boards, reading queue, and saved tab sessions</li>
     <li>Calendar events, focus-mode settings, and blocked-site lists</li>
@@ -181,8 +181,9 @@
     </tr>
     <tr>
       <td><code>identity</code></td>
-      <td>Sign in with Google via Chrome's built-in account picker (<code>chrome.identity.getAuthToken</code>), for
-        optional Drive sync. Requested only when you click "Sign in with Google," not at install.</td>
+      <td>Sign in with Google for optional Drive sync — Chrome's built-in account picker in Chrome itself, or the
+        standard <code>launchWebAuthFlow</code> sign-in page in other Chromium browsers. Requested only when you
+        click "Sign in with Google," not at install.</td>
       <td>Yes — to Google's own OAuth servers, see §4</td>
     </tr>
     <tr>
@@ -214,10 +215,13 @@
 
   <h2>4. Google Account Sign-In and Drive Sync (optional)</h2>
   <p>
-    If you choose to sign in with Google, Nestpane uses <code>chrome.identity.getAuthToken()</code> — Chrome's
-    built-in Google sign-in for extensions — to obtain an access token for the following scopes. This flow uses
-    no client secret; the access token is cached and refreshed by Chrome itself, not stored by Nestpane. This
-    requires actual Google Chrome — it does not work in Brave, Edge, Vivaldi, or other Chromium-based browsers.
+    If you choose to sign in with Google, Nestpane obtains an access token for the following scopes. In Google
+    Chrome, this uses <code>chrome.identity.getAuthToken()</code> — Chrome's built-in Google sign-in for
+    extensions, which caches and refreshes the token itself; Nestpane never stores it. In other Chromium-based
+    browsers (Brave, Vivaldi, Opera, Arc, Edge), where that Chrome-only mechanism isn't available, Nestpane falls
+    back to the standard <code>chrome.identity.launchWebAuthFlow()</code> extensions API instead — the token is
+    kept in memory only for that browser session and is never written to disk. Neither path involves a client
+    secret.
   </p>
   <ul>
     <li><code>userinfo.email</code> and <code>userinfo.profile</code> — to show your name/email in the sidebar</li>
@@ -257,7 +261,7 @@
     <li><strong>Daily briefing:</strong> a short summary of the current weather and the titles of your pending tasks for
       today</li>
     <li><strong>Smart Organize:</strong> the titles and URLs of your currently open tabs, plus the names of your
-      existing workspaces</li>
+      existing bookmark folders</li>
   </ul>
   <p>
     This data is sent only to Anthropic, governed by

@@ -63,7 +63,7 @@
         <a href="terms.html" class="hover:text-white transition-colors">Terms</a>
       </div>
       <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
-        class="hidden md:inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-200 transition-colors">Add
+        class="hidden md:inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition-colors">Add
         to Chrome</a>
     </div>
   </nav>
@@ -75,12 +75,12 @@
       <!-- Header -->
       <div class="mb-12 border-b border-white/10 pb-8">
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Privacy Policy</h1>
-        <p class="text-gray-500">Last updated: August 22, 2026</p>
+        <p class="text-gray-500">Last updated: August 25, 2026</p>
         <p class="text-gray-400 mt-4 text-lg">
           At Nestpane, accessible from <a href="https://nestpane.kneeraazon.com"
             class="text-[#FF6B00] hover:underline">https://nestpane.kneeraazon.com</a> and via the Nestpane Chrome
-          Extension, we prioritize your privacy. This Privacy Policy details what data we interact with and, more
-          importantly, what we don't collect.
+          Extension, we prioritize your privacy. This Privacy Policy details exactly what data the extension accesses,
+          how it's handled, where it's stored, and who (if anyone) it's shared with — permission by permission.
         </p>
       </div>
 
@@ -89,61 +89,124 @@
         <!-- Section 1 -->
         <div>
           <h2 class="text-2xl font-bold text-white mb-3">1. Information We Store Locally</h2>
-          <p>Nestpane is designed to be a strictly local experience. When you use our extension, the following data is
-            saved <strong>only on your device</strong> using Chrome's Local Storage API:</p>
+          <p>Nestpane is designed to be a strictly local-first experience. The following data is saved
+            <strong>only on your device</strong>, in Chrome's <code>storage.local</code>, and is never transmitted to
+            any server we control unless you explicitly enable Google Drive backup (see Section 3):</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
-            <li><strong>Widget Preferences:</strong> Your layout choices, selected widgets, and color themes.</li>
-            <li><strong>To-Do Lists & Notes:</strong> Any text you input into the productivity widgets.</li>
-            <li><strong>Quick Links:</strong> URLs and names for your custom bookmark shortcuts.</li>
-            <li><strong>Location Coordinates:</strong> If you opt-in to the weather widget, your approximate location
-              coordinates are saved locally to prevent repeated permission prompts.</li>
+            <li><strong>Bookmarks & Quick Access:</strong> folders, imported Chrome bookmarks, and pinned shortcut URLs/names you add.</li>
+            <li><strong>Notes & Nestodo:</strong> note text and tags, and Kanban task cards with their titles, descriptions, and due dates/reminders.</li>
+            <li><strong>Reminders, Habits, Journal & Calendar:</strong> standalone reminders, daily habit streaks, journal entries with mood tags, and local calendar events you create.</li>
+            <li><strong>Reading Queue & Tab Sessions:</strong> saved URLs to read later, and saved groups of open tabs.</li>
+            <li><strong>Sidebar & settings:</strong> your sidebar groups/links, theme, accent color, wallpaper choice, widget layout, and keyboard shortcut preferences.</li>
+            <li><strong>Location coordinates (optional):</strong> if you opt into the Weather widget, an approximate location is cached locally to avoid repeated permission prompts.</li>
+            <li><strong>Anthropic API key (optional):</strong> if you enable AI features, your own API key is stored locally under a separate, non-synced key — see Section 6.</li>
           </ul>
-          <p class="mt-4">This data never leaves your browser, is never transmitted to our servers, and is deleted
-            completely if you uninstall the extension.</p>
+          <p class="mt-4">All of this is deleted completely if you uninstall the extension, and none of it is sent to us.</p>
         </div>
 
         <!-- Section 2 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">2. Permissions Requested</h2>
-          <p>To function properly, Nestpane requires certain browser permissions. We are transparent about why we need
-            them:</p>
+          <h2 class="text-2xl font-bold text-white mb-3">2. Google Sign-In (Optional)</h2>
+          <p>Signing in with Google is entirely optional. If you choose to sign in, Nestpane requests these scopes:</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
-            <li><strong>Storage:</strong> Used to save your local preferences, widgets, and settings.</li>
-            <li><strong>Geolocation (Optional):</strong> Used solely by the Weather Widget to fetch local weather data.
-              This is strictly opt-in.</li>
+            <li><strong>userinfo.email / userinfo.profile:</strong> your email address, name, and profile picture, used only to display your identity in the sidebar.</li>
+            <li><strong>drive.appdata:</strong> see Section 3.</li>
           </ul>
+          <p class="mt-4">
+            In Google Chrome, sign-in uses <code>chrome.identity.getAuthToken()</code> — Chrome's own built-in Google
+            sign-in, which caches and refreshes the access token itself; Nestpane never stores it. In other
+            Chromium-based browsers (Brave, Vivaldi, Opera, Arc, Edge), where that Chrome-only mechanism isn't
+            available, Nestpane falls back to the standard <code>chrome.identity.launchWebAuthFlow()</code> API —
+            the resulting token is cached in memory only, for the length of your session, and is never written to
+            disk or sent anywhere except Google's own APIs. Neither path involves a client secret or a server of
+            ours in the middle.
+          </p>
+          <p class="mt-4">Your email, name, and profile picture are cached locally so they can be shown without
+            re-fetching on every load, and are cleared when you sign out.</p>
         </div>
 
         <!-- Section 3 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">3. Data We Do NOT Collect</h2>
-          <p>We are proud to be a zero-data-collection extension. We do <strong>not</strong> collect or process:</p>
-          <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
-            <li>Your browsing history, search queries, or tabs.</li>
-            <li>Personal identification information (PII) like names, emails, or IP addresses.</li>
-            <li>Telemetry, usage analytics, or crash reports.</li>
-            <li>Financial information.</li>
-          </ul>
+          <h2 class="text-2xl font-bold text-white mb-3">3. Google Drive Backup (Optional)</h2>
+          <p>If you sign in and enable sync, Nestpane can back up your bookmarks, notes, tasks, and other locally-stored
+            data (Section 1) to a single file inside a private, hidden <strong>app-data folder</strong> in your own
+            Google Drive — a folder that only Nestpane can see and access, not your other Drive files, and not
+            visible in Drive's normal UI. This uses the <code>drive.appdata</code> scope, which is intentionally
+            restrictive: it cannot list, read, or modify anything else in your Drive.</p>
+          <p class="mt-4"><strong>Optional end-to-end encryption:</strong> if you set a passphrase, your backup is
+            encrypted on-device with AES-GCM (key derived via PBKDF2, 600,000 iterations, 12+ character passphrase
+            required) before it's uploaded. The passphrase itself is stored only in your browser's local storage and
+            is never transmitted anywhere — if you lose it, or clear your browser data, the backup cannot be
+            recovered, including by us.</p>
+          <p class="mt-4">Turning off sync, or signing out, stops any further backup activity; it does not delete a
+            backup already sitting in your Drive app-data folder (you can remove it yourself via Google's own
+            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-[#FF6B00] hover:underline">third-party app permissions</a> page, which also fully revokes Nestpane's access).</p>
         </div>
 
         <!-- Section 4 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">4. Third-Party Services</h2>
-          <p>Nestpane interacts with limited third-party services to provide specific widgets. These services have their
-            own privacy policies:</p>
+          <h2 class="text-2xl font-bold text-white mb-3">4. Browser Permissions We Request</h2>
+          <p>Nestpane requests the following Chrome permissions. Every one is used only to power a specific feature,
+            entirely on-device — none of it is transmitted to a server we control:</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
-            <li><strong>Weather API Providers:</strong> If you use the weather widget, your approximate location is sent
-              directly to the weather provider to retrieve data.</li>
-            <li><strong>Search Engines:</strong> When you use the search bar, your query is sent directly to your
-              selected search engine (e.g., Google, DuckDuckGo).</li>
+            <li><strong>tabs:</strong> Tab Sessions (save/restore groups of open tabs), Smart Organize (sort your open tabs into bookmark folders), and the command palette's open-tabs search.</li>
+            <li><strong>bookmarks:</strong> read and write your Chrome bookmarks for the Bookmarks view.</li>
+            <li><strong>history:</strong> the History viewer, Analytics/Insights, and command-palette search.</li>
+            <li><strong>downloads:</strong> the Downloads viewer.</li>
+            <li><strong>storage:</strong> persisting all the local data described in Section 1.</li>
+            <li><strong>topSites:</strong> the Analytics/Insights "top visited sites" card.</li>
+            <li><strong>declarativeNetRequest:</strong> Focus Mode's optional site-blocking, evaluated entirely on-device by Chrome — Nestpane never sees the sites you visit through this.</li>
+            <li><strong>search:</strong> sends a query you type in the command bar to your own default search engine.</li>
+            <li><strong>identity / identity.email (optional):</strong> Google sign-in — see Section 2.</li>
+            <li><strong>geolocation (optional):</strong> auto-detects your city for the Weather widget.</li>
+            <li><strong>notifications (optional):</strong> desktop notifications when a Focus session ends or a habit is untracked for the day.</li>
           </ul>
-          <p class="mt-4">We do not act as a middleman for these requests; your browser communicates directly with these
-            services.</p>
+          <p class="mt-4">History, bookmarks, downloads, tabs, and top-sites data are read directly from Chrome's own
+            APIs to render inside the extension — they are never sent to us or any third party, and never leave your
+            device except where explicitly described elsewhere in this policy (Google sign-in/Drive, AI features).</p>
         </div>
 
         <!-- Section 5 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">5. Children's Information</h2>
+          <h2 class="text-2xl font-bold text-white mb-3">5. Data We Do NOT Collect</h2>
+          <p>Nestpane runs no backend server of its own. We do <strong>not</strong> collect, log, or have access to:</p>
+          <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
+            <li>Any of your data on a server we operate — everything in Section 1 stays on your device (or, only if you opt in, in your own Google Drive — Section 3).</li>
+            <li>Telemetry, usage analytics, or crash reports.</li>
+            <li>Advertising identifiers or any data used for ad targeting.</li>
+            <li>Financial or payment information.</li>
+          </ul>
+        </div>
+
+        <!-- Section 6 -->
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-3">6. AI Features (Optional)</h2>
+          <p>Nestpane's AI features — the command palette's "Ask AI," Smart Organize, and the daily briefing — are
+            entirely optional and disabled until you add your own Anthropic API key in Settings. When you use them,
+            the relevant text (your query, or your open tabs' titles/URLs for Smart Organize) is sent directly from
+            your browser to Anthropic's API (<code>api.anthropic.com</code>) using your key. We do not see, log, or
+            relay this data — it goes directly from your device to Anthropic, governed by
+            <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-[#FF6B00] hover:underline">Anthropic's privacy policy</a>.
+            Your API key is stored only in your browser's local storage, excluded from Drive backups, and never
+            transmitted anywhere except to Anthropic with each AI request you make.</p>
+        </div>
+
+        <!-- Section 7 -->
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-3">7. Other Third-Party Services</h2>
+          <p>A few features talk directly to third-party services, not through any server of ours:</p>
+          <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
+            <li><strong>Weather:</strong> if enabled, your approximate location (or manually-entered city) is sent to <code>wttr.in</code> to fetch forecast data; <code>ipwho.is</code> and <code>nominatim.openstreetmap.org</code> may be used for IP-based or manual city geocoding.</li>
+            <li><strong>Search Engines:</strong> a query typed in the command bar is sent directly to your browser's default search engine.</li>
+            <li><strong>Wallpaper:</strong> the "random photo" wallpaper option fetches an image from <code>picsum.photos</code>.</li>
+            <li><strong>Google Fonts:</strong> typefaces are loaded from <code>fonts.googleapis.com</code>/<code>fonts.gstatic.com</code>.</li>
+          </ul>
+          <p class="mt-4">Your browser communicates with these services directly; we are not a party to those requests and do not control their own data practices.</p>
+        </div>
+
+        <!-- Section 8 -->
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-3">8. Children's Information</h2>
           <p>Nestpane does not knowingly collect any data from anyone, including children under the age of 13. As we do
             not collect data at all, we do not require parental consent. If you believe your child has provided
             information to us through the extension (e.g., typing a name into a to-do list), rest assured it is stored
@@ -152,20 +215,19 @@
 
         <!-- Section 6 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">6. Your Data Protection Rights (GDPR/CCPA)</h2>
+          <h2 class="text-2xl font-bold text-white mb-3">9. Your Data Protection Rights (GDPR/CCPA)</h2>
           <p>Because Nestpane does not collect or store your data on our servers, there is no data for us to delete or
-            export on your behalf. You have complete control over your data. To exercise your right to deletion or
-            modification:</p>
+            export on your behalf. You have complete control over your data:</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
-            <li><strong>To Delete:</strong> Simply uninstall the Nestpane extension, or use the "Reset to Default"
-              button inside the extension's settings.</li>
-            <li><strong>To Export:</strong> You can manually copy your to-do lists and bookmarks from the UI.</li>
+            <li><strong>Local data:</strong> uninstall the Nestpane extension, or use "Clear All Data" inside the extension's settings, to remove everything described in Section 1.</li>
+            <li><strong>Google Drive backup (if used):</strong> visit Google's <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-[#FF6B00] hover:underline">third-party app permissions</a> page to revoke Nestpane's access, and delete the backup file directly from your Drive's app-data storage if you want it removed.</li>
+            <li><strong>To Export:</strong> use the extension's built-in export feature (Settings → Data Management) to download your data as a file, or copy individual items from the UI.</li>
           </ul>
         </div>
 
         <!-- Section 7 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">7. Changes to This Privacy Policy</h2>
+          <h2 class="text-2xl font-bold text-white mb-3">10. Changes to This Privacy Policy</h2>
           <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new
             Privacy Policy on this page and updating the "Last updated" date at the top. You are advised to review this
             Privacy Policy periodically for any changes.</p>
@@ -173,7 +235,7 @@
 
         <!-- Section 8 -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-3">8. Contact Us</h2>
+          <h2 class="text-2xl font-bold text-white mb-3">11. Contact Us</h2>
           <p>If you have any questions or concerns about this Privacy Policy or the extension's data handling, please
             contact us at:</p>
           <div class="mt-4 bg-white/5 p-6 rounded-xl border border-white/10">
