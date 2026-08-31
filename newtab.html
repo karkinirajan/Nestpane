@@ -132,94 +132,11 @@
     </div>
   </header>
 
-  <input type="file" id="heroBgUploadInput" accept="image/*" style="display:none">
-
   <div class="content-wrapper" id="mainContent" tabindex="-1">
 
     <div id="view-home" class="view active">
 
-      <section class="hero" id="heroSection">
-
-        <div class="hero-bg-img" id="heroBgImg"></div>
-        <div class="hero-overlay"></div>
-
-        <div class="hero-wp-controls" id="heroWpControls">
-          <button class="hero-wp-btn" id="refreshWallpaperBtn" title="New photo wallpaper">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-          </button>
-          <button class="hero-wp-btn" id="uploadWallpaperBtn" title="Upload image">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </button>
-          <button class="hero-wp-btn" id="heroBgColorBtn" title="Solid color">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-          </button>
-          <button class="hero-wp-btn hero-wp-btn-reset" id="resetWallpaperBtn" title="Reset to photo" style="display:none">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
-        </div>
-
-        <div class="hero-quote-col" id="heroQuoteCol">
-          <div class="hero-quote-mark">"</div>
-          <p class="hero-quote-text" id="heroQuoteText" spellcheck="false">Loading…</p>
-          <div class="hero-quote-author" id="heroQuoteAuthor" spellcheck="false">—</div>
-          <div class="hero-quote-actions">
-            <button class="hero-quote-btn" id="shuffleQuoteBtn" title="Random quote">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-              Shuffle
-            </button>
-            <button class="hero-quote-btn" id="editQuoteBtn" title="Write custom quote">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Edit
-            </button>
-            <button class="hero-quote-btn hero-quote-save-btn" id="saveQuoteBtn" title="Save" style="display:none">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
-              Save
-            </button>
-          </div>
-        </div>
-
-        <div class="hero-body">
-          <p class="greeting" id="greetingText">Good evening! 👋</p>
-          <div class="clock-row">
-            <span class="clock" id="clockDisplay">00:00</span>
-            <span class="clock-ampm" id="clockAmPm">AM</span>
-          </div>
-          <p class="date-line" id="dateDisplay">Loading…</p>
-        </div>
-
-        <div class="weather-widget" id="weatherWidget" tabindex="0">
-          <button type="button" class="weather-current" aria-label="Change weather location">
-            <span class="weather-icon" id="weatherIcon">⛅</span>
-            <div class="weather-body">
-              <span class="weather-temp" id="weatherTemp">--°C</span>
-              <span class="weather-desc" id="weatherDesc"></span>
-              <div class="weather-loc">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="9" height="9"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span id="weatherCity">Detecting…</span>
-              </div>
-            </div>
-          </button>
-          <div class="weather-divider"></div>
-          <div class="weather-forecast" id="weatherForecast">
-            <div class="weather-forecast-day"><span class="wf-day">—</span><span class="wf-icon">—</span><span class="wf-hi">—</span><span class="wf-lo">—</span></div>
-            <div class="weather-forecast-day"><span class="wf-day">—</span><span class="wf-icon">—</span><span class="wf-hi">—</span><span class="wf-lo">—</span></div>
-            <div class="weather-forecast-day"><span class="wf-day">—</span><span class="wf-icon">—</span><span class="wf-hi">—</span><span class="wf-lo">—</span></div>
-          </div>
-        </div>
-      </section>
-
       <div class="home-content">
-
-        <section class="section" id="wsBmSection" style="display:none">
-          <div class="section-title-row">
-            <h2 class="section-title">Bookmarks</h2>
-            <button class="edit-btn" id="addWsBmBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add
-            </button>
-          </div>
-          <div id="wsBmGrid"></div>
-        </section>
 
         <section class="section qa-todo-row">
 
@@ -259,6 +176,17 @@
             <div class="kd-todo-list" id="kanbanDashCols"></div>
           </div>
 
+        </section>
+
+        <section class="section" id="wsBmSection" style="display:none">
+          <div class="section-title-row">
+            <h2 class="section-title">Bookmarks</h2>
+            <button class="edit-btn" id="addWsBmBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
+          </div>
+          <div id="wsBmGrid"></div>
         </section>
 
         <section class="section ai-briefing-section" id="aiBriefingSection" style="display:none">
@@ -649,8 +577,8 @@
             <span class="theme-card-swatches"><span style="background:#1d2021"></span><span style="background:#282828"></span><span style="background:#fe8019"></span></span>
             <span>Dark</span>
           </button>
-          <button class="theme-card" data-theme="light" title="Gruvbox Light">
-            <span class="theme-card-swatches"><span style="background:#fbf1c7"></span><span style="background:#f9f5d7"></span><span style="background:#af3a03"></span></span>
+          <button class="theme-card" data-theme="light" title="Light">
+            <span class="theme-card-swatches"><span style="background:#fafafa"></span><span style="background:#f2f2f2"></span><span style="background:#af3a03"></span></span>
             <span>Light</span>
           </button>
         </div>
@@ -673,24 +601,6 @@
           <div class="color-swatch" data-color="#db2777" style="background:#db2777"></div>
           <input type="color" class="color-swatch accent-color-custom-input" id="accentColorCustomInput" value="#fe8019" title="Pick any color">
         </div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <div class="settings-section-title">Clock &amp; Date</div>
-      <div class="settings-row">
-        <div class="settings-label"><span>Clock Format</span></div>
-        <div class="toggle-group">
-          <button class="toggle-opt active" data-format="12" id="clock12Btn">12h</button>
-          <button class="toggle-opt" data-format="24" id="clock24Btn">24h</button>
-        </div>
-      </div>
-      <div class="settings-row">
-        <div class="settings-label"><span>Show Seconds</span></div>
-        <label class="switch">
-          <input type="checkbox" id="showSecondsToggle">
-          <span class="slider"></span>
-        </label>
       </div>
     </div>
 
@@ -1058,25 +968,6 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="heroColorModal" role="dialog" aria-modal="true" aria-labelledby="heroColorModalTitle">
-  <div class="modal" style="max-width:320px">
-    <div class="modal-header">
-      <h3 id="heroColorModalTitle">Solid Color Background</h3>
-      <button class="modal-close" data-modal="heroColorModal" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="hero-color-palette" id="heroColorPalette">
-        <div class="hero-color-custom-row">
-          <span class="hero-color-custom-label">Custom</span>
-          <input type="color" class="hero-color-custom-input" id="heroColorCustomInput" value="#1d2021" title="Pick any color">
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -1110,38 +1001,6 @@
       <button class="btn-secondary" data-modal="sbPromptModal" style="margin-right:auto">Cancel</button>
       <button class="btn-danger" id="sbPromptDeleteBtn" style="display:none">Delete</button>
       <button class="btn-primary" id="sbPromptSaveBtn">Save</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="weatherLocationModal" role="dialog" aria-modal="true" aria-labelledby="weatherLocationTitle">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-header">
-      <h3 id="weatherLocationTitle">Set Weather Location</h3>
-      <button class="modal-close" data-modal="weatherLocationModal" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <label for="weatherLocationInput">City Name</label>
-      <div style="display:flex;gap:7px">
-        <input type="text" id="weatherLocationInput" placeholder="e.g. Dhaka, London, New York…" class="modal-input" style="flex:1" autocomplete="off">
-        <button class="btn-primary" id="detectLocationBtn" data-tip="Detect my location" style="flex-shrink:0;padding:8px 12px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg>
-        </button>
-      </div>
-      <div style="font-size:11.5px;color:var(--text-2)">Use the GPS button to auto-detect.</div>
-      <div id="weatherLocationStatus" style="font-size:12px;color:var(--accent-2);min-height:16px;margin-top:4px"></div>
-    </div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn-secondary" id="reDetectWeatherBtn" style="font-size:12px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-        Re-detect
-      </button>
-      <div style="display:flex;gap:8px">
-        <button class="btn-secondary" data-modal="weatherLocationModal">Cancel</button>
-        <button class="btn-primary" id="saveWeatherLocationBtn">Set Location</button>
-      </div>
     </div>
   </div>
 </div>
