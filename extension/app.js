@@ -618,68 +618,6 @@ const DEFAULT_KANBAN = {
     { id: 2006, title: "Document design system color tokens in Notion", desc: "", createdAt: 2006, remindAt: null, notified: false }
   ]
 };
-const HERO_QUOTES = [
-  { quote: "The best way to predict the future is to create it.", author: "Peter Drucker" },
-  { quote: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
-  { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
-  { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-  { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
-  { quote: "Well done is better than well said.", author: "Benjamin Franklin" },
-  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
-  { quote: "Quality is not an act, it is a habit.", author: "Aristotle" },
-  { quote: "What you get by achieving your goals is not as important as what you become by achieving your goals.", author: "Zig Ziglar" },
-  { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
-  { quote: "Do not wait to strike till the iron is hot, but make it hot by striking.", author: "William Butler Yeats" },
-  { quote: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
-  { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
-  { quote: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
-  { quote: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
-  { quote: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
-  { quote: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
-  { quote: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
-  { quote: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-  { quote: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
-  { quote: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
-  { quote: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
-  { quote: "Opportunities don't happen, you create them.", author: "Chris Grosser" },
-  { quote: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
-  { quote: "I find that the harder I work, the more luck I seem to have.", author: "Thomas Jefferson" },
-  { quote: "Success is walking from failure to failure with no loss of enthusiasm.", author: "Winston Churchill" },
-  { quote: "The harder the conflict, the more glorious the triumph.", author: "Thomas Paine" },
-  { quote: "Life is 10% what happens to us and 90% how we react to it.", author: "Charles R. Swindoll" },
-  { quote: "The only place where success comes before work is in the dictionary.", author: "Vidal Sassoon" },
-  { quote: "Try not to become a person of success, but rather try to become a person of value.", author: "Albert Einstein" },
-  { quote: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
-  { quote: "It is never too late to be what you might have been.", author: "George Eliot" },
-  { quote: "Setting goals is the first step in turning the invisible into the visible.", author: "Tony Robbins" },
-  { quote: "Winners never quit, and quitters never win.", author: "Vince Lombardi" },
-  { quote: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Rohn" },
-  { quote: "The mind is everything. What you think you become.", author: "Buddha" },
-  { quote: "The best revenge is massive success.", author: "Frank Sinatra" },
-  { quote: "I am not a product of my circumstances. I am a product of my decisions.", author: "Stephen Covey" },
-  { quote: "Either you run the day, or the day runs you.", author: "Jim Rohn" },
-  { quote: "The two most important days in your life are the day you are born and the day you find out why.", author: "Mark Twain" },
-  { quote: "Whatever the mind can conceive and believe, it can achieve.", author: "Napoleon Hill" },
-  { quote: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein" },
-  { quote: "Two roads diverged in a wood, and I\u2014I took the one less traveled by, and that has made all the difference.", author: "Robert Frost" },
-  { quote: "I attribute my success to this: I never gave or took any excuse.", author: "Florence Nightingale" },
-  { quote: "You can't use up creativity. The more you use, the more you have.", author: "Maya Angelou" },
-  { quote: "Dream big and dare to fail.", author: "Norman Vaughan" },
-  { quote: "Our lives begin to end the day we become silent about things that matter.", author: "Martin Luther King Jr." },
-  { quote: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
-  { quote: "If you want to lift yourself up, lift up someone else.", author: "Booker T. Washington" },
-  { quote: "Act as if what you do makes a difference. It does.", author: "William James" },
-  { quote: "Success is not how high you have climbed, but how you make a positive difference to the world.", author: "Roy T. Bennett" },
-  { quote: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson" },
-  { quote: "Go confidently in the direction of your dreams. Live the life you have imagined.", author: "Henry David Thoreau" },
-  { quote: "When I let go of what I am, I become what I might be.", author: "Lao Tzu" },
-  { quote: "Happiness is not something ready-made. It comes from your own actions.", author: "Dalai Lama" },
-  { quote: "If you look at what you have in life, you'll always have more.", author: "Oprah Winfrey" },
-  { quote: "Change your thoughts and you change your world.", author: "Norman Vincent Peale" },
-  { quote: "Nothing is impossible. The word itself says 'I'm possible!'", author: "Audrey Hepburn" },
-  { quote: "There is only one way to avoid criticism: do nothing, say nothing, and be nothing.", author: "Aristotle" },
-  { quote: "You must be the change you wish to see in the world.", author: "Mahatma Gandhi" }
-];
 let S = {
   user: {
     name: "",
@@ -697,8 +635,6 @@ let S = {
   settings: {
     theme: "dark",
     accentColor: "#fe8019",
-    clockFormat: "12",
-    showSeconds: true,
     cardGlow: "glow",
     widgets: {
       notes: false,
@@ -709,9 +645,7 @@ let S = {
     },
     sidebarCollapsed: false,
     sidebar: null,
-    heroBg: null,
     qaMode: "icon",
-    heroQuote: null,
     e2e: { enabled: false },
     focus: { enabled: false, blockedSites: [] },
     ai: { enabled: false },
@@ -787,7 +721,6 @@ let S = {
   bmFolderFilter: null,
   bmSort: "az",
   googleUser: null,
-  weatherLocation: null,
   habits: [],
   readingQueue: [],
   tabSessions: [],
@@ -814,11 +747,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   migrateRemoveWorkspacesSidebarGroup();
   renderSidebar();
   migrateSyncSbLinksToQA();
-  initClock();
-  updateGreeting();
-  autoDetectWeather();
-  loadHeroBg();
-  loadHeroQuote();
   setupEventListeners();
   setupSearch();
   initTooltips();
@@ -1213,234 +1141,6 @@ function allWsFolderNames() {
     }
   });
   return explicit;
-}
-function initClock() {
-  updateClock();
-  setInterval(updateClock, 1e3);
-}
-function updateClock() {
-  const n = new Date();
-  let h = n.getHours(), m = n.getMinutes(), s = n.getSeconds();
-  let ampm = "";
-  if (S.settings.clockFormat === "12") {
-    ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12 || 12;
-  }
-  let str = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  if (S.settings.showSeconds) str += `:${String(s).padStart(2, "0")}`;
-  el("clockDisplay").textContent = str;
-  el("clockAmPm").textContent = ampm;
-  const days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-  ];
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
-  ];
-  el("dateDisplay").textContent = `${days[n.getDay()]}, ${months[n.getMonth()]} ${n.getDate()}, ${n.getFullYear()}`;
-}
-function updateGreeting() {
-  const h = (new Date()).getHours();
-  const g = h >= 5 && h < 12 ? "Good morning" : h >= 12 && h < 17 ? "Good afternoon" : h >= 17 && h < 21 ? "Good evening" : "Good night";
-  el("greetingText").textContent = S.user.name ? `${g}, ${S.user.name} \u{1F44B}` : `${g}! \u{1F44B}`;
-}
-async function fetchWeather(locationOverride) {
-  const loc = locationOverride !== void 0 ? locationOverride : S.weatherLocation;
-  const url = loc ? `https://wttr.in/${encodeURIComponent(loc)}?format=j1` : "https://wttr.in/?format=j1";
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(7e3) });
-    if (!r.ok) throw new Error("bad response");
-    const d = await r.json();
-    const c = d.current_condition[0];
-    const a = d.nearest_area[0];
-    const apiCity = a.areaName[0]?.value || "";
-    const country = a.country[0]?.value || "";
-    const isCoords = loc && /^-?\d+\.\d+,-?\d+\.\d+$/.test(loc);
-    const isManual = loc && !isCoords;
-    const cityName = isManual ? loc : apiCity || country || "Unknown";
-    el("weatherIcon").textContent = weatherEmoji(parseInt(c.weatherCode));
-    el("weatherTemp").textContent = c.temp_C + "\xB0C";
-    el("weatherCity").textContent = cityName;
-    el("weatherDesc").textContent = c.weatherDesc?.[0]?.value || "";
-    const forecastEl = el("weatherForecast");
-    if (forecastEl && d.weather && d.weather.length) {
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      forecastEl.innerHTML = d.weather.slice(0, 3).map((w) => {
-        const date = new Date(w.date + "T00:00:00");
-        const isToday = w.date === _dateKey(new Date());
-        const label = isToday ? "Today" : days[date.getDay()];
-        const code = parseInt(
-          w.hourly?.[4]?.weatherCode || w.hourly?.[0]?.weatherCode || "113"
-        );
-        const emoji = weatherEmoji(code);
-        return `<div class="weather-forecast-day">
-          <span class="wf-day">${escH(label)}</span>
-          <span class="wf-icon">${escH(emoji)}</span>
-          <span class="wf-hi">${escH(String(parseInt(w.maxtempC, 10) || 0))}\xB0</span>
-          <span class="wf-lo">${escH(String(parseInt(w.mintempC, 10) || 0))}\xB0</span>
-        </div>`;
-      }).join("");
-    }
-    return true;
-  } catch {
-    el("weatherCity").textContent = "Unavailable";
-    el("weatherDesc").textContent = "";
-    return false;
-  }
-}
-async function detectByIP() {
-  try {
-    const r = await fetch("https://ipwho.is/", {
-      signal: AbortSignal.timeout(5e3)
-    });
-    if (!r.ok) throw new Error("ipwho fail");
-    const d = await r.json();
-    const cityName = d.city || d.region || null;
-    if (cityName) {
-      const ok = await fetchWeather(cityName);
-      if (ok) {
-        S.weatherLocation = cityName;
-        save();
-        return true;
-      }
-    }
-  } catch {
-  }
-  await fetchWeather(void 0);
-  return false;
-}
-async function reversGeocode(lat, lon) {
-  try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`,
-      {
-        headers: { "Accept-Language": "en" },
-        signal: AbortSignal.timeout(5e3)
-      }
-    );
-    if (!r.ok) throw new Error();
-    const d = await r.json();
-    return d.address?.city || d.address?.town || d.address?.village || d.address?.county || null;
-  } catch {
-    return null;
-  }
-}
-async function autoDetectWeather() {
-  if (S.weatherLocation) {
-    fetchWeather(S.weatherLocation);
-    return;
-  }
-  el("weatherCity").textContent = "Detecting...";
-  el("weatherTemp").textContent = "--\xB0C";
-  el("weatherDesc").textContent = "";
-  const gotCity = await detectByIP();
-  if (gotCity || !navigator.geolocation) return;
-  if (IS_CHROME && chrome.permissions) {
-    const has = await chrome.permissions.contains({ permissions: ["geolocation"] }).catch(() => false);
-    if (!has) return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      const city = await reversGeocode(lat, lon);
-      if (city) {
-        const ok = await fetchWeather(city);
-        if (ok) {
-          S.weatherLocation = city;
-          save();
-        }
-      }
-    },
-    () => {
-    },
-    { timeout: 7e3, maximumAge: 6e5 }
-  );
-}
-async function reDetectWeather() {
-  S.weatherLocation = null;
-  save();
-  autoDetectWeather();
-}
-function openWeatherLocationModal() {
-  el("weatherLocationInput").value = S.weatherLocation || "";
-  el("weatherLocationStatus").textContent = "";
-  openModal("weatherLocationModal");
-}
-async function saveWeatherLocation() {
-  const city = el("weatherLocationInput").value.trim();
-  if (!city) {
-    showToast("Enter a city name", "error");
-    return;
-  }
-  el("weatherLocationStatus").textContent = "Checking...";
-  const ok = await fetchWeather(city);
-  if (ok) {
-    S.weatherLocation = city;
-    save();
-    closeModal("weatherLocationModal");
-    showToast(`Weather set to ${city}`, "success");
-  } else {
-    el("weatherLocationStatus").textContent = "\u26A0 City not found. Try a different name.";
-  }
-}
-async function detectWeatherLocation() {
-  const status = el("weatherLocationStatus");
-  status.textContent = "\u{1F4E1} Detecting your location...";
-  if (!navigator.geolocation) {
-    status.textContent = "\u26A0 Geolocation not supported by this browser.";
-    return;
-  }
-  const granted = await _ensurePermission(["geolocation"]);
-  if (!granted) {
-    status.textContent = "\u26A0 Location permission denied.";
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      const locStr = `${lat.toFixed(1)},${lon.toFixed(1)}`;
-      status.textContent = "\u{1F310} Fetching weather...";
-      const ok = await fetchWeather(locStr);
-      if (ok) {
-        S.weatherLocation = locStr;
-        save();
-        status.textContent = "\u2713 Location detected!";
-        setTimeout(() => closeModal("weatherLocationModal"), 700);
-        showToast("Location detected!", "success");
-      } else {
-        status.textContent = "\u26A0 Could not fetch weather for your location.";
-      }
-    },
-    (err) => {
-      status.textContent = err.code === 1 ? "\u26A0 Permission denied. Allow location access in Chrome settings." : "\u26A0 Could not determine location. Try entering a city manually.";
-    },
-    { timeout: 8e3 }
-  );
-}
-function weatherEmoji(c) {
-  if (c === 113) return "\u2600\uFE0F";
-  if (c === 116) return "\u26C5";
-  if (c === 119 || c === 122) return "\u2601\uFE0F";
-  if (c >= 386 && c <= 395) return "\u26C8\uFE0F";
-  if (c >= 323 && c <= 377) return "\u2744\uFE0F";
-  if (c >= 176 && c <= 321) return "\u{1F327}\uFE0F";
-  return "\u{1F324}\uFE0F";
 }
 const DRIVE_FILE_NAME = "nestpane-sync.json";
 const DRIVE_FILE_NAME_LEGACY = "llmaotab-sync.json";
@@ -2050,10 +1750,7 @@ function _refreshAfterCloudApply() {
   applyTheme(S.settings.theme || "dark");
   applyAccent(S.settings.accentColor || "#fe8019");
   renderAll();
-  updateGreeting();
   updateAvatarDisplay();
-  window._heroBgSessionCache = null;
-  loadHeroBg();
 }
 function _registerLiveStorageSync() {
   if (!IS_CHROME || !chrome.storage?.onChanged) return;
@@ -2293,7 +1990,6 @@ async function checkGoogleIdentity() {
     save();
   }
   updateAvatarDisplay();
-  updateGreeting();
   await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
 }
@@ -2384,7 +2080,6 @@ async function signIn() {
   applyGoogleProfile(profile);
   save();
   updateAvatarDisplay();
-  updateGreeting();
   await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
   showToast("Signed in & synced \u2601", "success");
@@ -2409,7 +2104,6 @@ async function signOut() {
   clearTimeout(Drive._syncTimer);
   save();
   updateAvatarDisplay();
-  updateGreeting();
   setSyncStatus("signed-out");
   renderCalendarWidget();
   closeModal("profileModal");
@@ -4648,72 +4342,6 @@ function addTask(text) {
   if (el("nestodoModal")?.classList.contains("open")) renderKanban();
   showToast("Added to Nestodo!", "success");
 }
-function loadHeroQuote() {
-  const custom = S.settings.heroQuote;
-  if (custom) {
-    _setHeroQuote(custom.quote, custom.author);
-    return;
-  }
-  const fb = HERO_QUOTES[Math.floor(Math.random() * HERO_QUOTES.length)];
-  _setHeroQuote(fb.quote, fb.author);
-}
-function _setHeroQuote(quote, author) {
-  const txt = el("heroQuoteText"), auth = el("heroQuoteAuthor");
-  if (txt) txt.textContent = quote;
-  if (auth) auth.textContent = "\u2014 " + (author || "");
-}
-function shuffleHeroQuote() {
-  S.settings.heroQuote = null;
-  save();
-  const fb = HERO_QUOTES[Math.floor(Math.random() * HERO_QUOTES.length)];
-  _setHeroQuote(fb.quote, fb.author);
-}
-function enterHeroQuoteEdit() {
-  const col = el("heroQuoteCol");
-  const txt = el("heroQuoteText");
-  const auth = el("heroQuoteAuthor");
-  const saveBtn = el("saveQuoteBtn");
-  const editBtn = el("editQuoteBtn");
-  if (!col) return;
-  col.classList.add("editing");
-  txt.contentEditable = "true";
-  auth.contentEditable = "true";
-  if (auth.textContent.startsWith("\u2014 "))
-    auth.textContent = auth.textContent.slice(2);
-  saveBtn.style.display = "flex";
-  editBtn.style.display = "none";
-  txt.focus();
-  const range = document.createRange();
-  range.selectNodeContents(txt);
-  range.collapse(false);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-function saveHeroQuoteEdit() {
-  const col = el("heroQuoteCol");
-  const txt = el("heroQuoteText");
-  const auth = el("heroQuoteAuthor");
-  const saveBtn = el("saveQuoteBtn");
-  const editBtn = el("editQuoteBtn");
-  const quote = txt.textContent.trim().slice(0, 240);
-  const author = auth.textContent.replace(/^—\s*/, "").trim().slice(0, 60);
-  col.classList.remove("editing");
-  txt.contentEditable = "false";
-  auth.contentEditable = "false";
-  saveBtn.style.display = "none";
-  editBtn.style.display = "flex";
-  if (quote) {
-    S.settings.heroQuote = { quote, author };
-    save();
-    auth.textContent = "\u2014 " + author;
-    showToast("Quote saved", "success");
-  } else {
-    S.settings.heroQuote = null;
-    save();
-    loadHeroQuote();
-  }
-}
 function _syncAiUI() {
   const section = el("aiBriefingSection");
   if (!section) return;
@@ -4746,15 +4374,10 @@ async function loadAiBriefing() {
   const kb = getKanban();
   const tasks = [...kb.todo || [], ...kb.doing || []];
   const taskList = tasks.slice(0, 5).map((t) => `- ${t.title}`).join("\n") || "(none)";
-  const weatherCity = el("weatherCity")?.textContent || "";
-  const weatherTemp = el("weatherTemp")?.textContent || "";
-  const weatherDesc = el("weatherDesc")?.textContent || "";
-  const weatherLine = weatherCity && !["Detecting\u2026", "Unavailable"].includes(weatherCity) ? `${weatherTemp}, ${weatherDesc} in ${weatherCity}` : "unavailable";
   const prompt = `Write a short, warm daily briefing (2-3 sentences max) for ${S.user?.name || "the user"}.
-Weather: ${weatherLine}
 Open tasks for today:
 ${taskList}
-Mention the weather naturally if available, nudge toward the most important pending task (if any), and end on a brief upbeat note. Plain text only, no markdown, no greeting like "Good morning".`;
+Nudge toward the most important pending task (if any), and end on a brief upbeat note. Plain text only, no markdown, no greeting like "Good morning".`;
   try {
     const text = await aiComplete(prompt, {
       system: "You are a concise, friendly assistant that writes short daily briefings for a personal dashboard. Keep it under 60 words, plain text, no markdown.",
@@ -4777,7 +4400,7 @@ function _renderAiBriefingSetup() {
   const body = el("aiBriefingBody");
   if (!body) return;
   body.innerHTML = `<div class="ai-briefing-setup">
-    <span>Add your Anthropic API key to enable AI-generated briefings. Once enabled, your task titles and local weather are sent to Anthropic automatically once per day to write this.</span>
+    <span>Add your Anthropic API key to enable AI-generated briefings. Once enabled, your task titles are sent to Anthropic automatically once per day to write this.</span>
     <button class="edit-btn" id="aiBriefingSetupBtn">Open Settings</button>
   </div>`;
   el("aiBriefingSetupBtn")?.addEventListener("click", openSettings);
@@ -5947,9 +5570,6 @@ async function openSettings() {
   el("aiToggle").checked = !!S.settings.ai?.enabled;
   el("aiApiKey").value = await _aiLoadApiKey();
   el("aiTestStatus").textContent = "";
-  el("clock12Btn").classList.toggle("active", S.settings.clockFormat === "12");
-  el("clock24Btn").classList.toggle("active", S.settings.clockFormat === "24");
-  el("showSecondsToggle").checked = !!S.settings.showSeconds;
   el("widgetNotesToggle").checked = S.settings.widgets.notes !== false;
   el("widgetTimerToggle").checked = S.settings.widgets.timer !== false;
   el("widgetCalendarToggle").checked = S.settings.widgets.calendar !== false;
@@ -5984,7 +5604,6 @@ async function saveSettings() {
   S.settings.widgets.calendar = el("widgetCalendarToggle").checked;
   S.settings.widgets.todo = el("widgetTodoToggle").checked;
   S.settings.widgets.reminders = el("widgetRemindersToggle").checked;
-  S.settings.showSeconds = el("showSecondsToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
   S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
   S.settings.e2e = S.settings.e2e || {};
@@ -6005,7 +5624,6 @@ async function saveSettings() {
   await _aiSaveApiKey(el("aiApiKey").value.trim());
   applyCardGlow(S.settings.cardGlow);
   updateAvatarDisplay();
-  updateGreeting();
   applyWidgetVisibility();
   _syncAiUI();
   save();
@@ -6945,7 +6563,6 @@ function setupEventListeners() {
     const renameItemBtn = e.target.closest("[data-sb-rename-item]");
     if (renameItemBtn) return renameSidebarItem(renameItemBtn.dataset.sbItemGroup, renameItemBtn.dataset.sbRenameItem);
   });
-  el("weatherWidget").addEventListener("click", openWeatherLocationModal);
   document.addEventListener("click", (e) => {
     const n = e.target.closest(".sb-item[data-view]");
     if (!n) return;
@@ -6994,9 +6611,6 @@ function setupEventListeners() {
       case "delete-kanban-card":
         deleteKanbanCard(d.col, Number(d.id));
         break;
-      case "apply-hero-color":
-        applyHeroColor(d.hex);
-        break;
       case "delete-cal-event":
         deleteCalEvent(Number(d.id));
         break;
@@ -7039,25 +6653,6 @@ function setupEventListeners() {
     const card = e.target.closest(".theme-card");
     if (!card) return;
     applyTheme(card.dataset.theme);
-    save();
-  });
-  el("clock12Btn").addEventListener("click", () => {
-    S.settings.clockFormat = "12";
-    el("clock12Btn").classList.add("active");
-    el("clock24Btn").classList.remove("active");
-    updateClock();
-    save();
-  });
-  el("clock24Btn").addEventListener("click", () => {
-    S.settings.clockFormat = "24";
-    el("clock24Btn").classList.add("active");
-    el("clock12Btn").classList.remove("active");
-    updateClock();
-    save();
-  });
-  el("showSecondsToggle").addEventListener("change", () => {
-    S.settings.showSeconds = el("showSecondsToggle").checked;
-    updateClock();
     save();
   });
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
@@ -7195,13 +6790,10 @@ function setupEventListeners() {
         S.notes = [];
         S.folders = DEFAULT_FOLDERS.map((f) => ({ ...f }));
         S.importedBookmarks = DEFAULT_IMPORTED_BOOKMARKS.map((b) => ({ ...b }));
-        S.weatherLocation = null;
         S.trash = [];
         S.settings = {
           theme: "dark",
           accentColor: "#fe8019",
-          clockFormat: "12",
-          showSeconds: true,
           cardGlow: "glow",
           widgets: {
             notes: false,
@@ -7210,7 +6802,6 @@ function setupEventListeners() {
             todo: false,
             reminders: true
           },
-          heroBg: null,
           qaMode: "icon"
         };
         S.habits = [];
@@ -7233,15 +6824,6 @@ function setupEventListeners() {
         showToast("All data cleared", "success");
       }
     );
-  });
-  el("saveWeatherLocationBtn").addEventListener("click", saveWeatherLocation);
-  el("detectLocationBtn").addEventListener("click", detectWeatherLocation);
-  el("weatherLocationInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") saveWeatherLocation();
-  });
-  el("reDetectWeatherBtn").addEventListener("click", () => {
-    closeModal("weatherLocationModal");
-    reDetectWeather();
   });
   el("addNoteBtn").addEventListener("click", openNoteNew);
   el("addNoteViewBtn").addEventListener("click", openNoteNew);
@@ -7350,7 +6932,6 @@ function setupEventListeners() {
     }
     S.user.name = n;
     updateAvatarDisplay();
-    updateGreeting();
     save();
     closeModal("profileModal");
     showToast("Profile updated!", "success");
@@ -7472,21 +7053,6 @@ function setupEventListeners() {
     else renderBmForActiveWorkspace();
   });
   renderTimerDisplay();
-  el("shuffleQuoteBtn")?.addEventListener("click", shuffleHeroQuote);
-  el("editQuoteBtn")?.addEventListener("click", enterHeroQuoteEdit);
-  el("saveQuoteBtn")?.addEventListener("click", saveHeroQuoteEdit);
-  el("refreshWallpaperBtn")?.addEventListener("click", refreshWallpaper);
-  el("uploadWallpaperBtn")?.addEventListener("click", uploadWallpaper);
-  el("resetWallpaperBtn")?.addEventListener("click", resetWallpaper);
-  el("heroBgColorBtn")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openModal("heroColorModal");
-  });
-  el("heroBgUploadInput")?.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (file) handleWallpaperUpload(file);
-    e.target.value = "";
-  });
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-addlink]");
     if (!btn) return;
@@ -7649,12 +7215,6 @@ function setupEventListeners() {
     if (!el("sbFooterUserWrap")?.contains(e.target)) {
       el("syncCard")?.classList.remove("popup-open");
     }
-  });
-  el("heroColorCustomInput")?.addEventListener("input", (e) => {
-    _applyHeroColor(e.target.value, true);
-  });
-  el("heroColorCustomInput")?.addEventListener("change", (e) => {
-    applyHeroColor(e.target.value);
   });
 }
 function renderHabits() {
@@ -8240,157 +7800,6 @@ function deleteKanbanCard(col, id) {
   renderKanbanDash();
   renderTrash();
 }
-const HERO_COLORS = [
-  { hex: "#7f1d1d", name: "Deep red" },
-  { hex: "#b91c1c", name: "Red" },
-  { hex: "#ef4444", name: "Bright red" },
-  { hex: "#14532d", name: "Deep green" },
-  { hex: "#15803d", name: "Green" },
-  { hex: "#22c55e", name: "Bright green" },
-  { hex: "#7c2d12", name: "Deep orange" },
-  { hex: "#c2410c", name: "Orange" },
-  { hex: "#f97316", name: "Bright orange" },
-  { hex: "#000000", name: "Pure black" },
-  { hex: "#111111", name: "Near black" },
-  { hex: "#1d2021", name: "Gruvbox dark" }
-];
-async function loadHeroBg() {
-  const stored = S.settings.heroBg;
-  if (stored && stored.startsWith("data:")) {
-    _applyHeroBgImage(stored, true);
-    el("resetWallpaperBtn")?.style.setProperty("display", "flex");
-    _buildColorPalette();
-    return;
-  }
-  if (stored && stored.startsWith("color:")) {
-    _applyHeroColor(stored.slice(6), false);
-    el("resetWallpaperBtn")?.style.setProperty("display", "flex");
-    _buildColorPalette();
-    return;
-  }
-  _buildColorPalette();
-  if (window._heroBgSessionCache) {
-    _applyHeroBgImage(window._heroBgSessionCache);
-    return;
-  }
-  await fetchRandomWallpaper();
-}
-function _buildColorPalette() {
-  const palette = el("heroColorPalette");
-  if (!palette) return;
-  const current = S.settings.heroBg?.startsWith("color:") ? S.settings.heroBg.slice(6) : null;
-  const customRow = palette.querySelector(".hero-color-custom-row");
-  palette.innerHTML = HERO_COLORS.map(
-    (c) => `
-    <div class="hero-color-swatch ${c.hex === current ? "active" : ""}"
-         style="background:${c.hex}"
-         title="${c.name}"
-         data-action="apply-hero-color" data-hex="${c.hex}"></div>`
-  ).join("");
-  if (customRow) palette.appendChild(customRow);
-  if (current) {
-    const customInput = palette.querySelector(".hero-color-custom-input");
-    if (customInput && /^#[0-9a-fA-F]{6}$/.test(current))
-      customInput.value = current;
-  }
-}
-function applyHeroColor(hex) {
-  S.settings.heroBg = "color:" + hex;
-  save();
-  _applyHeroColor(hex, true);
-  closeModal("heroColorModal");
-  _buildColorPalette();
-  syncWallpaperNow();
-}
-function _applyHeroColor(hex, showReset = true) {
-  const bgEl = el("heroBgImg");
-  if (bgEl) {
-    bgEl.style.backgroundImage = "none";
-    bgEl.style.backgroundColor = hex;
-    bgEl.style.opacity = "1";
-  }
-  if (showReset) el("resetWallpaperBtn")?.style.setProperty("display", "flex");
-}
-async function fetchRandomWallpaper() {
-  const bgEl = el("heroBgImg");
-  if (!bgEl) return;
-  bgEl.style.backgroundImage = "linear-gradient(160deg, #1d2021 0%, #282828 60%, #32302f 100%)";
-  bgEl.style.opacity = "1";
-  const url = `https://picsum.photos/seed/${Date.now()}-${Math.floor(Math.random() * 1e6)}/1920/1080`;
-  const img = new Image();
-  img.onload = () => {
-    window._heroBgSessionCache = url;
-    _applyHeroBgImage(url);
-  };
-  img.onerror = () => {
-    bgEl.style.backgroundImage = "linear-gradient(160deg, #1d2021 0%, #282828 60%, #32302f 100%)";
-    showToast("Couldn't load a new wallpaper \u2014 try again", "error");
-  };
-  img.src = url;
-}
-function _applyHeroBgImage(url, isCustom = false) {
-  const bgEl = el("heroBgImg");
-  if (!bgEl) return;
-  bgEl.style.backgroundImage = `url("${url}")`;
-  bgEl.style.opacity = "1";
-  const resetBtn = el("resetWallpaperBtn");
-  if (resetBtn) resetBtn.style.display = isCustom ? "flex" : "none";
-}
-function refreshWallpaper() {
-  if (S.settings.heroBg?.startsWith("data:")) return;
-  window._heroBgSessionCache = null;
-  fetchRandomWallpaper();
-  showToast("Loading new wallpaper\u2026", "info");
-}
-function uploadWallpaper() {
-  el("heroBgUploadInput")?.click();
-}
-async function handleWallpaperUpload(file) {
-  if (!file || !file.type.startsWith("image/")) return;
-  const dataUrl = await _resizeImageFile(file, 1920, 1080);
-  S.settings.heroBg = dataUrl;
-  save();
-  _applyHeroBgImage(dataUrl, true);
-  showToast("Wallpaper updated!", "success");
-  syncWallpaperNow();
-}
-function resetWallpaper() {
-  S.settings.heroBg = null;
-  save();
-  el("resetWallpaperBtn")?.style.setProperty("display", "none");
-  window._heroBgSessionCache = null;
-  fetchRandomWallpaper();
-  showToast("Wallpaper reset to random", "success");
-  syncWallpaperNow();
-}
-function syncWallpaperNow() {
-  if (!S.googleUser) return;
-  clearTimeout(Drive._syncTimer);
-  pushToDrive();
-}
-function _resizeImageFile(file, maxW, maxH) {
-  return new Promise((res) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width: w, height: h } = img;
-        if (w > maxW || h > maxH) {
-          const ratio = Math.min(maxW / w, maxH / h);
-          w = Math.round(w * ratio);
-          h = Math.round(h * ratio);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        res(canvas.toDataURL("image/jpeg", 0.88));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 function renderCalendarWidget() {
   const today = new Date();
   if (!S._calMonth)
@@ -8546,7 +7955,6 @@ window.openCmdPalette = openCmdPalette;
 window.closeCmdPalette = closeCmdPalette;
 window.navigateTo = navigateTo;
 window.showToast = showToast;
-window.openWeatherLocationModal = openWeatherLocationModal;
 window.openAddBookmarkModal = openAddBookmarkModal;
 window.openEditBookmarkModal = openEditBookmarkModal;
 window.deleteChromeBm = deleteChromeBm;
@@ -8567,10 +7975,6 @@ window.restoreSession = restoreSession;
 window.deleteSession = deleteSession;
 window.selectJournalDay = selectJournalDay;
 window.deleteKanbanCard = deleteKanbanCard;
-window.refreshWallpaper = refreshWallpaper;
-window.uploadWallpaper = uploadWallpaper;
-window.resetWallpaper = resetWallpaper;
-window.applyHeroColor = applyHeroColor;
 window.deleteCalEvent = deleteCalEvent;
 window.signOut = signOut;
 window.signIn = signIn;

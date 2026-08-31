@@ -36,7 +36,6 @@ const REQUIRED_PERMISSIONS = [
 const REQUIRED_OPTIONAL_PERMISSIONS = [
   "identity",
   "identity.email",
-  "geolocation",
   "notifications"
 ];
 const PUBLISHED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
