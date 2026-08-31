@@ -105,7 +105,7 @@
 <body>
 
   <h1>Privacy Policy for Nestpane</h1>
-  <p class="updated">Last updated: August 25, 2026 &nbsp;·&nbsp; See also: <a href="terms.html">Terms of Service</a></p>
+  <p class="updated">Last updated: August 31, 2026 &nbsp;·&nbsp; See also: <a href="terms.html">Terms of Service</a></p>
 
   <p>
     Nestpane ("the extension", "we", "our") is a Chrome extension that replaces the new tab
@@ -136,7 +136,7 @@
     <li>Journal entries, mood logs, and habit-tracker history</li>
     <li>Kanban boards, reading queue, and saved tab sessions</li>
     <li>Calendar events, focus-mode settings, and blocked-site lists</li>
-    <li>Theme, accent color, wallpaper choice, and other display preferences</li>
+    <li>Theme, accent color, and other display preferences</li>
     <li>Your Google OAuth access/refresh tokens, if you sign in (see §4)</li>
     <li>Your Anthropic API key, if you enable AI features (see §5) — stored under a separate, non-synced key and
       excluded from Drive backups</li>
@@ -190,11 +190,6 @@
       <td><code>identity.email</code></td>
       <td>Display the email address of the Chrome profile you're signed into, as a convenience label.</td>
       <td>No</td>
-    </tr>
-    <tr>
-      <td><code>geolocation</code></td>
-      <td>Auto-detect your city for the Weather widget.</td>
-      <td>Yes — to a geocoding/weather service, see §7</td>
     </tr>
     <tr>
       <td><code>declarativeNetRequest</code></td>
@@ -258,8 +253,7 @@
     <code>https://api.anthropic.com/v1/messages</code>, using your API key:</p>
   <ul>
     <li><strong>Ask AI / command bar:</strong> the text you typed</li>
-    <li><strong>Daily briefing:</strong> a short summary of the current weather and the titles of your pending tasks for
-      today</li>
+    <li><strong>Daily briefing:</strong> a short summary of the titles of your pending tasks for today</li>
     <li><strong>Smart Organize:</strong> the titles and URLs of your currently open tabs, plus the names of your
       existing bookmark folders</li>
   </ul>
@@ -279,20 +273,7 @@
     entry.
   </p>
 
-  <h2>7. Weather and Location</h2>
-  <p>To show local weather, Nestpane tries the following, in order, stopping as soon as one succeeds:</p>
-  <ul>
-    <li>Your device's GPS coordinates (if you grant the <code>geolocation</code> permission), reverse-geocoded to a city
-      name via <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap Nominatim</a>
-    </li>
-    <li>Your approximate location based on your IP address, via <a href="https://ipwho.is" target="_blank"
-        rel="noopener">ipwho.is</a></li>
-    <li>A manually entered city name, if you set one in Settings</li>
-  </ul>
-  <p>The resulting city/coordinates are sent to <a href="https://wttr.in" target="_blank" rel="noopener">wttr.in</a> to
-    retrieve current conditions and a 3-day forecast. None of these services receive any other Nestpane data.</p>
-
-  <h2>8. Other Third-Party Services</h2>
+  <h2>7. Other Third-Party Services</h2>
   <table>
     <tr>
       <th>Service</th>
@@ -304,15 +285,9 @@
       <td>Load Inter &amp; Playfair Display fonts</td>
       <td>Standard font-request traffic only</td>
     </tr>
-    <tr>
-      <td><code>picsum.photos</code></td>
-      <td>Random wallpaper images</td>
-      <td>None (anonymous image request)</td>
-    </tr>
   </table>
-  <p>Motivational quotes are bundled with the extension and shown offline — no network request is made for them.</p>
 
-  <h2>9. Data Retention and Deletion</h2>
+  <h2>8. Data Retention and Deletion</h2>
   <p>
     All local data lives in Chrome's <code>storage.local</code> for this extension and is deleted automatically
     when you uninstall Nestpane, or immediately if you use the "Clear All Data" option in Settings → Data Management.
@@ -322,7 +297,7 @@
     which removes Nestpane's hidden app-data folder along with it.
   </p>
 
-  <h2>10. Security</h2>
+  <h2>9. Security</h2>
   <ul>
     <li>All user-generated content is HTML-escaped before being displayed — no <code>eval</code>, no
       <code>innerHTML</code> with unsanitized input.</li>
@@ -332,14 +307,14 @@
     <li>All network requests Nestpane makes are over HTTPS.</li>
   </ul>
 
-  <h2>11. Children's Privacy</h2>
+  <h2>10. Children's Privacy</h2>
   <p>Nestpane is not directed at children under 13 and does not knowingly collect data from children.</p>
 
-  <h2>12. Changes to This Policy</h2>
+  <h2>11. Changes to This Policy</h2>
   <p>If this policy changes, the "Last updated" date above will be revised. Material changes will be noted in the
     extension's release notes on the Chrome Web Store.</p>
 
-  <h2>13. Contact</h2>
+  <h2>12. Contact</h2>
   <p>Questions about this policy or your data: <a
       href="mailto:karkinirajan1999@gmail.com">karkinirajan1999@gmail.com</a></p>
 
