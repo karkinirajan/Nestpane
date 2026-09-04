@@ -1,6 +1,6 @@
 {
   "name": "nestpane",
-  "version": "1.9.10",
+  "version": "2.0.1",
   "description": "Chrome MV3 extension replacing the new tab page with a local-first productivity dashboard",
   "private": true,
   "scripts": {
