@@ -732,7 +732,6 @@ let S = {
   calEvents: [],
   _calMonth: null,
   _qaDeleted: new Set(),
-  _cloudResetDone: false,
   _freshInstall: false
 };
 document.addEventListener("DOMContentLoaded", async () => {
@@ -885,7 +884,7 @@ async function loadState() {
     "_focusSessions",
     "_focusMinutes",
     "_qaDeleted",
-    "_cloudResetDone",
+    "_driveFileId",
     "workspaces",
     "activeWsId",
     "wsData"
@@ -970,7 +969,7 @@ async function loadState() {
   if (S._qaDeleted.size) {
     S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
   }
-  S._cloudResetDone = !!d._cloudResetDone;
+  Drive._fileId = d._driveFileId || null;
   S._savedAt = d._savedAt || 0;
   if (d.googleUser?.email) S.googleUser = d.googleUser;
   applyAccent(S.settings.accentColor);
@@ -1800,6 +1799,7 @@ async function pullFromDrive() {
   if (!token) return false;
   const fileIds = await findDriveFiles(token);
   if (!fileIds.length) return false;
+  await _setDriveFileId(fileIds[0]);
   const cloud = await _fetchCloudPayload(token, fileIds);
   if (!cloud) return false;
   let decoded = cloud;
@@ -1829,6 +1829,7 @@ async function pullFromDrive() {
       _refreshAfterCloudApply();
       showToast("Data synced from cloud \u2601", "success");
     }
+    if (fileIds.length > 1) await _cleanupDuplicateDriveFiles(token, fileIds);
     return true;
   } catch {
     return false;
@@ -1893,7 +1894,7 @@ async function _doPush(token) {
     if (r.ok) {
       const result = await r.json();
       if (!fileId) {
-        Drive._fileId = result.id;
+        await _setDriveFileId(result.id);
       }
       Drive._lastSyncAt = Date.now();
       S._savedAt = payload._savedAt;
@@ -1906,7 +1907,7 @@ async function _doPush(token) {
         await _forgetToken(token);
         setSyncStatus("needs-auth", S.googleUser?.email || "");
       } else if (r.status === 403 && fileId) {
-        Drive._fileId = null;
+        await _setDriveFileId(null);
         return await _doPush(token);
       } else if (r.status === 403) {
         setSyncStatus("needs-auth", S.googleUser?.email || "");
@@ -1993,9 +1994,13 @@ async function checkGoogleIdentity() {
   await syncWithDriveOnConnect(token);
   setSyncStatus("synced");
 }
-async function _wipeAndReuploadCloud(token) {
-  const fileIds = await findDriveFiles(token);
-  for (const fileId of fileIds) {
+async function _setDriveFileId(id) {
+  Drive._fileId = id;
+  await API.setLocal({ _driveFileId: id });
+}
+async function _cleanupDuplicateDriveFiles(token, fileIds) {
+  const extras = fileIds.filter((id) => id !== Drive._fileId);
+  for (const fileId of extras) {
     try {
       await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
         method: "DELETE",
@@ -2004,23 +2009,14 @@ async function _wipeAndReuploadCloud(token) {
     } catch {
     }
   }
-  Drive._fileId = null;
-  return await _doPush(token);
 }
 async function syncWithDriveOnConnect(token) {
-  if (!S._cloudResetDone) {
-    const ok = await _wipeAndReuploadCloud(token);
-    if (ok) {
-      S._cloudResetDone = true;
-      await API.setLocal({ _cloudResetDone: true });
-    }
-    return;
-  }
   const fileIds = await findDriveFiles(token);
   if (!fileIds.length) {
     await pushToDrive();
     return;
   }
+  await _setDriveFileId(fileIds[0]);
   const cloud = await _fetchCloudPayload(token, fileIds);
   if (!cloud) return;
   let decoded = cloud;
@@ -2040,6 +2036,7 @@ async function syncWithDriveOnConnect(token) {
   } else if ((decoded._savedAt || 0) < S._savedAt) {
     await pushToDrive();
   }
+  if (fileIds.length > 1) await _cleanupDuplicateDriveFiles(token, fileIds);
 }
 async function _ensurePermission(names) {
   if (!IS_CHROME || !chrome.permissions) return true;
@@ -2099,7 +2096,7 @@ async function signOut() {
   S.googleUser = null;
   S.user.googlePicture = null;
   S.user.googleName = null;
-  Drive._fileId = null;
+  await _setDriveFileId(null);
   Drive._lastSyncAt = 0;
   clearTimeout(Drive._syncTimer);
   save();
@@ -6783,7 +6780,7 @@ function setupEventListeners() {
         S.googleUser = null;
         S.user.googlePicture = null;
         S.user.googleName = null;
-        Drive._fileId = null;
+        await _setDriveFileId(null);
         Drive._lastSyncAt = 0;
         clearTimeout(Drive._syncTimer);
         S.quickAccess = DEFAULT_QUICK_ACCESS.map((q) => ({ ...q }));
