@@ -73,7 +73,7 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 
 This repo is a monorepo with two independently-built projects: this extension, and a
 static marketing/legal site in the sibling [`webapp/`](../webapp/) folder (deployed on
-Netlify, served at `nestpane.kneeraazon.com` — a custom domain, required because Google's
+Vercel, served at `nestpane.kneeraazon.com` — a custom domain, required because Google's
 OAuth verification rejects homepages on shared platform subdomains like the default
 `nestpane.netlify.app` — the landing page, privacy policy, and terms of service that the
 OAuth consent screen and Chrome Web Store listing link to). They share no build step or
@@ -99,7 +99,7 @@ nestpane/
 │   │   ├── icon-16.png  16×16 toolbar icon (generated from SVG)
 │   │   └── icon-48.png  48×48 extension management icon (generated from SVG)
 │   └── dist/          Production build output — ZIP this folder for Chrome Web Store (gitignored)
-└── webapp/            Static Netlify site — landing page, privacy.html, terms.html
+└── webapp/            Static Vercel site — landing page, privacy.html, terms.html
 ```
 
 ---
