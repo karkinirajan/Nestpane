@@ -7,7 +7,7 @@
   
   ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
   ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-0F0F0F?style=for-the-badge&logo=tailwind-css&logoColor=#FF6B00)
-  ![Netlify](https://img.shields.io/badge/Deployed_on-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)
+  ![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 </div>
 
 ---
@@ -102,7 +102,7 @@ nestpane/
 
 > ⚠️ **Do not delete `googleee397e5ec21b3ad7.html`** — it's a legacy Search Console verification file for the old `nestpane.netlify.app` URL-prefix property. It's harmless to keep and still resolves fine, but it's **no longer the active verification** backing the OAuth consent screen.
 >
-> **The site is now served at `nestpane.kneeraazon.com`**, not `nestpane.netlify.app` (though the latter still resolves to the same deployment). Google's OAuth verification rejects homepages hosted on shared platform subdomains like `netlify.app` — see [Google's guidance](https://support.google.com/cloud/answer/13807376) — no matter how many times Search Console's URL-prefix method verifies successfully. The fix was moving to a subdomain of an existing owned domain (DNS on Cloudflare, CNAME'd to `nestpane.netlify.app`), verified in Search Console as a **Domain property** (covers every subdomain automatically, unlike URL-prefix). If you change the custom domain again, update this file's references, `index.html`'s canonical/og tags, the self-links in `privacy.html`/`terms.html`, and the OAuth consent screen fields all together.
+> **The site is now served at `nestpane.kneeraazon.com`** (hosted on Vercel, DNS on Cloudflare), not `nestpane.netlify.app`. Google's OAuth verification rejects homepages hosted on shared platform subdomains like `netlify.app` — see [Google's guidance](https://support.google.com/cloud/answer/13807376) — no matter how many times Search Console's URL-prefix method verifies successfully. The fix was moving to a subdomain of an existing owned domain, verified in Search Console as a **Domain property** (covers every subdomain automatically, unlike URL-prefix). If you change the custom domain again, update this file's references, `index.html`'s canonical/og tags, the self-links in `privacy.html`/`terms.html`, and the OAuth consent screen fields all together.
 
 ## 🚀 Local Development
 
@@ -118,14 +118,15 @@ This site is built with pure HTML, Tailwind CSS (via CDN), and Vanilla JS. No bu
    ```
 3. Open `index.html` in your browser to view the landing page locally.
 
-## ☁️ Deployment (Netlify)
+## ☁️ Deployment (Vercel)
 
-This site is configured for zero-config static hosting on Netlify.
+This site is static HTML, deployed on Vercel at `nestpane.kneeraazon.com`.
 1. Push your repository to GitHub.
-2. Log into [Netlify](https://app.netlify.com/).
-3. Click "Add new site" -> "Import an existing project".
-4. Connect your GitHub repository.
-5. No build command or base directory is needed. Netlify will automatically detect the HTML files and deploy them.
+2. Log into [Vercel](https://vercel.com/) and click "Add New" -> "Project".
+3. Import the GitHub repository.
+4. Set the root directory to `webapp` (or to the branch root if deploying the `web` branch).
+5. No framework preset, build command, or output directory is needed; Vercel serves the HTML files as-is.
+6. Add `nestpane.kneeraazon.com` under the project's Domains settings, with the DNS record set in Cloudflare as Vercel instructs.
 
 ---
 
