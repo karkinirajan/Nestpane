@@ -760,7 +760,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   checkGoogleIdentity();
   _registerLiveStorageSync();
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && S.googleUser) pullFromDrive();
+    if (document.hidden) {
+      // The tab is backgrounding — on Brave/Chrome this is also the point
+      // a tab can be discarded by memory-saver features without warning.
+      // Flush every pending autosave now rather than trusting the debounce
+      // window to finish naturally.
+      _autosaveRegistry.flushAll();
+    } else if (S.googleUser) {
+      pullFromDrive();
+    }
+  });
+  window.addEventListener("pagehide", () => {
+    // Last-resort flush for an actual unload/discard/crash recovery path —
+    // pagehide fires even when visibilitychange doesn't catch it in time.
+    _autosaveRegistry.flushAll();
   });
   document.addEventListener("keydown", (e) => {
     const inInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
@@ -862,6 +875,32 @@ function _flattenLegacyWorkspaceData(raw) {
   });
   return { quickAccess, notes, folders, importedBookmarks, kanban, reminders };
 }
+async function _runStorageMigrations(d) {
+  const fromVersion = typeof d._schemaVersion === "number" ? d._schemaVersion : 0;
+  if (fromVersion >= NestpaneMigrations.CURRENT_SCHEMA_VERSION) return d;
+  try {
+    await API.setLocal({
+      _preMigrationBackup: { ...d, _backupAt: Date.now(), _backupFromVersion: fromVersion }
+    });
+  } catch (e) {
+    console.warn("[Nestpane] could not write pre-migration backup, proceeding anyway:", e);
+  }
+  const result = NestpaneMigrations.runMigrations(d, fromVersion);
+  if (result.rolledBack) {
+    console.error(
+      "[Nestpane] migration to v" + NestpaneMigrations.CURRENT_SCHEMA_VERSION + " failed, staying on v" + fromVersion + ":",
+      result.error
+    );
+    return d;
+  }
+  const migrated = { ...result.data, _schemaVersion: result.version };
+  try {
+    await API.setLocal({ _schemaVersion: result.version });
+  } catch (e) {
+    console.warn("[Nestpane] could not persist new _schemaVersion:", e);
+  }
+  return migrated;
+}
 async function loadState() {
   let d = await API.getLocal([
     "user",
@@ -887,8 +926,10 @@ async function loadState() {
     "_driveFileId",
     "workspaces",
     "activeWsId",
-    "wsData"
+    "wsData",
+    "_schemaVersion"
   ]);
+  d = await _runStorageMigrations(d);
   if (!d.settings && IS_CHROME && chrome.storage) {
     const synced = await API.get(["user", "trash", "settings", "weatherLocation"]);
     if (synced.settings) {
@@ -1026,20 +1067,8 @@ function _warnSaveFailed(err) {
   );
 }
 const el = (id) => document.getElementById(id);
-const escH = (s) => s ? String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") : "";
-const safeUrl = (raw) => {
-  if (!raw) return "";
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : "https://" + trimmed;
-  try {
-    const u = new URL(withScheme);
-    if (u.protocol !== "https:" && u.protocol !== "http:") return "";
-    return u.href;
-  } catch {
-    return "";
-  }
-};
+const { escH, safeUrl } = NestpaneFormat;
+const _autosaveRegistry = NestpaneAutosave.createAutosaveRegistry();
 const getDomain = (url) => {
   try {
     return new URL(url).hostname.replace("www.", "");
@@ -1149,7 +1178,8 @@ const Drive = {
   _fileId: null,
   _syncTimer: null,
   _lastSyncAt: 0,
-  _status: "idle"
+  _status: "idle",
+  _lastKnownRemoteSavedAt: 0
 };
 let _lastAuthTokenError = null;
 let _useWebAuthFallback = false;
@@ -1823,6 +1853,7 @@ async function pullFromDrive() {
     }
   }
   try {
+    Drive._lastKnownRemoteSavedAt = Math.max(Drive._lastKnownRemoteSavedAt, decoded._savedAt || 0);
     if ((decoded._savedAt || 0) > S._savedAt) {
       applyCloudData(decoded);
       await _persistLocalState();
@@ -1851,6 +1882,22 @@ async function pushToDrive() {
 async function _doPush(token) {
   setSyncStatus("syncing");
   const payload = buildDrivePayload();
+  if (Drive._fileId) {
+    const remote = await _fetchCloudPayload(token, [Drive._fileId]).catch(() => null);
+    const { conflict } = NestpaneDriveConflict.detectDriveConflict({
+      remoteSavedAt: remote?._savedAt,
+      lastKnownRemoteSavedAt: Drive._lastKnownRemoteSavedAt,
+      localSavedAt: payload._savedAt
+    });
+    if (conflict) {
+      const pulled = await pullFromDrive().catch(() => false);
+      if (pulled) {
+        showToast("Synced newer changes from another device first ☁", "success");
+      }
+      setSyncStatus("synced");
+      return false;
+    }
+  }
   let body;
   if (S.settings.e2e?.enabled) {
     const pass = await _e2eLoadPassphrase();
@@ -1897,6 +1944,7 @@ async function _doPush(token) {
         await _setDriveFileId(result.id);
       }
       Drive._lastSyncAt = Date.now();
+      Drive._lastKnownRemoteSavedAt = payload._savedAt;
       S._savedAt = payload._savedAt;
       await API.setLocal({ _savedAt: S._savedAt });
       setSyncStatus("synced");
@@ -3939,6 +3987,7 @@ function renderNoteEditorTags() {
     x.addEventListener("click", () => {
       _noteTags.splice(Number(x.dataset.i), 1);
       renderNoteEditorTags();
+      _noteAutosave.schedule();
     });
   });
 }
@@ -3955,7 +4004,60 @@ function updateNoteWordCount() {
   const words = (el("noteContent")?.value || "").trim().split(/\s+/).filter(Boolean).length;
   wc.textContent = `${words} word${words === 1 ? "" : "s"}`;
 }
+// Commits whatever is currently in the note-editor form fields, creating or
+// updating the note as needed. Returns false (and does nothing) if both
+// fields are empty — there's nothing worth saving. `silent` skips the
+// list/widget re-render and toast, used by autosave so typing doesn't
+// trigger a re-render on every keystroke.
+function _commitNoteForm({ silent } = {}) {
+  const titleEl = el("noteTitle");
+  const contentEl = el("noteContent");
+  if (!titleEl || !contentEl) return false;
+  const title = titleEl.value.trim();
+  const content = contentEl.value.trim();
+  if (!content && !title) return false;
+  const notes = wsNotes();
+  const now = Date.now();
+  if (S.editingNoteId) {
+    const idx = notes.findIndex((n) => n.id === S.editingNoteId);
+    if (idx > -1)
+      notes[idx] = {
+        ...notes[idx],
+        title: title || "Untitled",
+        content,
+        updatedAt: now,
+        tags: _noteTags,
+        pinned: _notePinned
+      };
+  } else {
+    // First autosave of a brand-new note: create it now and remember its id
+    // so every later autosave (and the eventual explicit Save) updates this
+    // same note instead of creating a duplicate each time.
+    const id = now;
+    notes.unshift({
+      id,
+      title: title || "Untitled",
+      content,
+      date: now,
+      updatedAt: now,
+      tags: _noteTags,
+      pinned: _notePinned
+    });
+    S.editingNoteId = id;
+    el("deleteNoteBtn").style.display = "block";
+  }
+  save();
+  if (!silent) {
+    renderNotesWidget();
+    renderNotesView();
+  }
+  return true;
+}
+const _noteAutosave = _autosaveRegistry.register(
+  NestpaneAutosave.createFlushableDebounce(() => _commitNoteForm({ silent: true }), 800)
+);
 function openNoteEdit(id) {
+  _noteAutosave.flush();
   const noteId = Number(id);
   const note = wsNotes().find((n) => n.id === noteId);
   if (!note) return;
@@ -3972,6 +4074,7 @@ function openNoteEdit(id) {
   openModal("noteModal");
 }
 function openNoteNew() {
+  _noteAutosave.flush();
   S.editingNoteId = null;
   el("noteModalTitle").textContent = "New Note";
   el("noteTitle").value = "";
@@ -3986,44 +4089,18 @@ function openNoteNew() {
   setTimeout(() => el("noteTitle").focus(), 60);
 }
 function saveNote() {
-  const title = el("noteTitle").value.trim();
-  const content = el("noteContent").value.trim();
-  if (!content && !title) {
+  _noteAutosave.cancel();
+  const committed = _commitNoteForm({ silent: false });
+  if (!committed) {
     showToast("Write something first!", "error");
     return;
   }
-  const notes = wsNotes();
-  const now = Date.now();
-  if (S.editingNoteId) {
-    const idx = notes.findIndex((n) => n.id === S.editingNoteId);
-    if (idx > -1)
-      notes[idx] = {
-        ...notes[idx],
-        title: title || "Untitled",
-        content,
-        updatedAt: now,
-        tags: _noteTags,
-        pinned: _notePinned
-      };
-  } else {
-    notes.unshift({
-      id: now,
-      title: title || "Untitled",
-      content,
-      date: now,
-      updatedAt: now,
-      tags: _noteTags,
-      pinned: _notePinned
-    });
-  }
-  save();
-  renderNotesWidget();
-  renderNotesView();
   if (_noteMdPreviewOn) _toggleNoteMarkdown();
   closeModal("noteModal");
   showToast("Note saved!", "success");
 }
 function deleteNote() {
+  _noteAutosave.cancel();
   if (!S.editingNoteId) return;
   deleteNoteById(S.editingNoteId);
   if (_noteMdPreviewOn) _toggleNoteMarkdown();
@@ -6830,8 +6907,13 @@ function setupEventListeners() {
   el("notePinBtn").addEventListener("click", () => {
     _notePinned = !_notePinned;
     updateNotePinBtn();
+    _noteAutosave.schedule();
   });
-  el("noteContent").addEventListener("input", updateNoteWordCount);
+  el("noteTitle").addEventListener("input", () => _noteAutosave.schedule());
+  el("noteContent").addEventListener("input", () => {
+    updateNoteWordCount();
+    _noteAutosave.schedule();
+  });
   el("noteTagInput").addEventListener("keydown", (e) => {
     if ((e.key === "Enter" || e.key === "," || e.key === " ") && e.target.value.trim()) {
       e.preventDefault();
@@ -6839,12 +6921,14 @@ function setupEventListeners() {
       if (tag && !_noteTags.includes(tag) && _noteTags.length < 8) {
         _noteTags.push(tag);
         renderNoteEditorTags();
+        _noteAutosave.schedule();
       }
       e.target.value = "";
     }
     if (e.key === "Backspace" && !e.target.value && _noteTags.length) {
       _noteTags.pop();
       renderNoteEditorTags();
+      _noteAutosave.schedule();
     }
   });
   el("notesViewSearch").addEventListener("input", (e) => {
@@ -7103,13 +7187,17 @@ function setupEventListeners() {
     }
     renderJournalCal();
   });
-  el("journalTextarea")?.addEventListener("input", updateJournalWordCount);
+  el("journalTextarea")?.addEventListener("input", () => {
+    updateJournalWordCount();
+    _journalAutosave.schedule();
+  });
   el("saveJournalBtn")?.addEventListener("click", saveJournalEntry);
   el("saveJournalBtn2")?.addEventListener("click", saveJournalEntry);
   document.querySelectorAll(".journal-mood-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".journal-mood-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
+      _journalAutosave.schedule();
     });
   });
   el("kanbanDashOpenBtn")?.addEventListener("click", () => openNestodoModal());
@@ -7461,6 +7549,7 @@ function renderJournalCal() {
   calGrid.innerHTML = html;
 }
 function selectJournalDay(key) {
+  _journalAutosave.flush();
   _journalViewDate = key;
   renderJournalCal();
   loadJournalEntry(key);
@@ -7492,17 +7581,31 @@ function updateJournalWordCount() {
   const words = ta.value.trim().split(/\s+/).filter(Boolean).length;
   wc.textContent = words + " word" + (words !== 1 ? "s" : "");
 }
-function saveJournalEntry() {
+// Commits the journal textarea + mood for the date currently being viewed.
+// `force` writes even when both fields are empty (the explicit Save button
+// wants this, so it can clear an entry back to blank); autosave omits it so
+// idly browsing an empty day never creates a ghost entry.
+function _commitJournalForm({ silent, force } = {}) {
   const ta = el("journalTextarea");
-  if (!ta) return;
+  if (!ta) return false;
   const text = ta.value;
   const mood = document.querySelector(".journal-mood-btn.active")?.dataset?.mood || "";
-  if (!S.journal[_journalViewDate]) S.journal[_journalViewDate] = {};
-  S.journal[_journalViewDate].text = text;
-  S.journal[_journalViewDate].mood = mood;
-  S.journal[_journalViewDate].updatedAt = Date.now();
+  const key = _journalViewDate;
+  if (!force && !text.trim() && !mood && !S.journal[key]) return false;
+  if (!S.journal[key]) S.journal[key] = {};
+  S.journal[key].text = text;
+  S.journal[key].mood = mood;
+  S.journal[key].updatedAt = Date.now();
   save();
-  renderJournalCal();
+  if (!silent) renderJournalCal();
+  return true;
+}
+const _journalAutosave = _autosaveRegistry.register(
+  NestpaneAutosave.createFlushableDebounce(() => _commitJournalForm({ silent: true }), 800)
+);
+function saveJournalEntry() {
+  _journalAutosave.cancel();
+  _commitJournalForm({ silent: false, force: true });
   showToast("Journal saved", "success");
 }
 let _kanbanTargetCol = null;

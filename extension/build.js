@@ -3,8 +3,16 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { mergeManifest } = require("./scripts/merge-manifest.js");
 const ROOT = __dirname;
-const DIST = path.join(ROOT, "dist");
+const targetArg = process.argv.find((a) => a.startsWith("--target="));
+// "chromium" (the default) is the only target CWS actually ships today, and
+// it must keep writing to dist/ exactly as before — nothing about the
+// existing release pipeline changes. Any other target writes to its own
+// dist-<target>/ directory so it can never collide with or destabilize that
+// pipeline.
+const TARGET = targetArg ? targetArg.split("=")[1] : "chromium";
+const DIST = TARGET === "chromium" ? path.join(ROOT, "dist") : path.join(ROOT, `dist-${TARGET}`);
 const manifest = require("./manifest.json");
 const VERSION = manifest.version;
 const WATCH = process.argv.includes("--watch");
@@ -22,7 +30,11 @@ const REQUIRED_FILES = [
   "popup.html",
   "popup.js",
   "privacy.html",
-  "terms.html"
+  "terms.html",
+  "lib/format.js",
+  "lib/migrations.js",
+  "lib/drive-conflict.js",
+  "lib/autosave.js"
 ];
 const REQUIRED_PERMISSIONS = [
   "tabs",
@@ -122,8 +134,20 @@ async function build() {
   staticFiles.forEach((file) => {
     const dest = path.join(DIST, file);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(path.join(ROOT, file), dest);
-    console.log("  \u2713", file);
+    if (file === "manifest.json" && TARGET !== "chromium") {
+      const deltaPath = path.join(ROOT, `manifest.${TARGET}.json`);
+      if (!fs.existsSync(deltaPath)) {
+        console.error(`\n\u2717 No manifest.${TARGET}.json delta found \u2014 cannot build the "${TARGET}" target.`);
+        process.exit(1);
+      }
+      const delta = JSON.parse(fs.readFileSync(deltaPath, "utf8"));
+      const merged = mergeManifest(manifest, delta);
+      fs.writeFileSync(dest, JSON.stringify(merged, null, 2));
+      console.log(`  \u2713 ${file} (merged with manifest.${TARGET}.json)`);
+    } else {
+      fs.copyFileSync(path.join(ROOT, file), dest);
+      console.log("  \u2713", file);
+    }
   });
   let esbuild;
   try {
@@ -140,6 +164,7 @@ async function build() {
         target: "chrome110",
         loader: "js"
       });
+      fs.mkdirSync(path.dirname(path.join(DIST, file)), { recursive: true });
       fs.writeFileSync(path.join(DIST, file), result.code);
       const orig = fs.statSync(path.join(ROOT, file)).size;
       const min = result.code.length;
@@ -158,6 +183,7 @@ async function build() {
   } else {
     if (!esbuild) console.log("\nNote: esbuild not installed \u2014 run `npm install` to enable minification. Copying files verbatim.");
     [...jsFiles, ...cssFiles].forEach((file) => {
+      fs.mkdirSync(path.dirname(path.join(DIST, file)), { recursive: true });
       fs.copyFileSync(path.join(ROOT, file), path.join(DIST, file));
       console.log("  \u2713", file);
     });
@@ -168,7 +194,7 @@ async function build() {
   fs.readdirSync(iconsDir).forEach((f) => {
     fs.copyFileSync(path.join(iconsDir, f), path.join(distIconsDir, f));
   });
-  console.log("\n\u2713 Build complete \u2014 files ready in dist/");
+  console.log(`\n\u2713 Build complete \u2014 files ready in ${path.relative(ROOT, DIST)}/`);
   console.log("To package: npm run zip");
   if (WATCH) {
     console.log("\nWatch mode: re-running on file change...");

@@ -1,0 +1,9 @@
+{
+  "_comment": "Delta merged onto manifest.json by `node build.js --target=firefox`. Only keys that genuinely differ for Firefox live here — everything else is inherited from the Chromium manifest unchanged.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "nestpane@kneeraazon.com",
+      "strict_min_version": "121.0"
+    }
+  }
+}
