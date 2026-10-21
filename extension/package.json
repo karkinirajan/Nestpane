@@ -1,12 +1,15 @@
 {
   "name": "nestpane",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Chrome MV3 extension replacing the new tab page with a local-first productivity dashboard",
   "private": true,
   "scripts": {
     "build": "node build.js",
+    "build:firefox": "node build.js --target=firefox",
     "dev": "node build.js --watch",
-    "lint": "eslint app.js popup.js fouc.js build.js",
+    "lint": "eslint app.js popup.js fouc.js build.js lib/*.js",
+    "test": "node --test tests/*.test.js",
+    "check-registry": "node scripts/check-registry.js",
     "zip": "node build.js && cd dist && zip -r ../nestpane-v$(node -p \"require('../package.json').version\")-chrome.zip ."
   },
   "devDependencies": {
