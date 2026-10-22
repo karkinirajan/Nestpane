@@ -20,8 +20,28 @@ This repository contains the official Nestpane landing site and comprehensive le
 ## 📄 Pages Included
 - **`index.html`** — The main landing page with Hero, Features, Interactive Mockup, and FAQ.
 - **`about.html`** — The mission statement and design philosophy behind Nestpane.
+- **`changelog.html`** — Public release notes.
 - **`privacy.html`** — Comprehensive, GDPR/CCPA compliant Privacy Policy.
 - **`terms.html`** — Complete Terms of Service governing the use of the extension and site.
+- **`dashboard/`** — The actual Nestpane dashboard, running as a plain web page (no extension
+  install). **Generated, not hand-written** — see "Updating the dashboard" below.
+- **`robots.txt`** / **`sitemap.xml`** — standard SEO files.
+
+## 🔄 Updating the dashboard
+
+`dashboard/` is built from the extension's own source so there's one copy of the actual app
+logic, not two drifting copies:
+
+```
+node ../scripts/build-dashboard.js
+```
+
+Run this any time `../extension/app.js`, `../extension/lib/*.js`, `../extension/style.css`,
+`../extension/fouc.js`, or `../extension/newtab.html` change. It is not wired into any
+CI/deploy hook yet — nothing currently reminds you to re-run it, so the dashboard can silently
+go stale if this is forgotten. `dashboard/oauth-callback.html` is hand-written, not generated —
+see `../docs/browsers/dashboard.md` for what it does and the one Google Cloud Console step it
+still needs before Google sign-in works there.
 
 ---
 

@@ -47,17 +47,30 @@ Per-call-site handling that already exists and is relevant to Firefox:
 - `chrome.declarativeNetRequest` (Focus Mode) is supported in Firefox 113+ per the brief's own
   premise — **not independently re-verified against Mozilla's current docs this session**; do
   that before claiming Focus Mode works identically on Firefox in a store listing.
+- 2026-10-22: line-numbers above have shifted since this file was first written (new `lib/*.js`
+  modules were added earlier in `app.js`) — treat the specific `app.js:NNN` references in this
+  file as approximate pointers to re-find by function name, not exact anymore. The underlying
+  behavior they describe is unchanged.
+- Also fixed this session, independent of Firefox specifically: a couple of `chrome.*`
+  references (`FOCUS_RULE_CEILING`'s initializer, Tab Sessions save/restore) weren't guarded the
+  same way every other call site is, and would throw if `chrome` were ever genuinely absent. Not
+  expected to matter for a real Firefox extension (Firefox's WebExtension `chrome.*` compat
+  alias means `chrome` exists there too), but it's now consistent everywhere regardless.
 
 ## 4. Build and package commands
 
 ```
 npm run build:firefox   # -> dist-firefox/ (merged manifest, same JS/CSS as Chromium)
-cd dist-firefox && zip -r ../nestpane-v2.1.0-firefox.zip .
+cd dist-firefox && zip -r ../nestpane-v$(node -p "require('../package.json').version")-firefox.zip .
 ```
 
-Verified in this session: `npm run build:firefox` runs cleanly and produces a `dist-firefox/`
-tree whose `manifest.json` carries the merged `browser_specific_settings` while every other
-file is identical to the Chromium build.
+Verified on 2026-10-21 (version 2.1.0), re-verified on 2026-10-22 against 2.1.2 (which added the
+web dashboard support code — bookmarks store, notification/declarativeNetRequest hardening, web
+OAuth for the dashboard only), and once more against 2.1.3 (a same-day security fix to that web
+OAuth sign-out flow): `npm run build:firefox` runs cleanly each time, `dist-firefox/manifest.json`
+reads the current version and carries the merged `browser_specific_settings`, every other file
+matches the Chromium build. The output wasn't zipped or submitted — that's left for the project
+owner, per their own request.
 
 ## 5. Test procedure for this browser
 
@@ -86,3 +99,5 @@ Not applicable — nothing has shipped to AMO yet to roll back from.
 | Date | Version | Who | Evidence |
 |---|---|---|---|
 | 2026-10-21 | 2.1.0 | automated session | `npm run build:firefox` run and confirmed producing a correctly-merged manifest in `dist-firefox/`. `web-ext lint`, AMO submission, and manual Firefox smoke-testing **not performed** — flagged, not silently skipped. |
+| 2026-10-22 | 2.1.2 | automated session | `npm run build:firefox` re-run and confirmed clean against the current source; output deleted without zipping/submitting, left for the project owner per their own request. `web-ext lint`, AMO submission, and manual smoke-testing still **not performed**. |
+| 2026-10-22 | 2.1.3 | automated session | Re-run once more after the web-dashboard sign-out security fix; `dist-firefox/manifest.json` confirmed reading `2.1.3`, output deleted without zipping/submitting. |

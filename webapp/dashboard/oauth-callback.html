@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Signing in…</title>
+  <style>
+    body { background:#0F0F0F; color:#E0E0E0; font-family: sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; text-align:center; }
+    a { color:#FF6B00; }
+  </style>
+</head>
+<body>
+  <div id="msg">Signing you in…</div>
+  <script>
+    (function () {
+      "use strict";
+      // Standard OAuth2 implicit-flow callback: Google redirects here with
+      // the token in the URL fragment (never sent to any server — fragments
+      // never leave the browser). This page's only job is to hand that
+      // token to localStorage (the same keys app.js's _persistWebAuthToken
+      // uses) and send the user back to the dashboard.
+      var msg = document.getElementById("msg");
+      function fail(text) {
+        msg.textContent = text;
+        var link = document.createElement("div");
+        link.style.marginTop = "12px";
+        link.innerHTML = '<a href="./">Back to the dashboard</a>';
+        document.body.appendChild(link);
+      }
+      try {
+        var params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        var error = params.get("error");
+        if (error) {
+          fail("Sign-in failed: " + error);
+          return;
+        }
+        var token = params.get("access_token");
+        var expiresIn = Number(params.get("expires_in")) || 3600;
+        var state = params.get("state");
+        var expectedState = sessionStorage.getItem("nestpane_oauth_state");
+        var returnTo = sessionStorage.getItem("nestpane_oauth_return_to") || "./";
+        sessionStorage.removeItem("nestpane_oauth_state");
+        sessionStorage.removeItem("nestpane_oauth_return_to");
+        if (!token) {
+          fail("Sign-in failed: no token returned.");
+          return;
+        }
+        if (!state || state !== expectedState) {
+          fail("Sign-in failed: could not verify this request (state mismatch). Please try again.");
+          return;
+        }
+        var expiresAt = Date.now() + Math.max(expiresIn - 120, 60) * 1000;
+        localStorage.setItem("ftL__waToken", JSON.stringify(token));
+        localStorage.setItem("ftL__waTokenExp", JSON.stringify(expiresAt));
+        var sep = returnTo.indexOf("?") === -1 ? "?" : "&";
+        window.location.replace(returnTo + sep + "nestpane_oauth=success");
+      } catch (e) {
+        fail("Sign-in failed: " + (e && e.message || "unknown error"));
+      }
+    })();
+  </script>
+</body>
+</html>

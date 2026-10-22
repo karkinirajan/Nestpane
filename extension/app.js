@@ -66,105 +66,7 @@ const API = {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.getTree((tree) => res(tree || []));
     } else {
-      res([
-        {
-          id: "0",
-          title: "",
-          children: [
-            {
-              id: "1",
-              title: "Bookmarks bar",
-              children: [
-                {
-                  id: "10",
-                  title: "Social Media",
-                  children: [
-                    {
-                      id: "100",
-                      title: "YouTube",
-                      url: "https://youtube.com"
-                    },
-                    {
-                      id: "101",
-                      title: "Twitter / X",
-                      url: "https://twitter.com"
-                    },
-                    {
-                      id: "102",
-                      title: "Instagram",
-                      url: "https://instagram.com"
-                    },
-                    {
-                      id: "103",
-                      title: "Facebook",
-                      url: "https://facebook.com"
-                    },
-                    { id: "104", title: "TikTok", url: "https://tiktok.com" }
-                  ]
-                },
-                {
-                  id: "11",
-                  title: "Development",
-                  children: [
-                    { id: "110", title: "GitHub", url: "https://github.com" },
-                    {
-                      id: "111",
-                      title: "Stack Overflow",
-                      url: "https://stackoverflow.com"
-                    },
-                    {
-                      id: "112",
-                      title: "MDN Web Docs",
-                      url: "https://developer.mozilla.org"
-                    },
-                    {
-                      id: "113",
-                      title: "CodePen",
-                      url: "https://codepen.io"
-                    }
-                  ]
-                },
-                {
-                  id: "12",
-                  title: "Design Resources",
-                  children: [
-                    { id: "120", title: "Figma", url: "https://figma.com" },
-                    {
-                      id: "121",
-                      title: "Dribbble",
-                      url: "https://dribbble.com"
-                    },
-                    {
-                      id: "122",
-                      title: "Behance",
-                      url: "https://behance.net"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              id: "2",
-              title: "Other bookmarks",
-              children: [
-                {
-                  id: "20",
-                  title: "Tools",
-                  children: [
-                    { id: "200", title: "Notion", url: "https://notion.so" },
-                    { id: "201", title: "Trello", url: "https://trello.com" },
-                    {
-                      id: "202",
-                      title: "Google Drive",
-                      url: "https://drive.google.com"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]);
+      _loadWebBookmarksTree().then(res);
     }
   }),
   history: (query = "") => new Promise((res) => {
@@ -179,85 +81,21 @@ const API = {
         (items) => res((items || []).filter((it) => !it.url?.startsWith(ownPrefix)))
       );
     } else {
-      res([
-        {
-          id: "1",
-          title: "GitHub",
-          url: "https://github.com",
-          lastVisitTime: Date.now() - 18e5
-        },
-        {
-          id: "2",
-          title: "Stack Overflow",
-          url: "https://stackoverflow.com",
-          lastVisitTime: Date.now() - 36e5
-        },
-        {
-          id: "3",
-          title: "MDN Web Docs",
-          url: "https://developer.mozilla.org",
-          lastVisitTime: Date.now() - 72e5
-        },
-        {
-          id: "4",
-          title: "YouTube",
-          url: "https://youtube.com",
-          lastVisitTime: Date.now() - 108e5
-        },
-        {
-          id: "5",
-          title: "Google",
-          url: "https://google.com",
-          lastVisitTime: Date.now() - 144e5
-        },
-        {
-          id: "6",
-          title: "Figma",
-          url: "https://figma.com",
-          lastVisitTime: Date.now() - 18e6
-        },
-        {
-          id: "7",
-          title: "Notion",
-          url: "https://notion.so",
-          lastVisitTime: Date.now() - 216e5
-        },
-        {
-          id: "8",
-          title: "Twitter",
-          url: "https://twitter.com",
-          lastVisitTime: Date.now() - 864e5
-        }
-      ]);
+      // Browsing history is a browser-extension-only API — there is no way
+      // for a plain web page to read it, on any browser. Showing fake
+      // placeholder history here would be actively misleading (it would
+      // look like real data), so this returns empty and the caller shows
+      // "Requires the browser extension" instead of a fabricated list.
+      res([]);
     }
   }),
   downloads: () => new Promise((res) => {
     if (IS_CHROME && chrome.downloads) {
       chrome.downloads.search({ limit: 50, orderBy: ["-startTime"] }, res);
     } else {
-      res([
-        {
-          id: 1,
-          filename: "/Downloads/project-report.pdf",
-          fileSize: 2457600,
-          state: "complete",
-          startTime: new Date(Date.now() - 864e5).toISOString()
-        },
-        {
-          id: 2,
-          filename: "/Downloads/design-assets.zip",
-          fileSize: 15728640,
-          state: "complete",
-          startTime: new Date(Date.now() - 1728e5).toISOString()
-        },
-        {
-          id: 3,
-          filename: "/Downloads/nodejs-setup.exe",
-          fileSize: 31457280,
-          state: "complete",
-          startTime: new Date(Date.now() - 2592e5).toISOString()
-        }
-      ]);
+      // Same reasoning as history(): this is a browser-extension-only API.
+      // No fake placeholder downloads — empty, with an honest UI message.
+      res([]);
     }
   }),
   identity: () => new Promise((res) => {
@@ -284,35 +122,55 @@ const API = {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.create(details, (node) => res(node || null));
     } else {
-      res(null);
+      _loadWebBookmarksTree().then((tree) => {
+        const node = NestpaneBookmarksStore.insertNode(tree, details.parentId, details);
+        if (node) _persistWebBookmarksTree();
+        res(node);
+      });
     }
   }),
   updateBookmark: (id, changes) => new Promise((res) => {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.update(id, changes, (node) => res(node || null));
     } else {
-      res(null);
+      _loadWebBookmarksTree().then((tree) => {
+        const node = NestpaneBookmarksStore.updateNode(tree, id, changes);
+        if (node) _persistWebBookmarksTree();
+        res(node);
+      });
     }
   }),
   moveBookmark: (id, dest) => new Promise((res) => {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.move(id, dest, (node) => res(node || null));
     } else {
-      res(null);
+      _loadWebBookmarksTree().then((tree) => {
+        const node = NestpaneBookmarksStore.moveNode(tree, id, dest.parentId);
+        if (node) _persistWebBookmarksTree();
+        res(node);
+      });
     }
   }),
   removeBookmark: (id) => new Promise((res) => {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.remove(id, () => res(true));
     } else {
-      res(false);
+      _loadWebBookmarksTree().then((tree) => {
+        const ok = NestpaneBookmarksStore.removeNode(tree, id);
+        if (ok) _persistWebBookmarksTree();
+        res(ok);
+      });
     }
   }),
   removeBookmarkTree: (id) => new Promise((res) => {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.removeTree(id, () => res(true));
     } else {
-      res(false);
+      _loadWebBookmarksTree().then((tree) => {
+        const ok = NestpaneBookmarksStore.removeNode(tree, id);
+        if (ok) _persistWebBookmarksTree();
+        res(ok);
+      });
     }
   }),
   deleteHistoryUrl: (url) => new Promise((res) => {
@@ -333,6 +191,17 @@ const API = {
     if (IS_CHROME && chrome.downloads) chrome.downloads.show(id);
   }
 };
+let _webBookmarksTree = null;
+async function _loadWebBookmarksTree() {
+  if (_webBookmarksTree) return _webBookmarksTree;
+  const d = await API.getLocal(["_webBookmarksTree"]);
+  _webBookmarksTree = Array.isArray(d._webBookmarksTree) ? d._webBookmarksTree : NestpaneBookmarksStore.createDefaultTree();
+  return _webBookmarksTree;
+}
+function _persistWebBookmarksTree() {
+  API.setLocal({ _webBookmarksTree }).catch(() => {
+  });
+}
 const SB_ICONS = {
   dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
   home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
@@ -758,6 +627,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setInterval(_checkDueReminders, 6e4);
   loadDownloads();
   checkGoogleIdentity();
+  _completeWebOAuthIfNeeded();
   _registerLiveStorageSync();
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -1186,6 +1056,36 @@ let _useWebAuthFallback = false;
 let _webAuthToken = null;
 let _webAuthTokenExpiresAt = 0;
 const WEB_AUTH_CLIENT_ID = "296619954590-aqc37amrpvqv5m16i5cu4ceob43bfjsm.apps.googleusercontent.com";
+// `_webAuthToken`/`_webAuthTokenExpiresAt` above are plain in-memory variables.
+// There is no background service worker, so every new tab is a brand-new JS
+// context — those variables reset to null/0 on every single new-tab load.
+// Browsers (like Brave) that skip chrome.identity.getAuthToken's own
+// OS-level token cache and go straight to the launchWebAuthFlow fallback
+// therefore look "logged out" on every refresh, even though the token is
+// often still valid. Persisting the token here and rehydrating it on first
+// use is what actually keeps a Brave session alive across new tabs.
+async function _loadPersistedWebAuthToken() {
+  try {
+    const d = await API.getLocal(["_waToken", "_waTokenExp"]);
+    if (d._waToken && d._waTokenExp && Date.now() < d._waTokenExp) {
+      return { token: d._waToken, expiresAt: d._waTokenExp };
+    }
+  } catch {
+  }
+  return null;
+}
+function _persistWebAuthToken(token, expiresAt) {
+  API.setLocal({ _waToken: token, _waTokenExp: expiresAt }).catch(() => {
+  });
+}
+function _clearPersistedWebAuthToken() {
+  if (IS_CHROME && chrome.storage?.local) {
+    chrome.storage.local.remove(["_waToken", "_waTokenExp"]);
+  } else {
+    localStorage.removeItem("ftL__waToken");
+    localStorage.removeItem("ftL__waTokenExp");
+  }
+}
 function _isRealChromeCancel(msg) {
   return /did not approve access/i.test(msg || "");
 }
@@ -1216,16 +1116,22 @@ function _parseImplicitToken(redirectUrl) {
     return { token: null, expiresIn: 0 };
   }
 }
-function _webAuthFlowToken(interactive) {
+async function _webAuthFlowToken(interactive) {
+  if (!chrome.identity?.launchWebAuthFlow) return null;
+  if (!_webAuthToken) {
+    // This is a brand-new page context — rehydrate whatever token a
+    // previous new-tab page already obtained before falling through to a
+    // fresh (and on Brave, possibly cookie-blocked) silent re-auth attempt.
+    const persisted = await _loadPersistedWebAuthToken();
+    if (persisted) {
+      _webAuthToken = persisted.token;
+      _webAuthTokenExpiresAt = persisted.expiresAt;
+    }
+  }
+  if (!interactive && _webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
+    return _webAuthToken;
+  }
   return new Promise((resolve) => {
-    if (!chrome.identity?.launchWebAuthFlow) {
-      resolve(null);
-      return;
-    }
-    if (!interactive && _webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
-      resolve(_webAuthToken);
-      return;
-    }
     const scopes = chrome.runtime.getManifest()?.oauth2?.scopes || [];
     const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
       client_id: WEB_AUTH_CLIENT_ID,
@@ -1251,10 +1157,73 @@ function _webAuthFlowToken(interactive) {
         _lastAuthTokenError = null;
         _webAuthToken = token;
         _webAuthTokenExpiresAt = Date.now() + Math.max(expiresIn - 120, 60) * 1e3;
+        _persistWebAuthToken(_webAuthToken, _webAuthTokenExpiresAt);
       }
       resolve(token);
     });
   });
+}
+// --- Plain-web OAuth (the web dashboard — no chrome.identity at all) ---
+//
+// chrome.identity (both getAuthToken and launchWebAuthFlow) only exists
+// inside an extension context. A plain web page has to do a standard OAuth2
+// implicit-flow redirect instead: send the whole page to Google's consent
+// screen, Google redirects back to oauth-callback.html with the token in
+// the URL fragment, that page hands it off here via localStorage, and we
+// pick it back up on the next check.
+//
+// REQUIRES A ONE-TIME CONSOLE STEP THIS CODE CANNOT DO ITSELF: a redirect
+// URI of the dashboard's own origin (e.g.
+// https://nestpane.kneeraazon.com/dashboard/oauth-callback.html) must be
+// added to an OAuth client in Google Cloud Console. The existing
+// WEB_AUTH_CLIENT_ID was created for chrome.identity.launchWebAuthFlow,
+// whose redirect URIs are always the extension's *.chromiumapp.org shape —
+// Google OAuth client *types* restrict which redirect URI shapes they'll
+// accept, so this plain https:// redirect may need its own "Web
+// application"-type client rather than reusing that one. Until that's
+// registered, this will fail exactly like the chromiumapp.org
+// redirect_uri_mismatch error seen earlier this session — same cause,
+// different redirect URI.
+const WEB_OAUTH_SCOPES = ["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/drive.appdata"];
+function _plainWebOAuthRedirectUri() {
+  return new URL("oauth-callback.html", window.location.href).toString();
+}
+function _plainWebOAuthStart(interactive) {
+  const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  try {
+    sessionStorage.setItem("nestpane_oauth_state", state);
+    sessionStorage.setItem("nestpane_oauth_return_to", window.location.href);
+  } catch {
+  }
+  const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+    client_id: WEB_AUTH_CLIENT_ID,
+    response_type: "token",
+    redirect_uri: _plainWebOAuthRedirectUri(),
+    scope: WEB_OAUTH_SCOPES.join(" "),
+    prompt: interactive ? "select_account" : "none",
+    state
+  }).toString();
+  window.location.href = authUrl;
+}
+async function _plainWebOAuthToken(interactive) {
+  if (typeof window === "undefined" || typeof sessionStorage === "undefined") return null;
+  if (!_webAuthToken) {
+    const persisted = await _loadPersistedWebAuthToken();
+    if (persisted) {
+      _webAuthToken = persisted.token;
+      _webAuthTokenExpiresAt = persisted.expiresAt;
+    }
+  }
+  if (_webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
+    return _webAuthToken;
+  }
+  if (!interactive) return null;
+  // No valid token and the caller wants one now — the only way to get one
+  // on a plain web page is a full-page redirect. There is nothing to
+  // `resolve()` here: the page navigates away and the token comes back on
+  // the *next* load, picked up by oauth-callback.html.
+  _plainWebOAuthStart(true);
+  return null;
 }
 async function _isBrave() {
   try {
@@ -1264,7 +1233,7 @@ async function _isBrave() {
   }
 }
 async function getAuthToken(interactive = false) {
-  if (!IS_CHROME || !chrome.identity) return null;
+  if (!IS_CHROME || !chrome.identity) return _plainWebOAuthToken(interactive);
   const skipNative = _useWebAuthFallback || await _isBrave();
   if (!skipNative && chrome.identity.getAuthToken) {
     const native = await _nativeGetAuthToken(interactive);
@@ -1279,6 +1248,7 @@ function _forgetToken(token) {
     if (token && token === _webAuthToken) {
       _webAuthToken = null;
       _webAuthTokenExpiresAt = 0;
+      _clearPersistedWebAuthToken();
     }
     if (!IS_CHROME || !chrome.identity?.removeCachedAuthToken || !token) {
       resolve();
@@ -1884,18 +1854,36 @@ async function _doPush(token) {
   const payload = buildDrivePayload();
   if (Drive._fileId) {
     const remote = await _fetchCloudPayload(token, [Drive._fileId]).catch(() => null);
+    const remoteSavedAt = remote?._savedAt || 0;
     const { conflict } = NestpaneDriveConflict.detectDriveConflict({
-      remoteSavedAt: remote?._savedAt,
+      remoteSavedAt,
       lastKnownRemoteSavedAt: Drive._lastKnownRemoteSavedAt,
       localSavedAt: payload._savedAt
     });
     if (conflict) {
-      const pulled = await pullFromDrive().catch(() => false);
-      if (pulled) {
+      // Someone else has written to the cloud file since we last checked.
+      // Pull it in first so we never discard it — but that doesn't
+      // automatically mean OUR push should be cancelled. If what we were
+      // about to push is still the newer copy (the common case: this is
+      // just the first push of a session and we'd never checked the
+      // remote's real timestamp yet), push it anyway instead of stranding
+      // these local changes until the next edit happens to retrigger a
+      // sync. Only skip the push when the remote is genuinely ahead of it.
+      await pullFromDrive().catch(() => false);
+      Drive._lastKnownRemoteSavedAt = Math.max(Drive._lastKnownRemoteSavedAt, remoteSavedAt);
+      if (NestpaneDriveConflict.shouldPushAfterReconciling({
+        remoteSavedAt,
+        localSavedAt: payload._savedAt
+      })) {
+        // Fall through to the push below using the payload already built
+        // above — pullFromDrive() only mutates local state when the cloud
+        // copy was newer, which can't be true in this branch, so S (and
+        // therefore `payload`) is still exactly what it was.
+      } else {
         showToast("Synced newer changes from another device first ☁", "success");
+        setSyncStatus("synced");
+        return false;
       }
-      setSyncStatus("synced");
-      return false;
     }
   }
   let body;
@@ -2097,18 +2085,21 @@ async function _ensurePermission(names) {
   }
 }
 async function signIn() {
-  if (!IS_CHROME) {
-    openModal("profileModal");
-    return;
-  }
-  const granted = await _ensurePermission(["identity", "identity.email"]);
-  if (!granted || !chrome.identity) {
-    showToast("Google sign-in needs the identity permission to continue", "error");
-    return;
+  if (IS_CHROME) {
+    const granted = await _ensurePermission(["identity", "identity.email"]);
+    if (!granted || !chrome.identity) {
+      showToast("Google sign-in needs the identity permission to continue", "error");
+      return;
+    }
   }
   setSyncStatus("syncing");
   const token = await getAuthToken(true);
   if (!token) {
+    // On the web dashboard this is also the expected path when sign-in
+    // just redirected the whole page away (see _plainWebOAuthToken) \u2014 the
+    // real completion happens in _completeWebOAuthIfNeeded() after the
+    // browser comes back from Google, not here.
+    if (!IS_CHROME) return;
     setSyncStatus("signed-out");
     if (_lastAuthTokenError && !_isRealChromeCancel(_lastAuthTokenError)) {
       showToast("Google sign-in failed. Please try again.", "error");
@@ -2117,6 +2108,9 @@ async function signIn() {
     }
     return;
   }
+  await _finishSignIn(token);
+}
+async function _finishSignIn(token) {
   const profile = await fetchGoogleProfile(token);
   if (!profile || !profile.email) {
     setSyncStatus("error", "Could not fetch profile.");
@@ -2129,15 +2123,41 @@ async function signIn() {
   setSyncStatus("synced");
   showToast("Signed in & synced \u2601", "success");
 }
+async function _completeWebOAuthIfNeeded() {
+  if (IS_CHROME) return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("nestpane_oauth") !== "success") return;
+  params.delete("nestpane_oauth");
+  const qs = params.toString();
+  history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : "") + window.location.hash);
+  setSyncStatus("syncing");
+  const token = await getAuthToken(false);
+  if (!token) {
+    setSyncStatus("signed-out");
+    showToast("Google sign-in failed. Please try again.", "error");
+    return;
+  }
+  await _finishSignIn(token);
+}
 async function _revokeGoogleAccess() {
   const token = await getAuthToken(false);
-  if (IS_CHROME && chrome.identity && token) {
+  if (token) {
     await fetch(`https://oauth2.googleapis.com/revoke?token=${token}`, {
       method: "POST"
     }).catch(() => {
     });
+    // _forgetToken only clears _webAuthToken when it matches the extension's
+    // web-auth-flow fallback token; on the web dashboard there's no
+    // chrome.identity.removeCachedAuthToken to call, so clear everything
+    // directly here too — otherwise "sign out" revokes the token with
+    // Google but leaves a now-invalid-but-still-present copy sitting in
+    // localStorage, and getAuthToken()'s expiry check wouldn't catch that
+    // until it actually expired (~55 minutes later).
     await _forgetToken(token);
   }
+  _webAuthToken = null;
+  _webAuthTokenExpiresAt = 0;
+  _clearPersistedWebAuthToken();
 }
 async function signOut() {
   await _revokeGoogleAccess();
@@ -3565,7 +3585,7 @@ async function loadHistory(q) {
   el("historyLoading").style.display = "none";
   const list = el("historyList");
   if (!items.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">\u{1F550}</div><div class="empty-state-text">No history found</div></div>';
+    list.innerHTML = IS_CHROME ? '<div class="empty-state"><div class="empty-state-icon">\u{1F550}</div><div class="empty-state-text">No history found</div></div>' : '<div class="empty-state"><div class="empty-state-icon">\u{1F550}</div><div class="empty-state-text">Requires the browser extension</div></div>';
     return;
   }
   const groups = {};
@@ -3658,7 +3678,7 @@ async function loadDownloads() {
   el("downloadsLoading").style.display = "none";
   const list = el("downloadsList");
   if (!items.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">\u2B07\uFE0F</div><div class="empty-state-text">No downloads found</div></div>';
+    list.innerHTML = IS_CHROME ? '<div class="empty-state"><div class="empty-state-icon">\u2B07\uFE0F</div><div class="empty-state-text">No downloads found</div></div>' : '<div class="empty-state"><div class="empty-state-icon">\u2B07\uFE0F</div><div class="empty-state-text">Requires the browser extension</div></div>';
     return;
   }
   list.innerHTML = items.map((it) => {
@@ -4883,16 +4903,33 @@ function resetTimer(mins, mode) {
   applyFocusBlockRules(false);
 }
 function _notifyUser(title, opts = {}) {
-  if (!IS_CHROME || !chrome.notifications) return;
-  chrome.notifications.create("nestpane-" + Date.now(), {
-    type: "basic",
-    iconUrl: opts.icon || "icons/favicon.png",
-    title,
-    message: opts.body || ""
-  });
+  if (IS_CHROME && chrome.notifications) {
+    chrome.notifications.create("nestpane-" + Date.now(), {
+      type: "basic",
+      iconUrl: opts.icon || "icons/favicon.png",
+      title,
+      message: opts.body || ""
+    });
+    return;
+  }
+  // No chrome.notifications API outside the extension (the web dashboard,
+  // or any non-Chromium target) — the standard Web Notifications API gives
+  // the same user-facing result on any modern browser, so reminders aren't
+  // silently dropped there.
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission === "granted") {
+    new Notification(title, { body: opts.body || "", icon: opts.icon || "icons/favicon.png" });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then((perm) => {
+      if (perm === "granted") {
+        new Notification(title, { body: opts.body || "", icon: opts.icon || "icons/favicon.png" });
+      }
+    });
+  }
 }
 function _scheduleHabitNotifications() {
-  if (!IS_CHROME || !chrome.notifications) return;
+  const hasNotifications = (IS_CHROME && chrome.notifications) || typeof Notification !== "undefined";
+  if (!hasNotifications) return;
   const habits = S.habits || [];
   if (!habits.length) return;
   const now = new Date();
@@ -4969,7 +5006,7 @@ function renderTimerStats() {
   if (stats) stats.style.display = "";
 }
 const FOCUS_RULE_BASE_ID = 9e3;
-const FOCUS_RULE_CEILING = chrome?.declarativeNetRequest?.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES || 5e3;
+const FOCUS_RULE_CEILING = (IS_CHROME && chrome.declarativeNetRequest?.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES) || 5e3;
 const FOCUS_DOMAIN_RE = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
 async function applyFocusBlockRules(active) {
   if (!IS_CHROME || !chrome.declarativeNetRequest) return true;
@@ -7471,6 +7508,10 @@ function renderSessions() {
   ).join("");
 }
 async function saveCurrentSession() {
+  if (!IS_CHROME || !chrome.tabs) {
+    showToast("Tab sessions require the browser extension", "error");
+    return;
+  }
   try {
     const tabs = await new Promise(
       (res) => chrome.tabs.query({ currentWindow: true }, res)
@@ -7503,6 +7544,13 @@ async function saveCurrentSession() {
 function restoreSession(id) {
   const s = S.tabSessions.find((x) => x.id === id);
   if (!s) return;
+  if (!IS_CHROME || !chrome.tabs) {
+    // This session may have been synced in via Drive backup from a device
+    // running the real extension \u2014 S.tabSessions can be non-empty here even
+    // though this device (the web dashboard) has no chrome.tabs API at all.
+    showToast("Opening saved tabs requires the browser extension", "error");
+    return;
+  }
   s.tabs.forEach((t) => chrome.tabs.create({ url: t.url, active: false }));
   showToast(`Opening ${s.tabs.length} tabs\u2026`, "success");
 }
