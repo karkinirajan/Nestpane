@@ -1,6 +1,69 @@
 # Changelog
 
-## 2.1.0 — 2026-10-21
+## 2.1.3 — 2026-10-22
+
+### Fixed
+- **Security: signing out of the web dashboard didn't actually revoke or clear the Google OAuth
+  token.** `_revokeGoogleAccess()`'s revoke-and-clear logic was guarded by `IS_CHROME`, which is
+  false on the web dashboard — so clicking "sign out" there cleared the UI/profile state but
+  left a fully valid token sitting in `localStorage` and never told Google to revoke it. Anyone
+  with access to that browser profile could keep syncing with it until it expired naturally
+  (~55 minutes). Caught by an automated security review right after 2.1.2 shipped the web OAuth
+  flow this applies to. Fixed: sign-out now revokes and clears the token unconditionally, on
+  every platform, not just when `chrome.identity` exists. No test added — this path depends on
+  real browser storage and a live token, which couldn't be exercised in this session the same
+  way the pure-logic fixes elsewhere in this release were.
+
+## 2.1.2 — 2026-10-22
+
+### Added
+- **Web dashboard** at `nestpane.kneeraazon.com/dashboard/` — the same `app.js`/`lib/*.js` the
+  extension uses, served as a plain web page so people can try Nestpane with no install. Built
+  by `node scripts/build-dashboard.js` from the extension source (not a hand-duplicated copy).
+  See `docs/browsers/dashboard.md` for exactly what's identical to the extension and what can't
+  be (bookmarks/history/downloads/tab-sessions/site-blocking are extension-only browser
+  privileges on every browser, not a Nestpane limitation).
+- A real, persisted bookmark store for contexts without `chrome.bookmarks` (the web dashboard):
+  `extension/lib/bookmarks-store.js`, 10 unit tests. Previously, Add/Edit/Move/Delete bookmark
+  silently no-op'd outside the extension — now it actually works, against Nestpane's own
+  localStorage-backed tree (not the browser's native bookmarks, which no web page can access).
+- Google sign-in / Drive backup on the web dashboard, via a standard OAuth2 redirect flow
+  (`_plainWebOAuthToken` in `app.js`, `webapp/dashboard/oauth-callback.html`) since
+  `chrome.identity` doesn't exist outside an extension. **Needs one manual step before it
+  actually works**: a redirect URI for the dashboard's own origin must be registered in Google
+  Cloud Console — not something this session could do. Full detail in `dashboard.md` §3.
+- Reminders and habit notifications now fall back to the standard Web Notifications API when
+  `chrome.notifications` isn't available, instead of just doing nothing.
+
+### Fixed
+- **History and Downloads views previously showed fake placeholder data** (a hardcoded
+  "GitHub, Stack Overflow, YouTube…" list) whenever `chrome.history`/`chrome.downloads` weren't
+  available, which would have been actively misleading once this ran as a real web page. Both
+  now return empty and show "Requires the browser extension," matching the pattern already used
+  elsewhere in the app for Chromium-only features.
+- Hardened a handful of `chrome.*` references that weren't guarded as consistently as the rest
+  of the codebase (`FOCUS_RULE_CEILING`'s top-level initializer, Tab Sessions save/restore) —
+  harmless inside the real extension, but would throw once the same file started running as a
+  plain web page on a browser with no `chrome` global at all. No functional change for the
+  extension itself.
+
+### Site
+- `webapp/`: added the missing AI-features and Journal cards to the public feature list (they
+  existed in the product but not on the site), a `robots.txt`, a `sitemap.xml`, a JSON-LD
+  `SoftwareApplication` block (no invented ratings/install counts), and a public `changelog.html`
+  derived from this file. Nav/footer links updated across every page.
+
+## 2.1.1 — 2026-10-22
+
+Version-only bump. The Chrome Web Store rejected uploading 2.1.0 (already present there in some
+form). No code changes beyond the version number itself — everything listed under 2.1.0 below
+(migrations, Drive-conflict handling, autosave/flush-on-hide, Brave auth-token persistence, and
+the Drive-sync override-vs-restore fix) is included in this build; see that section for details.
+`manifest.json`, `package.json`, and `package-lock.json` all bumped together. Rebuilt, re-tested
+(34/34 passing), re-linted (`eslint --max-warnings 0` clean), and re-zipped —
+`nestpane-v2.1.1-chrome.zip`, SHA-256 `28180997858f59619507f0fd89cfa95e53f39f834b490c62b6ed9a1d545282a2`.
+
+## 2.1.0 — 2026-10-21 (updated 2026-10-22)
 
 ### Added
 - Storage schema versioning + migration framework (`extension/lib/migrations.js`). All existing
@@ -42,6 +105,43 @@
   Chrome instance was available in this session to reproduce the original report or confirm the
   fix live. Treat this as a confident, tested fix to the mechanism, not a confirmed field fix
   until it's been run in a real Brave session.
+- **Google sign-in appearing logged-out on every new tab in Brave.** Root cause, confirmed by
+  reading the code: there's no background service worker, so every new-tab page is a fresh JS
+  context. On Chrome, `chrome.identity.getAuthToken` papers over this because Chrome caches the
+  token itself at the OS/profile level. But `_isBrave()` (`app.js`) deliberately skips that
+  native call on Brave and uses the `launchWebAuthFlow` fallback instead — and that fallback's
+  token was only ever held in a plain in-memory variable (`_webAuthToken`), never written to
+  `chrome.storage.local`. So on Brave, every single new tab started from zero, with nothing to
+  fall back on but a silent `prompt: "none"` re-auth — which can itself fail quietly if Brave's
+  stricter third-party-cookie/storage-partitioning blocks the hidden auth iframe from seeing the
+  existing Google session. Either way, the user saw "logged out" far more often than intended.
+  Fixed by persisting the web-auth-flow token (`_waToken`/`_waTokenExp`) to
+  `chrome.storage.local` and rehydrating it on first use in a new tab, so a token obtained once
+  survives across new-tab loads until it actually expires (~55 minutes), instead of being
+  thrown away the instant the tab closes. Cleared correctly on sign-out
+  (`_forgetToken`/`_clearPersistedWebAuthToken`). Never included in the Drive sync payload
+  (`buildDrivePayload()` doesn't reference it) — confirmed by reading that function's full field
+  list. **This does not fix the underlying ~55-minute-expiry re-auth if Brave's cookie
+  partitioning blocks the silent `prompt:"none"` flow** — that's a Brave privacy-policy
+  interaction the extension can't fully control from inside `launchWebAuthFlow`; it only fixes
+  the far more common "logged out on literally every refresh" symptom. Verified by static code
+  review, lint, and syntax-checking the minified build — not by running it in an actual Brave
+  session (none available this session).
+- **Drive sync could get stuck never pushing local changes (regression in 2.1.0's own A2 fix,
+  caught and fixed same day).** The conflict check added earlier in this release
+  (`detectDriveConflict`) treats the very first push of any session as a "conflict" against any
+  pre-existing cloud backup, since `Drive._lastKnownRemoteSavedAt` always starts at 0. The old
+  handling treated every such conflict as "don't push, period" — so a device with genuinely
+  newer local data, syncing against an older cloud backup, would pull (a no-op, since cloud was
+  older), then simply stop, leaving its own newer changes stranded locally until the user's next
+  edit happened to retrigger a sync. Fixed with a new `shouldPushAfterReconciling()` check
+  (`extension/lib/drive-conflict.js`): after reconciling against the remote, the push still goes
+  ahead if local is at least as new as the remote — it's only actually skipped when the remote
+  is strictly newer. This is what makes "override the cloud with local changes unless the cloud
+  is genuinely ahead (new browser/device restores from it instead)" work the way any other
+  syncing app behaves. 5 new unit tests, including the exact regression scenario and an explicit
+  "fresh install restores from an existing cloud backup instead of overwriting it" case. 34/34
+  tests pass total.
 
 ### Changed
 - `escH`/`safeUrl` moved out of `app.js` into a shared, dependency-free `extension/lib/format.js`

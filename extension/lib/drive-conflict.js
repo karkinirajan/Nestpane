@@ -22,7 +22,24 @@
     return { conflict: true, remoteSavedAt: remote };
   }
 
-  const api = { detectDriveConflict };
+  /**
+   * After a detected conflict has been reconciled (the newer remote copy,
+   * if any, has been pulled in), decides whether the push that triggered
+   * the conflict check should still go ahead.
+   *
+   * This is what makes "override the cloud unless it's genuinely behind"
+   * work: a conflict only means "go check the remote before assuming
+   * you're first" — it must not mean "never push this round." If what we
+   * were about to push is still at least as new as the remote, local wins
+   * and the push proceeds; only a remote that's strictly newer blocks it.
+   */
+  function shouldPushAfterReconciling({ remoteSavedAt, localSavedAt }) {
+    const remote = remoteSavedAt || 0;
+    const local = localSavedAt || 0;
+    return local >= remote;
+  }
+
+  const api = { detectDriveConflict, shouldPushAfterReconciling };
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {

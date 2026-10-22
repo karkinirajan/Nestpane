@@ -34,7 +34,8 @@ const REQUIRED_FILES = [
   "lib/format.js",
   "lib/migrations.js",
   "lib/drive-conflict.js",
-  "lib/autosave.js"
+  "lib/autosave.js",
+  "lib/bookmarks-store.js"
 ];
 const REQUIRED_PERMISSIONS = [
   "tabs",
