@@ -47,31 +47,28 @@ still needs before Google sign-in works there.
 
 ## 🎨 Design System & Branding
 
-Nestpane relies on a dual-font system and a strict dark-mode color palette to balance modern tech aesthetics with high readability.
+Nestpane uses a cohesive, human-crafted architectural design system shared across both the Chrome extension (`extension/style.css`, `extension/popup.html`) and the public website (`webapp/*.html`).
 
 ### Typography
 | Role | Font | Usage | Tracking (Letter-Spacing) |
 | :--- | :--- | :--- | :--- |
-| **Display** | `Space Grotesk` | Headlines, Logo Wordmark, Numbers | `-0.02em` to `-0.05em` |
-| **Body** | `Inter` | Paragraphs, UI elements, Navigation links | Normal |
+| **UI & Headlines** | `Inter` (`cv02`, `cv03`, `cv04`, `cv11`) | Headings, navigation, body copy, controls | `-0.03em` (headings) to normal |
+| **Editorial Accent** | `Instrument Serif` | Italic display emphasis & quotes | `-0.01em` |
+| **Technical / Numeric** | `JetBrains Mono` | Timers, KPI counters (`tabular-nums`), keyboard shortcuts, version tags | `-0.02em` |
 
-**Google Fonts Import:**
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-```
-
-### Color Palette
+### Color Palette (Obsidian Dark)
 
 | Role | Hex Code | Usage |
 | :--- | :--- | :--- |
-| **Primary Accent** | `#FF6B00` | Buttons, Logo background, Active states, Hover glows |
-| **Background Base** | `#0F0F0F` | Main page background (Deep Charcoal) |
-| **Background Secondary**| `#1A1A1A` | Cards, Browser Mockups, Inner sections |
-| **Text Primary** | `#FFFFFF` | Main headings, bold text, "Nest" in wordmark |
-| **Text Secondary** | `#E0E0E0` | Body copy, paragraphs |
-| **Text Muted** | `#9CA3AF` (Gray-400)| Icons, placeholders, unactive links |
+| **Primary Accent** | `#e86c2c` | Terracotta Ember — primary actions, active states |
+| **Secondary Accent** | `#f2935c` | Warm Amber — highlights, inline links, badges |
+| **Background Base** | `#0c0d0e` | Deep Obsidian canvas |
+| **Surface Elevated** | `#131517` | Cards, sidebar, modals |
+| **Surface Secondary** | `#1a1d20` | Inputs, hover states, nested blocks |
+| **Border Hairline** | `#23262a` | Crisp 1px structural borders (`#30343a` on hover) |
+| **Text Primary** | `#f3f2ee` | Warm alabaster headings and primary copy |
+| **Text Secondary** | `#a6a49e` | Body copy and descriptions |
+| **Text Muted** | `#6e6c67` | Overlines, captions, and metadata |
 
 ### Logo & Branding Concept
 - **The Monogram:** The icon features the letters "NP" constructed from a grid of small, mathematically precise square blocks, contained within a larger rounded orange square. This represents "building blocks," modularity, and structure.

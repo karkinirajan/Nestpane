@@ -490,7 +490,7 @@ const DEFAULT_KANBAN = {
 let S = {
   user: {
     name: "",
-    avatarColor: "#7c3aed",
+    avatarColor: "#e86c2c",
     googlePicture: null,
     googleName: null
   },
@@ -503,8 +503,8 @@ let S = {
   trash: [],
   settings: {
     theme: "dark",
-    accentColor: "#fe8019",
-    cardGlow: "glow",
+    accentColor: "#e86c2c",
+    cardGlow: "off",
     widgets: {
       notes: false,
       timer: false,
@@ -633,10 +633,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (document.hidden) {
       // The tab is backgrounding — on Brave/Chrome this is also the point
       // a tab can be discarded by memory-saver features without warning.
-      // Flush every pending autosave now rather than trusting the debounce
-      // window to finish naturally.
+      // Flush every pending autosave and pending Drive push immediately.
       _autosaveRegistry.flushAll();
-    } else if (S.googleUser) {
+      _flushPendingDrivePush();
+    } else if (S.googleUser && !Drive._dirty && !Drive._syncing) {
       pullFromDrive();
     }
   });
@@ -644,6 +644,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Last-resort flush for an actual unload/discard/crash recovery path —
     // pagehide fires even when visibilitychange doesn't catch it in time.
     _autosaveRegistry.flushAll();
+    _flushPendingDrivePush();
   });
   document.addEventListener("keydown", (e) => {
     const inInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
@@ -794,6 +795,10 @@ async function loadState() {
     "_focusMinutes",
     "_qaDeleted",
     "_driveFileId",
+    "_driveLastRemoteSavedAt",
+    "_driveHasEverSynced",
+    "_webBookmarksTree",
+    "_snapshots",
     "workspaces",
     "activeWsId",
     "wsData",
@@ -808,6 +813,10 @@ async function loadState() {
     }
   }
   S._freshInstall = !(d.settings || d.wsData || d.workspaces || d.quickAccess || d.user);
+  S._hadLegacyWithoutSidebar = Boolean(!S._freshInstall && d.settings && !d.settings.sidebar);
+  if (Array.isArray(d._webBookmarksTree)) {
+    _webBookmarksTree = d._webBookmarksTree;
+  }
   S.user = d.user || S.user;
   S.trash = Array.isArray(d.trash) ? d.trash : [];
   S._qaDeleted = new Set(Array.isArray(d._qaDeleted) ? d._qaDeleted : []);
@@ -877,15 +886,18 @@ async function loadState() {
   }
   S._focusSessions = d._focusSessions && typeof d._focusSessions === "object" ? d._focusSessions : {};
   S._focusMinutes = d._focusMinutes && typeof d._focusMinutes === "object" ? d._focusMinutes : {};
+  S._snapshots = Array.isArray(d._snapshots) ? d._snapshots : [];
   if (S._qaDeleted.size) {
     S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
   }
   Drive._fileId = d._driveFileId || null;
+  Drive._lastKnownRemoteSavedAt = d._driveLastRemoteSavedAt || 0;
+  Drive._hasEverSynced = Boolean(d._driveHasEverSynced);
   S._savedAt = d._savedAt || 0;
   if (d.googleUser?.email) S.googleUser = d.googleUser;
   applyAccent(S.settings.accentColor);
   applyTheme(S.settings.theme);
-  applyCardGlow(S.settings.cardGlow || "glow");
+  applyCardGlow(S.settings.cardGlow || "off");
   _syncFocusModeUI();
   _syncAiUI();
   document.body.classList.toggle(
@@ -900,6 +912,31 @@ async function loadState() {
 }
 function save() {
   S._savedAt = Date.now();
+  S._freshInstall = false;
+  Drive._dirty = true;
+  if (typeof NestpaneSnapshots !== "undefined" && NestpaneSnapshots.recordDailySnapshot) {
+    S._snapshots = NestpaneSnapshots.recordDailySnapshot(
+      S._snapshots,
+      {
+        _savedAt: S._savedAt,
+        user: S.user,
+        quickAccess: S.quickAccess,
+        notes: S.notes,
+        folders: S.folders,
+        importedBookmarks: S.importedBookmarks,
+        settings: S.settings,
+        habits: S.habits,
+        readingQueue: S.readingQueue,
+        tabSessions: S.tabSessions,
+        journal: S.journal,
+        kanban: S.kanban,
+        reminders: S.reminders,
+        calEvents: S.calEvents
+      },
+      _todayKey(),
+      7
+    );
+  }
   const p = API.setLocal({
     user: S.user,
     googleUser: S.googleUser,
@@ -920,7 +957,10 @@ function save() {
     _savedAt: S._savedAt,
     _focusSessions: S._focusSessions || {},
     _focusMinutes: S._focusMinutes || {},
-    _qaDeleted: [...S._qaDeleted || new Set()]
+    _snapshots: S._snapshots || [],
+    _qaDeleted: [...S._qaDeleted || new Set()],
+    _driveLastRemoteSavedAt: Drive._lastKnownRemoteSavedAt || 0,
+    _driveHasEverSynced: Boolean(Drive._hasEverSynced)
   });
   if (S.googleUser) scheduleDriveSync();
   return p.catch((err) => _warnSaveFailed(err));
@@ -972,7 +1012,7 @@ function favSrc(url) {
     const origin = new URL(url).origin;
     return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(origin)}&size=64`;
   } catch {
-    return `https://www.google.com/s2/favicons?domain=${getDomain(url)}&sz=32`;
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(getDomain(url))}&sz=32`;
   }
 }
 let _bmEditId = null;
@@ -1049,7 +1089,11 @@ const Drive = {
   _syncTimer: null,
   _lastSyncAt: 0,
   _status: "idle",
-  _lastKnownRemoteSavedAt: 0
+  _lastKnownRemoteSavedAt: 0,
+  _hasEverSynced: false,
+  _syncing: false,
+  _pendingPush: false,
+  _dirty: false
 };
 let _lastAuthTokenError = null;
 let _useWebAuthFallback = false;
@@ -1616,15 +1660,23 @@ async function testAiApiKey() {
   }
 }
 function buildDrivePayload() {
+  const savedAt = S._savedAt || Date.now();
+  S._savedAt = savedAt;
+  const cleanSettings = { ...S.settings };
+  if (cleanSettings.ai && typeof cleanSettings.ai === "object") {
+    const aiCopy = { ...cleanSettings.ai };
+    delete aiCopy.apiKey;
+    cleanSettings.ai = aiCopy;
+  }
   return {
     _version: 2,
-    _savedAt: Date.now(),
+    _savedAt: savedAt,
     user: S.user,
     quickAccess: S.quickAccess,
     notes: S.notes,
     folders: S.folders,
     importedBookmarks: S.importedBookmarks,
-    settings: S.settings,
+    settings: cleanSettings,
     habits: S.habits,
     readingQueue: S.readingQueue,
     tabSessions: S.tabSessions,
@@ -1634,13 +1686,21 @@ function buildDrivePayload() {
     calEvents: S.calEvents,
     weatherLocation: S.weatherLocation,
     trash: S.trash,
-    _qaDeleted: [...S._qaDeleted || new Set()]
+    _qaDeleted: [...S._qaDeleted || new Set()],
+    _focusSessions: S._focusSessions || {},
+    _focusMinutes: S._focusMinutes || {},
+    _snapshots: S._snapshots || [],
+    ...Array.isArray(_webBookmarksTree) ? { _webBookmarksTree } : {}
   };
 }
-function applyCloudData(cloud) {
+function applyCloudData(cloud, opts = {}) {
   if (!cloud || cloud._version < 1) return;
+  S._freshInstall = false;
+  S._hadLegacyWithoutSidebar = false;
   if (Array.isArray(cloud._qaDeleted)) {
-    S._qaDeleted = new Set([...S._qaDeleted, ...cloud._qaDeleted]);
+    S._qaDeleted = opts.overrideInitialState ? new Set(cloud._qaDeleted) : new Set([...S._qaDeleted, ...cloud._qaDeleted]);
+  } else if (opts.overrideInitialState) {
+    S._qaDeleted = new Set();
   }
   if (Array.isArray(cloud.workspaces) || cloud.wsData && typeof cloud.wsData === "object") {
     const flat = _flattenLegacyWorkspaceData(cloud);
@@ -1659,18 +1719,39 @@ function applyCloudData(cloud) {
       S.kanban = { todo: [], doing: [], done: [], ...cloud.kanban };
     if (Array.isArray(cloud.reminders)) S.reminders = cloud.reminders;
   }
+  S.quickAccess = _dedupeByUrl(S.quickAccess);
+  S.importedBookmarks = _dedupeByUrl(S.importedBookmarks);
   if (S._qaDeleted.size) {
     S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
   }
-  S.habits = Array.isArray(cloud.habits) ? cloud.habits : S.habits;
-  S.readingQueue = Array.isArray(cloud.readingQueue) ? cloud.readingQueue : S.readingQueue;
-  S.tabSessions = Array.isArray(cloud.tabSessions) ? cloud.tabSessions : S.tabSessions;
-  S.journal = cloud.journal && typeof cloud.journal === "object" ? cloud.journal : S.journal;
-  S.calEvents = Array.isArray(cloud.calEvents) ? cloud.calEvents : S.calEvents;
-  S.trash = Array.isArray(cloud.trash) ? cloud.trash : S.trash;
+  S.habits = Array.isArray(cloud.habits) ? cloud.habits : opts.overrideInitialState ? [] : S.habits;
+  S.readingQueue = Array.isArray(cloud.readingQueue) ? cloud.readingQueue : opts.overrideInitialState ? [] : S.readingQueue;
+  S.tabSessions = Array.isArray(cloud.tabSessions) ? cloud.tabSessions : opts.overrideInitialState ? [] : S.tabSessions;
+  S.journal = cloud.journal && typeof cloud.journal === "object" ? cloud.journal : opts.overrideInitialState ? {} : S.journal;
+  S.calEvents = Array.isArray(cloud.calEvents) ? cloud.calEvents : opts.overrideInitialState ? [] : S.calEvents;
+  S.trash = Array.isArray(cloud.trash) ? cloud.trash : opts.overrideInitialState ? [] : S.trash;
+  if (cloud._focusSessions && typeof cloud._focusSessions === "object") {
+    S._focusSessions = cloud._focusSessions;
+  } else if (opts.overrideInitialState) {
+    S._focusSessions = {};
+  }
+  if (cloud._focusMinutes && typeof cloud._focusMinutes === "object") {
+    S._focusMinutes = cloud._focusMinutes;
+  } else if (opts.overrideInitialState) {
+    S._focusMinutes = {};
+  }
+  if (Array.isArray(cloud._snapshots)) {
+    S._snapshots = cloud._snapshots;
+  } else if (opts.overrideInitialState) {
+    S._snapshots = [];
+  }
+  if (Array.isArray(cloud._webBookmarksTree)) {
+    _webBookmarksTree = cloud._webBookmarksTree;
+    _persistWebBookmarksTree();
+  }
   if (cloud.weatherLocation !== void 0)
     S.weatherLocation = cloud.weatherLocation;
-  if (cloud.settings)
+  if (cloud.settings) {
     S.settings = {
       ...S.settings,
       ...cloud.settings,
@@ -1680,13 +1761,18 @@ function applyCloudData(cloud) {
         ...cloud.settings.sbLinks || {}
       }
     };
+    if (!Array.isArray(S.settings.sidebar)) {
+      migrateSidebarToDataModel();
+    }
+  }
   if (cloud.user) {
     S.user = { ...S.user, ...cloud.user };
     if (S.googleUser) {
       S.user.googlePicture = S.googleUser.picture || S.user.googlePicture;
+      S.user.googleName = S.user.googleName || S.googleUser.name || null;
     }
   }
-  S._savedAt = cloud._savedAt || 0;
+  S._savedAt = cloud._savedAt || Date.now();
 }
 function _sanitizeImportedLinks(arr) {
   if (!Array.isArray(arr)) return arr;
@@ -1742,13 +1828,28 @@ async function _persistLocalState() {
     _savedAt: S._savedAt,
     _focusSessions: S._focusSessions || {},
     _focusMinutes: S._focusMinutes || {},
-    _qaDeleted: [...S._qaDeleted || new Set()]
+    _snapshots: S._snapshots || [],
+    _qaDeleted: [...S._qaDeleted || new Set()],
+    _driveLastRemoteSavedAt: Drive._lastKnownRemoteSavedAt || 0,
+    _driveHasEverSynced: Boolean(Drive._hasEverSynced)
   });
 }
 function _refreshAfterCloudApply() {
   applyTheme(S.settings.theme || "dark");
-  applyAccent(S.settings.accentColor || "#fe8019");
+  applyAccent(S.settings.accentColor || "#e86c2c");
+  applyCardGlow(S.settings.cardGlow || "off");
+  document.body.classList.toggle("sidebar-collapsed", !!S.settings.sidebarCollapsed);
+  el("sidebarToggleBtn")?.classList.toggle("active", !!S.settings.sidebarCollapsed);
+  _syncFocusModeUI();
+  _syncAiUI();
   renderAll();
+  renderHabits();
+  renderReadingQueue();
+  renderSessions();
+  renderRemindersWidget();
+  if (el("nestodoModal")?.classList.contains("open")) renderKanban();
+  if (document.querySelector(".view.active")?.id === "view-journal") initJournalView();
+  if (document.querySelector(".view.active")?.id === "view-analytics") renderAnalytics();
   updateAvatarDisplay();
 }
 function _registerLiveStorageSync() {
@@ -1788,13 +1889,27 @@ function _applyLiveStorageChange(changes) {
   if (changes._focusSessions) S._focusSessions = changes._focusSessions.newValue || {};
   if (changes._focusMinutes) S._focusMinutes = changes._focusMinutes.newValue || {};
   if (changes._qaDeleted) S._qaDeleted = new Set(changes._qaDeleted.newValue || []);
+  if (changes._driveLastRemoteSavedAt) {
+    Drive._lastKnownRemoteSavedAt = Math.max(
+      Drive._lastKnownRemoteSavedAt,
+      changes._driveLastRemoteSavedAt.newValue || 0
+    );
+  }
+  if (changes._driveHasEverSynced) {
+    Drive._hasEverSynced = Boolean(changes._driveHasEverSynced.newValue);
+  }
   if (S._qaDeleted.size) {
     S.quickAccess = S.quickAccess.filter((q) => !S._qaDeleted.has(_normUrl(q.url)));
   }
   S._savedAt = changes._savedAt.newValue || S._savedAt;
+  S._freshInstall = false;
   _refreshAfterCloudApply();
+  if (S.googleUser && S._savedAt > Drive._lastKnownRemoteSavedAt) {
+    Drive._dirty = true;
+    scheduleDriveSync(400);
+  }
 }
-async function pullFromDrive() {
+async function pullFromDrive(opts = {}) {
   const token = await getAuthToken(false);
   if (!token) return false;
   const fileIds = await findDriveFiles(token);
@@ -1823,64 +1938,92 @@ async function pullFromDrive() {
     }
   }
   try {
-    Drive._lastKnownRemoteSavedAt = Math.max(Drive._lastKnownRemoteSavedAt, decoded._savedAt || 0);
-    if ((decoded._savedAt || 0) > S._savedAt) {
-      applyCloudData(decoded);
+    const remoteSavedAt = decoded._savedAt || 0;
+    Drive._lastKnownRemoteSavedAt = Math.max(Drive._lastKnownRemoteSavedAt, remoteSavedAt);
+    const shouldApply = Boolean(opts.forceApply) || remoteSavedAt > S._savedAt;
+    if (shouldApply) {
+      clearTimeout(Drive._syncTimer);
+      Drive._syncTimer = null;
+      Drive._dirty = false;
+      applyCloudData(decoded, { overrideInitialState: Boolean(opts.overrideInitialState) });
+      Drive._hasEverSynced = true;
+      Drive._lastSyncAt = Date.now();
       await _persistLocalState();
       _refreshAfterCloudApply();
-      showToast("Data synced from cloud \u2601", "success");
+      setSyncStatus("synced");
+      if (!opts.silent) {
+        showToast("Data synced from cloud \u2601", "success");
+      }
     }
     if (fileIds.length > 1) await _cleanupDuplicateDriveFiles(token, fileIds);
-    return true;
+    return shouldApply;
   } catch {
     return false;
   }
 }
 async function pushToDrive() {
-  if (!S.googleUser) return;
+  if (!S.googleUser) return false;
   if (!navigator.onLine) {
     setSyncStatus("offline");
-    return;
+    return false;
+  }
+  if (Drive._syncing) {
+    Drive._pendingPush = true;
+    return false;
   }
   const token = await getAuthToken(false);
   if (!token) {
     setSyncStatus("needs-auth", S.googleUser?.email || "");
-    return;
+    return false;
   }
-  await _doPush(token);
+  Drive._syncing = true;
+  try {
+    return await _doPush(token);
+  } finally {
+    Drive._syncing = false;
+    if (Drive._pendingPush) {
+      Drive._pendingPush = false;
+      scheduleDriveSync(200);
+    }
+  }
 }
 async function _doPush(token) {
   setSyncStatus("syncing");
   const payload = buildDrivePayload();
+  if (!Drive._fileId) {
+    const existingIds = await findDriveFiles(token);
+    if (existingIds.length) {
+      await _setDriveFileId(existingIds[0]);
+      if (existingIds.length > 1) {
+        await _cleanupDuplicateDriveFiles(token, existingIds);
+      }
+    }
+  }
   if (Drive._fileId) {
     const remote = await _fetchCloudPayload(token, [Drive._fileId]).catch(() => null);
     const remoteSavedAt = remote?._savedAt || 0;
+    const isFirstLoginOrFreshInstall = Boolean(S._freshInstall || !Drive._hasEverSynced);
     const { conflict } = NestpaneDriveConflict.detectDriveConflict({
       remoteSavedAt,
       lastKnownRemoteSavedAt: Drive._lastKnownRemoteSavedAt,
       localSavedAt: payload._savedAt
     });
-    if (conflict) {
-      // Someone else has written to the cloud file since we last checked.
-      // Pull it in first so we never discard it — but that doesn't
-      // automatically mean OUR push should be cancelled. If what we were
-      // about to push is still the newer copy (the common case: this is
-      // just the first push of a session and we'd never checked the
-      // remote's real timestamp yet), push it anyway instead of stranding
-      // these local changes until the next edit happens to retrigger a
-      // sync. Only skip the push when the remote is genuinely ahead of it.
-      await pullFromDrive().catch(() => false);
+    if (conflict || isFirstLoginOrFreshInstall && remoteSavedAt > 0) {
+      await pullFromDrive({
+        forceApply: isFirstLoginOrFreshInstall,
+        overrideInitialState: isFirstLoginOrFreshInstall,
+        silent: true
+      }).catch(() => false);
       Drive._lastKnownRemoteSavedAt = Math.max(Drive._lastKnownRemoteSavedAt, remoteSavedAt);
       if (NestpaneDriveConflict.shouldPushAfterReconciling({
         remoteSavedAt,
-        localSavedAt: payload._savedAt
+        localSavedAt: payload._savedAt,
+        isFirstLoginOrFreshInstall
       })) {
-        // Fall through to the push below using the payload already built
-        // above — pullFromDrive() only mutates local state when the cloud
-        // copy was newer, which can't be true in this branch, so S (and
-        // therefore `payload`) is still exactly what it was.
+        // Local state on an already-synced browser is genuinely newer than
+        // the remote copy — proceed with the push.
       } else {
-        showToast("Synced newer changes from another device first ☁", "success");
+        showToast("Synced newer changes from cloud \u2601", "success");
         setSyncStatus("synced");
         return false;
       }
@@ -1895,7 +2038,7 @@ async function _doPush(token) {
         "Sync paused: E2E encryption is enabled but no passphrase is set. Add one in Settings.",
         "error"
       );
-      return;
+      return false;
     }
     body = JSON.stringify(await _e2eEncryptPayload(payload, pass));
   } else {
@@ -1928,13 +2071,19 @@ async function _doPush(token) {
     });
     if (r.ok) {
       const result = await r.json();
-      if (!fileId) {
+      if (!fileId && result?.id) {
         await _setDriveFileId(result.id);
       }
+      Drive._dirty = false;
+      Drive._hasEverSynced = true;
       Drive._lastSyncAt = Date.now();
       Drive._lastKnownRemoteSavedAt = payload._savedAt;
       S._savedAt = payload._savedAt;
-      await API.setLocal({ _savedAt: S._savedAt });
+      await API.setLocal({
+        _savedAt: S._savedAt,
+        _driveLastRemoteSavedAt: Drive._lastKnownRemoteSavedAt,
+        _driveHasEverSynced: true
+      });
       setSyncStatus("synced");
       return true;
     } else {
@@ -1942,7 +2091,7 @@ async function _doPush(token) {
       if (r.status === 401) {
         await _forgetToken(token);
         setSyncStatus("needs-auth", S.googleUser?.email || "");
-      } else if (r.status === 403 && fileId) {
+      } else if ((r.status === 403 || r.status === 404) && fileId) {
         await _setDriveFileId(null);
         return await _doPush(token);
       } else if (r.status === 403) {
@@ -1961,9 +2110,20 @@ async function _doPush(token) {
     return false;
   }
 }
-function scheduleDriveSync() {
+function scheduleDriveSync(delayMs = 500) {
   clearTimeout(Drive._syncTimer);
-  Drive._syncTimer = setTimeout(pushToDrive, 2e3);
+  Drive._syncTimer = setTimeout(() => {
+    Drive._syncTimer = null;
+    pushToDrive();
+  }, delayMs);
+}
+function _flushPendingDrivePush() {
+  if (!S.googleUser) return;
+  if (Drive._syncTimer || Drive._dirty) {
+    clearTimeout(Drive._syncTimer);
+    Drive._syncTimer = null;
+    pushToDrive();
+  }
 }
 async function manualPushToDrive() {
   const btn = el("pushCloudBtn");
@@ -1982,7 +2142,7 @@ async function manualPullFromDrive() {
   const btn = el("pullCloudBtn");
   if (btn) btn.disabled = true;
   try {
-    const pulled = await pullFromDrive();
+    const pulled = await pullFromDrive({ forceApply: true, overrideInitialState: true, silent: true });
     showToast(pulled ? "Pulled from cloud \u2601\uFE0F" : "Already up to date", "success");
     _updateSyncTimestamp();
   } catch {
@@ -2017,17 +2177,21 @@ async function checkGoogleIdentity() {
     }
     return;
   }
-  if (!S.googleUser) {
-    const profile = await fetchGoogleProfile(token);
+  let profile = null;
+  const hadGoogleUser = Boolean(S.googleUser?.email);
+  if (!hadGoogleUser) {
+    profile = await fetchGoogleProfile(token);
     if (!profile?.email) {
       setSyncStatus("error", "Could not verify account.");
       return;
     }
     applyGoogleProfile(profile);
-    save();
   }
   updateAvatarDisplay();
-  await syncWithDriveOnConnect(token);
+  await syncWithDriveOnConnect(token, {
+    isInitialSignIn: !hadGoogleUser,
+    profile
+  });
   setSyncStatus("synced");
 }
 async function _setDriveFileId(id) {
@@ -2046,9 +2210,13 @@ async function _cleanupDuplicateDriveFiles(token, fileIds) {
     }
   }
 }
-async function syncWithDriveOnConnect(token) {
+async function syncWithDriveOnConnect(token, opts = {}) {
   const fileIds = await findDriveFiles(token);
   if (!fileIds.length) {
+    Drive._hasEverSynced = true;
+    S._freshInstall = false;
+    if (!S._savedAt) S._savedAt = Date.now();
+    await _persistLocalState();
     await pushToDrive();
     return;
   }
@@ -2058,19 +2226,57 @@ async function syncWithDriveOnConnect(token) {
   let decoded = cloud;
   if (cloud._e2e === 1) {
     const pass = await _e2eLoadPassphrase();
-    if (!pass) return;
+    if (!pass) {
+      showToast(
+        "Cloud backup is encrypted \u2014 enter your sync passphrase in Settings",
+        "error"
+      );
+      return;
+    }
     try {
       decoded = await _e2eDecryptPayload(cloud, pass);
     } catch {
+      showToast(
+        "Could not decrypt cloud backup \u2014 check your sync passphrase",
+        "error"
+      );
       return;
     }
   }
-  if ((decoded._savedAt || 0) > S._savedAt) {
-    applyCloudData(decoded);
+  const remoteSavedAt = decoded._savedAt || 0;
+  const isFirstLoginOrFreshInstall = Boolean(
+    opts.isInitialSignIn || S._freshInstall || !Drive._hasEverSynced
+  );
+  const action = NestpaneDriveConflict.reconcileOnConnect({
+    remoteSavedAt,
+    localSavedAt: S._savedAt || 0,
+    hasRemoteFile: true,
+    isFirstLoginOrFreshInstall
+  });
+  if (action === "pull") {
+    clearTimeout(Drive._syncTimer);
+    Drive._syncTimer = null;
+    Drive._dirty = false;
+    applyCloudData(decoded, { overrideInitialState: isFirstLoginOrFreshInstall });
+    if (opts.profile) {
+      applyGoogleProfile(opts.profile);
+    }
+    Drive._hasEverSynced = true;
+    Drive._lastSyncAt = Date.now();
+    Drive._lastKnownRemoteSavedAt = remoteSavedAt || Date.now();
+    S._savedAt = remoteSavedAt || Date.now();
     await _persistLocalState();
     _refreshAfterCloudApply();
-  } else if ((decoded._savedAt || 0) < S._savedAt) {
+  } else if (action === "push") {
+    Drive._hasEverSynced = true;
+    Drive._lastKnownRemoteSavedAt = remoteSavedAt;
+    await _persistLocalState();
     await pushToDrive();
+  } else {
+    Drive._hasEverSynced = true;
+    Drive._lastSyncAt = Date.now();
+    Drive._lastKnownRemoteSavedAt = remoteSavedAt || S._savedAt;
+    await _persistLocalState();
   }
   if (fileIds.length > 1) await _cleanupDuplicateDriveFiles(token, fileIds);
 }
@@ -2095,10 +2301,6 @@ async function signIn() {
   setSyncStatus("syncing");
   const token = await getAuthToken(true);
   if (!token) {
-    // On the web dashboard this is also the expected path when sign-in
-    // just redirected the whole page away (see _plainWebOAuthToken) \u2014 the
-    // real completion happens in _completeWebOAuthIfNeeded() after the
-    // browser comes back from Google, not here.
     if (!IS_CHROME) return;
     setSyncStatus("signed-out");
     if (_lastAuthTokenError && !_isRealChromeCancel(_lastAuthTokenError)) {
@@ -2116,10 +2318,14 @@ async function _finishSignIn(token) {
     setSyncStatus("error", "Could not fetch profile.");
     return;
   }
+  clearTimeout(Drive._syncTimer);
+  Drive._syncTimer = null;
   applyGoogleProfile(profile);
-  save();
   updateAvatarDisplay();
-  await syncWithDriveOnConnect(token);
+  await syncWithDriveOnConnect(token, {
+    isInitialSignIn: true,
+    profile
+  });
   setSyncStatus("synced");
   showToast("Signed in & synced \u2601", "success");
 }
@@ -2146,13 +2352,6 @@ async function _revokeGoogleAccess() {
       method: "POST"
     }).catch(() => {
     });
-    // _forgetToken only clears _webAuthToken when it matches the extension's
-    // web-auth-flow fallback token; on the web dashboard there's no
-    // chrome.identity.removeCachedAuthToken to call, so clear everything
-    // directly here too — otherwise "sign out" revokes the token with
-    // Google but leaves a now-invalid-but-still-present copy sitting in
-    // localStorage, and getAuthToken()'s expiry check wouldn't catch that
-    // until it actually expired (~55 minutes later).
     await _forgetToken(token);
   }
   _webAuthToken = null;
@@ -2166,8 +2365,13 @@ async function signOut() {
   S.user.googleName = null;
   await _setDriveFileId(null);
   Drive._lastSyncAt = 0;
+  Drive._lastKnownRemoteSavedAt = 0;
+  Drive._hasEverSynced = false;
+  Drive._dirty = false;
+  Drive._pendingPush = false;
   clearTimeout(Drive._syncTimer);
-  save();
+  Drive._syncTimer = null;
+  await _persistLocalState();
   updateAvatarDisplay();
   setSyncStatus("signed-out");
   renderCalendarWidget();
@@ -2187,7 +2391,7 @@ function updateAvatarDisplay() {
       img.addEventListener("error", () => {
         img.remove();
         avatarEl.textContent = S.user.name ? S.user.name[0].toUpperCase() : "U";
-        avatarEl.style.background = S.user.avatarColor || "#7c3aed";
+        avatarEl.style.background = S.user.avatarColor || "#e86c2c";
         avatarEl.style.padding = "";
       });
       avatarEl.innerHTML = "";
@@ -2196,18 +2400,18 @@ function updateAvatarDisplay() {
       avatarEl.style.padding = "0";
     } else {
       avatarEl.textContent = S.user.name ? S.user.name[0].toUpperCase() : "U";
-      avatarEl.style.background = S.user.avatarColor || "#7c3aed";
+      avatarEl.style.background = S.user.avatarColor || "#e86c2c";
       avatarEl.style.padding = "";
     }
   }
   if (ftrAvatar) {
     if (pic) {
-      ftrAvatar.innerHTML = `<img src="${pic}" alt="avatar">`;
+      ftrAvatar.innerHTML = `<img src="${escH(safeUrl(pic) || "")}" alt="avatar">`;
       ftrAvatar.style.background = "transparent";
     } else if (S.googleUser?.email || S.user.name) {
       const letter = (S.user.name || S.googleUser?.email || "U")[0].toUpperCase();
       ftrAvatar.textContent = letter;
-      ftrAvatar.style.background = S.user.avatarColor || "#7c3aed";
+      ftrAvatar.style.background = S.user.avatarColor || "#e86c2c";
     } else {
       ftrAvatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`;
       ftrAvatar.style.background = "";
@@ -3877,9 +4081,15 @@ function _mdRender(text) {
   html = html.replace(/__(.+?)__/g, (_, t) => `<strong>${t}</strong>`);
   html = html.replace(/_(.+?)_/g, (_, t) => `<em>${t}</em>`);
   html = html.replace(/~~(.+?)~~/g, (_, t) => `<del>${t}</del>`);
+  html = html.replace(/\[\[([^[\]\n]+)\]\]/g, (_, targetRaw) => {
+    const t = targetRaw.trim();
+    const resolved = typeof NestpaneWikiLinks !== "undefined" ? NestpaneWikiLinks.resolveWikiLink(t, S) : null;
+    const cls = resolved ? "md-wikilink resolved" : "md-wikilink";
+    return `<button type="button" class="${cls}" data-action="open-wikilink" data-wikilink="${t}">[[${t}]]</button>`;
+  });
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => {
     const clean = safeUrl(u);
-    return clean ? `<a href="${clean}" target="_blank" rel="noopener" class="md-link">${t}</a>` : t;
+    return clean ? `<a href="${escH(clean)}" target="_blank" rel="noopener" class="md-link">${t}</a>` : t;
   });
   html = html.replace(/^[\-\*] (.+)$/gm, (_, t) => `<li class="md-li">${t}</li>`);
   html = html.replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul class="md-ul">${m}</ul>`);
@@ -4076,6 +4286,62 @@ function _commitNoteForm({ silent } = {}) {
 const _noteAutosave = _autosaveRegistry.register(
   NestpaneAutosave.createFlushableDebounce(() => _commitNoteForm({ silent: true }), 800)
 );
+function renderNoteBacklinks(title, exclude) {
+  const bar = el("noteBacklinksBar");
+  if (!bar) return;
+  if (!title || typeof NestpaneWikiLinks === "undefined") {
+    bar.style.display = "none";
+    bar.innerHTML = "";
+    return;
+  }
+  const backlinks = NestpaneWikiLinks.findBacklinks(title, S, exclude);
+  if (!backlinks.length) {
+    bar.style.display = "none";
+    bar.innerHTML = "";
+    return;
+  }
+  bar.style.display = "flex";
+  bar.innerHTML = `<span class="backlinks-label">Linked from:</span>` + backlinks.map(
+    (b) => `<button type="button" class="backlink-chip" data-action="open-backlink" data-btype="${escH(b.type)}" data-bid="${escH(b.id)}">${escH(b.title)}</button>`
+  ).join("");
+}
+function handleWikiLinkClick(targetTitle) {
+  if (!targetTitle || typeof NestpaneWikiLinks === "undefined") return;
+  const resolved = NestpaneWikiLinks.resolveWikiLink(targetTitle, S);
+  if (resolved) {
+    if (resolved.type === "note") {
+      openNoteEdit(Number(resolved.id));
+    } else if (resolved.type === "task") {
+      closeModal("noteModal");
+      openNestodoModal();
+    } else if (resolved.type === "bookmark" && resolved.url) {
+      const clean = safeUrl(resolved.url);
+      if (clean) window.open(clean, "_blank", "noopener");
+    } else if (resolved.type === "journal") {
+      closeModal("noteModal");
+      navigateTo("journal");
+      setTimeout(() => selectJournalDay(resolved.id), 100);
+    }
+    return;
+  }
+  const now = Date.now();
+  const newNote = {
+    id: now,
+    title: targetTitle,
+    content: "",
+    date: now,
+    updatedAt: now,
+    tags: [],
+    pinned: false
+  };
+  wsNotes().unshift(newNote);
+  save();
+  renderNotesWidget();
+  renderNotesView();
+  if (_noteMdPreviewOn) _toggleNoteMarkdown();
+  openNoteEdit(now);
+  showToast(`Created note "${targetTitle}"`, "success");
+}
 function openNoteEdit(id) {
   _noteAutosave.flush();
   const noteId = Number(id);
@@ -4091,6 +4357,7 @@ function openNoteEdit(id) {
   renderNoteEditorTags();
   updateNotePinBtn();
   updateNoteWordCount();
+  renderNoteBacklinks(note.title, { type: "note", id: note.id });
   openModal("noteModal");
 }
 function openNoteNew() {
@@ -4105,6 +4372,7 @@ function openNoteNew() {
   renderNoteEditorTags();
   updateNotePinBtn();
   updateNoteWordCount();
+  renderNoteBacklinks("", null);
   openModal("noteModal");
   setTimeout(() => el("noteTitle").focus(), 60);
 }
@@ -4145,6 +4413,27 @@ function deleteNoteById(id) {
     showToast("Note deleted", "success");
   }
 }
+function _findKanbanCardById(cardId) {
+  const kb = getKanban();
+  for (const col of ["todo", "doing", "done"]) {
+    const found = (kb[col] || []).find((c) => String(c.id) === String(cardId));
+    if (found) return { card: found, col };
+  }
+  return null;
+}
+function startFocusOnTask(cardId) {
+  const found = _findKanbanCardById(cardId);
+  if (!found) return;
+  S._activeFocusTaskId = found.card.id;
+  if (!S.settings.widgets.timer) {
+    S.settings.widgets.timer = true;
+    applyWidgetVisibility();
+  }
+  closeModal("nestodoModal");
+  resetTimer(25, "focus");
+  timerPlay();
+  showToast(`Focusing on: ${found.card.title}`, "success");
+}
 function renderKanbanDash() {
   const container = el("kanbanDashCols");
   if (container) {
@@ -4154,10 +4443,12 @@ function renderKanbanDash() {
       container.innerHTML = `<div class="kd-empty">No to-dos yet \u2014 click + to add one.</div>`;
     } else {
       container.innerHTML = todos.map((card) => `
-    <div class="kd-todo-item" data-kid="${card.id}">
+    <div class="kd-todo-item${S._activeFocusTaskId === card.id ? " active-focus-task" : ""}" data-kid="${card.id}">
       <div class="kd-todo-check" data-kid="${card.id}" title="Mark done"></div>
       <span class="kd-todo-text">${escH(card.title)}</span>
+      ${card.focusMinutes ? `<span class="focus-min-badge" title="Logged focus time">\u23F1 ${card.focusMinutes}m</span>` : ""}
       ${_reminderBadgeHtml(card)}
+      <button class="kd-todo-focus" data-action="focus-task" data-id="${card.id}" title="Start 25m focus session on this task">\u{1F3AF}</button>
       <button class="kd-todo-del" data-kid="${card.id}" title="Delete">\u2715</button>
     </div>`).join("");
       container.querySelectorAll(".kd-todo-text").forEach((span) => {
@@ -4317,7 +4608,7 @@ function deleteReminder(id) {
   renderTrash();
 }
 function migrateAddSocials() {
-  if (S._freshInstall) return;
+  if (S._freshInstall || !S._hadLegacyWithoutSidebar) return;
   const data = wsData();
   if (!data?.quickAccess) return;
   const existing = new Set(data.quickAccess.map((q) => q.url));
@@ -4409,7 +4700,7 @@ function _mirrorLinkToQuickAccess(link) {
   return true;
 }
 function migrateSyncSbLinksToQA() {
-  if (S._freshInstall) return;
+  if (S._freshInstall || !S._hadLegacyWithoutSidebar) return;
   let added = false;
   ["google", "projects", "others", "socials"].forEach((group) => {
     (S.settings.sbLinks?.[group] || []).forEach((link) => {
@@ -4829,7 +5120,7 @@ function renderTimerDisplay() {
   const prog = el("timerProgress");
   const ratio = T.remaining / T.total;
   prog.style.strokeDashoffset = CIRC * (1 - ratio);
-  prog.style.stroke = ratio > 0.5 ? "#7c3aed" : ratio > 0.2 ? "#f97316" : "#ef4444";
+  prog.style.stroke = ratio > 0.5 ? "var(--accent)" : ratio > 0.2 ? "var(--warning)" : "var(--error)";
   const m = Math.floor(T.remaining / 60), s = T.remaining % 60;
   el("timerDisplay").textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
@@ -4853,12 +5144,22 @@ function timerPlay() {
       _notifyUser("Nestpane Focus Complete", { body: `${Math.round(T.total / 60)}m session done! Take a break.`, icon: "icons/favicon.png" });
       if (T._mode === "focus") {
         const today = _todayKey();
+        const mins = Math.round(T.total / 60);
         S._focusSessions = S._focusSessions || {};
         S._focusSessions[today] = (S._focusSessions[today] || 0) + 1;
         S._focusMinutes = S._focusMinutes || {};
-        S._focusMinutes[today] = (S._focusMinutes[today] || 0) + Math.round(T.total / 60);
+        S._focusMinutes[today] = (S._focusMinutes[today] || 0) + mins;
+        if (S._activeFocusTaskId != null) {
+          const found = _findKanbanCardById(S._activeFocusTaskId);
+          if (found?.card) {
+            found.card.focusMinutes = (found.card.focusMinutes || 0) + mins;
+            found.card.focusSessions = (found.card.focusSessions || 0) + 1;
+          }
+        }
         save();
         renderTimerStats();
+        renderKanbanDash();
+        if (el("nestodoModal")?.classList.contains("open")) renderKanban();
       }
       return;
     }
@@ -4895,6 +5196,14 @@ function resetTimer(mins, mode) {
     } else if (T._mode === "long") {
       badge.textContent = "\u{1F33F} Long Break";
       badge.style.display = "";
+    } else if (S._activeFocusTaskId != null) {
+      const found = _findKanbanCardById(S._activeFocusTaskId);
+      if (found?.card) {
+        badge.textContent = `\u{1F3AF} ${found.card.title}`;
+        badge.style.display = "";
+      } else {
+        badge.style.display = "none";
+      }
     } else {
       badge.style.display = "none";
     }
@@ -4939,7 +5248,7 @@ function _scheduleHabitNotifications() {
   const delay = nineAM - now;
   setTimeout(() => {
     const today = _todayKey();
-    const unchecked = habits.filter((h) => !h.days?.[today]);
+    const unchecked = habits.filter((h) => !(h.completedDates || []).includes(today) && !h.days?.[today]);
     if (unchecked.length) {
       _notifyUser("Nestpane Habits", { body: `You have ${unchecked.length} habit${unchecked.length > 1 ? "s" : ""} to track today.`, icon: "icons/favicon.png" });
     }
@@ -5093,8 +5402,8 @@ function renderTrash() {
     return `<div class="trash-item">
       <span>${icon}</span>
       <span class="trash-item-name">${escH(name)}</span>
-      <span class="trash-item-type ${typeClass}">${item._type || "item"}</span>
-      <button class="restore-btn" data-key="${key}">Restore</button>
+      <span class="trash-item-type ${typeClass}">${escH(item._type || "item")}</span>
+      <button class="restore-btn" data-key="${escH(key)}">Restore</button>
     </div>`;
   }).join("");
   list.querySelectorAll(".restore-btn[data-key]").forEach((btn) => {
@@ -5307,7 +5616,7 @@ async function renderAnalytics() {
                 </div>
                 <div>
                   <div class="ins-row-label" style="font-size:12px">${escH(n.title || "Untitled")}</div>
-                  ${n.tags?.length ? `<div class="ins-row-sub">#${n.tags.slice(0, 2).join(" #")}</div>` : ""}
+                  ${n.tags?.length ? `<div class="ins-row-sub">#${n.tags.slice(0, 2).map((t) => escH(t)).join(" #")}</div>` : ""}
                 </div>
               </div>
               ${n.pinned ? '<span class="ins-pill accent">\u{1F4CC}</span>' : ""}
@@ -5323,19 +5632,10 @@ async function renderAnalytics() {
         </div>
         ${S.habits.length ? S.habits.slice(0, 6).map((h) => {
     const done = (h.completedDates || []).includes(today);
-    const streak = (h.completedDates || []).reduce(
-      (s, d, i, arr) => {
-        if (i === 0) return 1;
-        const prev = new Date(arr[i - 1]);
-        const cur = new Date(d);
-        const diff = Math.round((cur - prev) / 864e5);
-        return diff === 1 ? s + 1 : 1;
-      },
-      h.completedDates?.length ? 1 : 0
-    );
+    const streak = _habitStreak(h);
     return `<div class="ins-row">
                 <div class="ins-row-left">
-                  <span style="font-size:16px">${h.icon || "\u2705"}</span>
+                  <span style="font-size:16px">${escH(h.emoji || h.icon || "\u2705")}</span>
                   <span class="ins-row-label">${escH(h.name)}</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
@@ -5689,19 +5989,52 @@ async function openSettings() {
   document.querySelectorAll("#cardGlowGroup .toggle-opt").forEach((b) => {
     b.classList.toggle(
       "active",
-      b.dataset.glow === (S.settings.cardGlow || "glow")
+      b.dataset.glow === (S.settings.cardGlow || "off")
     );
   });
-  _syncAccentSwatchUI(S.settings.accentColor || "#fe8019");
+  _syncAccentSwatchUI(S.settings.accentColor || "#e86c2c");
   document.querySelectorAll("#avatarColors .color-swatch").forEach((s) => {
     s.classList.toggle(
       "active",
-      s.dataset.color === (S.user.avatarColor || "#7c3aed")
+      s.dataset.color === (S.user.avatarColor || "#e86c2c")
     );
   });
   _loadShortcutsUI();
+  renderSnapshotsList();
   el("settingsPanel").classList.add("open");
   el("settingsOverlay").classList.add("open");
+}
+function renderSnapshotsList() {
+  const listEl = el("snapshotsList");
+  if (!listEl) return;
+  const snaps = Array.isArray(S._snapshots) ? S._snapshots : [];
+  if (!snaps.length) {
+    listEl.innerHTML = `<div class="snapshot-empty">Daily snapshots are recorded automatically as you use Nestpane.</div>`;
+    return;
+  }
+  listEl.innerHTML = snaps.map((snap) => {
+    const label = typeof NestpaneSnapshots !== "undefined" ? NestpaneSnapshots.formatSnapshotLabel(snap) : snap.dateKey;
+    return `<div class="snapshot-item">
+      <span class="snapshot-label">${escH(label)}</span>
+      <button type="button" class="snapshot-restore-btn" data-action="restore-snapshot" data-date="${escH(snap.dateKey)}">Restore</button>
+    </div>`;
+  }).join("");
+}
+function restoreSnapshotByDate(dateKey) {
+  const snaps = Array.isArray(S._snapshots) ? S._snapshots : [];
+  const snap = snaps.find((s) => s && s.dateKey === dateKey);
+  if (!snap || !snap.data) return;
+  confirm2(
+    "Restore Daily Snapshot?",
+    `Restore your workspace to the snapshot from ${dateKey}? Current state will be replaced and synced.`,
+    () => {
+      applyCloudData({ _version: 2, ...snap.data, _savedAt: Date.now() }, { overrideInitialState: true });
+      save();
+      _refreshAfterCloudApply();
+      renderSnapshotsList();
+      showToast(`Restored snapshot from ${dateKey}`, "success");
+    }
+  );
 }
 function closeSettings() {
   el("settingsPanel").classList.remove("open");
@@ -5716,7 +6049,7 @@ async function saveSettings() {
   S.settings.widgets.todo = el("widgetTodoToggle").checked;
   S.settings.widgets.reminders = el("widgetRemindersToggle").checked;
   const glowBtn = document.querySelector("#cardGlowGroup .toggle-opt.active");
-  S.settings.cardGlow = glowBtn?.dataset.glow || "glow";
+  S.settings.cardGlow = glowBtn?.dataset.glow || "off";
   S.settings.e2e = S.settings.e2e || {};
   const e2eWantsEnabled = el("e2eToggle").checked;
   const e2ePassInput = el("e2ePassphrase").value;
@@ -5762,8 +6095,12 @@ function applyTheme(theme) {
   _syncThemeGridUI();
 }
 const THEME_PRESETS = [
-  { id: "dark", label: "Dark" },
-  { id: "light", label: "Light" }
+  { id: "dark", label: "Obsidian" },
+  { id: "light", label: "Paper" },
+  { id: "nord", label: "Nord" },
+  { id: "catppuccin", label: "Mocha" },
+  { id: "gruvbox", label: "Gruvbox" },
+  { id: "solarized", label: "Solarized" }
 ];
 function _syncThemeGridUI() {
   document.querySelectorAll("#themeGrid .theme-card").forEach((c) => {
@@ -5776,9 +6113,9 @@ function applyAccent(color) {
   document.documentElement.style.setProperty("--accent", color);
   document.documentElement.style.setProperty("--accent-2", color + "cc");
   document.documentElement.style.setProperty("--accent-light", color + "cc");
-  document.documentElement.style.setProperty("--accent-bg", color + "2e");
-  document.documentElement.style.setProperty("--accent-subtle", color + "14");
-  document.documentElement.style.setProperty("--accent-glow", color + "80");
+  document.documentElement.style.setProperty("--accent-bg", color + "24");
+  document.documentElement.style.setProperty("--accent-subtle", color + "12");
+  document.documentElement.style.setProperty("--accent-glow", color + "59");
   try {
     localStorage.setItem("__nt_accent", color);
   } catch {
@@ -5800,7 +6137,7 @@ function _syncAccentSwatchUI(color) {
   }
 }
 function applyCardGlow(mode) {
-  document.documentElement.dataset.cardGlow = mode || "glow";
+  document.documentElement.dataset.cardGlow = mode || "off";
 }
 function applyWidgetVisibility() {
   const w = S.settings.widgets;
@@ -6107,8 +6444,8 @@ function _renderCmdResults(q) {
     html += journalMatches.map((j) => {
       const snippet = (j.text || "").slice(0, 60);
       return `
-      <div class="cmd-result-item" data-cmd-item data-journal-date="${j.date}">
-        <div class="cmd-type-icon">${j.mood || "\u{1F4D3}"}</div>
+      <div class="cmd-result-item" data-cmd-item data-journal-date="${escH(j.date)}">
+        <div class="cmd-type-icon">${escH(j.mood || "\u{1F4D3}")}</div>
         <div class="cmd-item-body">
           <div class="cmd-item-title">${escH(j.date)}</div>
           <div class="cmd-item-sub">${escH(snippet)}${(j.text || "").length > 60 ? "\u2026" : ""}</div>
@@ -6713,6 +7050,9 @@ function setupEventListeners() {
       case "restore-session":
         restoreSession(Number(d.id));
         break;
+      case "switch-session":
+        switchToSession(Number(d.id));
+        break;
       case "delete-session":
         deleteSession(Number(d.id));
         break;
@@ -6721,6 +7061,27 @@ function setupEventListeners() {
         break;
       case "delete-kanban-card":
         deleteKanbanCard(d.col, Number(d.id));
+        break;
+      case "focus-task":
+        startFocusOnTask(Number(d.id) || d.id);
+        break;
+      case "open-wikilink":
+        handleWikiLinkClick(d.wikilink);
+        break;
+      case "open-backlink":
+        if (d.btype === "note") {
+          openNoteEdit(Number(d.bid));
+        } else if (d.btype === "task") {
+          closeModal("noteModal");
+          openNestodoModal();
+        } else if (d.btype === "journal") {
+          closeModal("noteModal");
+          navigateTo("journal");
+          setTimeout(() => selectJournalDay(d.bid), 100);
+        }
+        break;
+      case "restore-snapshot":
+        restoreSnapshotByDate(d.date);
         break;
       case "delete-cal-event":
         deleteCalEvent(Number(d.id));
@@ -6896,7 +7257,12 @@ function setupEventListeners() {
         S.user.googleName = null;
         await _setDriveFileId(null);
         Drive._lastSyncAt = 0;
+        Drive._lastKnownRemoteSavedAt = 0;
+        Drive._hasEverSynced = false;
+        Drive._dirty = false;
+        Drive._pendingPush = false;
         clearTimeout(Drive._syncTimer);
+        Drive._syncTimer = null;
         S.quickAccess = DEFAULT_QUICK_ACCESS.map((q) => ({ ...q }));
         S.notes = [];
         S.folders = DEFAULT_FOLDERS.map((f) => ({ ...f }));
@@ -6904,8 +7270,8 @@ function setupEventListeners() {
         S.trash = [];
         S.settings = {
           theme: "dark",
-          accentColor: "#fe8019",
-          cardGlow: "glow",
+          accentColor: "#e86c2c",
+          cardGlow: "off",
           widgets: {
             notes: false,
             timer: false,
@@ -6913,6 +7279,7 @@ function setupEventListeners() {
             todo: false,
             reminders: true
           },
+          sidebar: JSON.parse(JSON.stringify(DEFAULT_SIDEBAR)),
           qaMode: "icon"
         };
         S.habits = [];
@@ -6925,11 +7292,13 @@ function setupEventListeners() {
           done: DEFAULT_KANBAN.done.map((c) => ({ ...c }))
         };
         S.reminders = [];
-        save();
+        S._freshInstall = true;
+        S._savedAt = 0;
+        await _persistLocalState();
         renderAll();
         applyTheme("dark");
-        applyAccent("#fe8019");
-        applyCardGlow("glow");
+        applyAccent("#e86c2c");
+        applyCardGlow("off");
         updateAvatarDisplay();
         setSyncStatus("signed-out");
         showToast("All data cleared", "success");
@@ -7027,7 +7396,7 @@ function setupEventListeners() {
     if (gUser) {
       const pic = S.user.googlePicture || gUser.picture;
       const name = S.user.googleName || gUser.email || "";
-      const avatarHtml = pic ? `<img src="${escH(pic)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">` : `<div style="width:40px;height:40px;border-radius:50%;background:${S.user.avatarColor || "#7c3aed"};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">${(name[0] || "U").toUpperCase()}</div>`;
+      const avatarHtml = pic ? `<img src="${escH(pic)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">` : `<div style="width:40px;height:40px;border-radius:50%;background:${S.user.avatarColor || "#e86c2c"};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">${(name[0] || "U").toUpperCase()}</div>`;
       const syncInfo = Drive._lastSyncAt ? `<div style="font-size:10.5px;color:var(--success);margin-top:2px">\u2601 Synced ${_timeAgo(Drive._lastSyncAt)}</div>` : `<div style="font-size:10.5px;color:var(--text-3);margin-top:2px">\u2601 Connected to Drive</div>`;
       el("profileGoogleInfo").style.display = "flex";
       el("profileGoogleInfo").innerHTML = `${avatarHtml}<div style="min-width:0">
@@ -7208,6 +7577,7 @@ function setupEventListeners() {
     if (e.key === "Enter") saveReading();
   });
   el("saveSessionBtn")?.addEventListener("click", saveCurrentSession);
+  el("stashSessionBtn")?.addEventListener("click", stashCurrentTabs);
   el("journalPrevMonth")?.addEventListener("click", () => {
     _journalViewMonth--;
     if (_journalViewMonth < 0) {
@@ -7488,6 +7858,7 @@ function renderSessions() {
       <div class="session-header">
         <span class="session-name">${escH(s.name)}</span>
         <span class="session-meta">${s.tabs.length} tabs \xB7 ${fmtTimeAgo(s.savedAt)}</span>
+        <button class="session-restore-btn" data-action="switch-session" data-id="${s.id}" title="Stash current open tabs and switch window to this session">Switch Here</button>
         <button class="session-restore-btn" data-action="restore-session" data-id="${s.id}">Open All</button>
         <button class="session-del" data-action="delete-session" data-id="${s.id}" title="Delete session">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -7497,7 +7868,7 @@ function renderSessions() {
         ${s.tabs.slice(0, 8).map(
       (t) => `
           <a href="${escH(safeUrl(t.url) || "#")}" class="session-tab" target="_blank" rel="noopener">
-            <img src="${t.favicon || ""}" alt="" width="14" height="14">
+            <img src="${escH(safeUrl(t.favicon) || "")}" alt="" width="14" height="14">
             <span class="session-tab-title">${escH(t.title)}</span>
             <span class="session-tab-url">${escH(t.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</span>
           </a>`
@@ -7553,6 +7924,75 @@ function restoreSession(id) {
   }
   s.tabs.forEach((t) => chrome.tabs.create({ url: t.url, active: false }));
   showToast(`Opening ${s.tabs.length} tabs\u2026`, "success");
+}
+async function stashCurrentTabs() {
+  if (!IS_CHROME || !chrome.tabs) {
+    showToast("Tab stashing requires the browser extension", "error");
+    return;
+  }
+  try {
+    const tabs = await new Promise((res) => chrome.tabs.query({ currentWindow: true }, res));
+    const saveable = tabs.filter(
+      (t) => !t.pinned && t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
+    );
+    if (!saveable.length) {
+      showToast("No open tabs to stash", "error");
+      return;
+    }
+    const name = `Stashed \u2014 ${(new Date()).toLocaleDateString("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+    S.tabSessions.unshift({
+      id: Date.now(),
+      name,
+      savedAt: Date.now(),
+      tabs: saveable.map((t) => ({
+        title: t.title || t.url,
+        url: t.url,
+        favicon: t.favIconUrl || ""
+      }))
+    });
+    save();
+    renderSessions();
+    const idsToClose = saveable.map((t) => t.id).filter(Boolean);
+    if (idsToClose.length) chrome.tabs.remove(idsToClose);
+    showToast(`Stashed & closed ${saveable.length} tabs!`, "success");
+  } catch {
+    showToast("Could not stash tabs", "error");
+  }
+}
+async function switchToSession(id) {
+  const s = S.tabSessions.find((x) => x.id === id);
+  if (!s) return;
+  if (!IS_CHROME || !chrome.tabs) {
+    showToast("Switching sessions requires the browser extension", "error");
+    return;
+  }
+  try {
+    const tabs = await new Promise((res) => chrome.tabs.query({ currentWindow: true }, res));
+    const saveable = tabs.filter(
+      (t) => !t.pinned && t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
+    );
+    if (saveable.length) {
+      const name = `Auto-Stashed \u2014 ${(new Date()).toLocaleDateString("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+      S.tabSessions.unshift({
+        id: Date.now(),
+        name,
+        savedAt: Date.now(),
+        tabs: saveable.map((t) => ({
+          title: t.title || t.url,
+          url: t.url,
+          favicon: t.favIconUrl || ""
+        }))
+      });
+      save();
+    }
+    s.tabs.forEach((t) => chrome.tabs.create({ url: t.url, active: false }));
+    const idsToClose = saveable.map((t) => t.id).filter(Boolean);
+    if (idsToClose.length) chrome.tabs.remove(idsToClose);
+    renderSessions();
+    showToast(`Switched to "${s.name}" (${s.tabs.length} tabs)`, "success");
+  } catch {
+    showToast("Could not switch session", "error");
+  }
 }
 function deleteSession(id) {
   S.tabSessions = S.tabSessions.filter((x) => x.id !== id);
@@ -7621,6 +8061,26 @@ function loadJournalEntry(key) {
   document.querySelectorAll(".journal-mood-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.mood === entry.mood);
   });
+  renderJournalBacklinks(key);
+}
+function renderJournalBacklinks(dateKey) {
+  const bar = el("journalBacklinksBar");
+  if (!bar) return;
+  if (!dateKey || typeof NestpaneWikiLinks === "undefined") {
+    bar.style.display = "none";
+    bar.innerHTML = "";
+    return;
+  }
+  const backlinks = NestpaneWikiLinks.findBacklinks(dateKey, S, { type: "journal", id: dateKey });
+  if (!backlinks.length) {
+    bar.style.display = "none";
+    bar.innerHTML = "";
+    return;
+  }
+  bar.style.display = "flex";
+  bar.innerHTML = `<span class="backlinks-label">Linked to ${escH(dateKey)}:</span>` + backlinks.map(
+    (b) => `<button type="button" class="backlink-chip" data-action="open-backlink" data-btype="${escH(b.type)}" data-bid="${escH(b.id)}">${escH(b.title)}</button>`
+  ).join("");
 }
 function updateJournalWordCount() {
   const ta = el("journalTextarea");
@@ -7704,18 +8164,22 @@ function renderKanban() {
     if (!container) return;
     container.innerHTML = cards.map(
       (card) => `
-      <div class="kanban-card" draggable="true" data-col="${col}" data-id="${card.id}">
+      <div class="kanban-card${S._activeFocusTaskId === card.id ? " active-focus-task" : ""}" draggable="true" data-col="${col}" data-id="${card.id}">
         <div class="kanban-card-title">${escH(card.title)}</div>
         <div class="kanban-card-meta">
           <span>${card.desc ? escH(card.desc) : ""}</span>
-          <button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">\u2715</button>
+          <div style="display:flex;align-items:center;gap:4px">
+            ${card.focusMinutes ? `<span class="focus-min-badge">\u23F1 ${card.focusMinutes}m</span>` : ""}
+            ${col !== "done" ? `<button class="kanban-card-focus" data-action="focus-task" data-id="${card.id}" title="Focus 25m on this task">\u{1F3AF}</button>` : ""}
+            <button class="kanban-card-del" data-action="delete-kanban-card" data-col="${col}" data-id="${card.id}" title="Delete">\u2715</button>
+          </div>
         </div>
         ${_reminderBadgeHtml(card)}
       </div>`
     ).join("");
     container.querySelectorAll(".kanban-card").forEach((card) => {
       card.addEventListener("click", (e) => {
-        if (e.target.closest(".kanban-card-del")) return;
+        if (e.target.closest(".kanban-card-del") || e.target.closest(".kanban-card-focus")) return;
         openKanbanCardModal(card.dataset.col, Number(card.dataset.id));
       });
       card.addEventListener("dragstart", () => {

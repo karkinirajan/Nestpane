@@ -14,19 +14,21 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Google Fonts: Space Grotesk & Inter -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
 
   <!-- Custom Styles -->
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0F0F0F;
-      color: #E0E0E0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0c0d0e;
+      color: #f3f2ee;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     }
 
     h1,
@@ -35,37 +37,41 @@
     h4,
     h5,
     .font-display {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.02em;
     }
 
-    .grid-bg {
-      background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88em;
+      background: #131517;
+      border: 1px solid #23262a;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #f3f2ee;
     }
   </style>
 </head>
 
-<body class="grid-bg antialiased">
+<body class="antialiased selection:bg-[#e86c2c]/25 selection:text-[#f3f2ee]">
 
   <!-- Navigation -->
-  <nav id="top" class="fixed top-0 w-full z-50 backdrop-blur-lg bg-[#0F0F0F]/70 border-b border-white/5">
-    <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4 flex justify-between items-center">
-      <a href="index.html" class="flex items-center gap-3 group">
-        <img src="logo.svg" alt="Nestpane logo" class="w-10 h-10 transition-transform group-hover:scale-105 shadow-md shadow-[#FF6B00]/30 rounded-xl" />
-        <span class="text-xl font-display font-bold tracking-[-0.02em]">
-          <span class="text-white">Nest</span><span class="text-[#FF6B00]">pane</span>
-        </span>
+  <nav id="top" class="fixed top-0 w-full z-50 backdrop-blur-md bg-[#0c0d0e]/85 border-b border-[#23262a]">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 py-3.5 flex justify-between items-center">
+      <a href="index.html" class="flex items-center gap-2.5 group">
+        <img src="logo.svg" alt="Nestpane logo" class="w-8 h-8 rounded-lg" />
+        <span class="text-[15px] font-semibold tracking-[-0.02em] text-[#f3f2ee]">Nestpane</span>
       </a>
-      <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-        <a href="index.html" class="hover:text-white transition-colors">Home</a>
-        <a href="dashboard/" class="hover:text-white transition-colors">Dashboard</a>
-        <a href="about.html" class="hover:text-white transition-colors">About</a>
-        <a href="changelog.html" class="hover:text-white transition-colors">Changelog</a>
-        <a href="privacy.html" class="text-white">Privacy</a>
-        <a href="terms.html" class="hover:text-white transition-colors">Terms</a>
+      <div class="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-[#a6a49e]">
+        <a href="index.html" class="hover:text-[#f3f2ee] transition-colors">Home</a>
+        <a href="dashboard/" class="hover:text-[#f3f2ee] transition-colors">Web Dashboard</a>
+        <a href="about.html" class="hover:text-[#f3f2ee] transition-colors">About</a>
+        <a href="changelog.html" class="hover:text-[#f3f2ee] transition-colors">Changelog</a>
+        <a href="privacy.html" class="text-[#f3f2ee]">Privacy</a>
+        <a href="terms.html" class="hover:text-[#f3f2ee] transition-colors">Terms</a>
       </div>
       <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
-        class="hidden md:inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition-colors">Add
+        class="inline-flex items-center gap-2 bg-[#e86c2c] hover:bg-[#d85f20] text-white px-4 py-1.5 rounded-md text-[13px] font-semibold transition-colors">Add
         to Chrome</a>
     </div>
   </nav>
@@ -80,7 +86,7 @@
         <p class="text-gray-500">Last updated: August 25, 2026</p>
         <p class="text-gray-400 mt-4 text-lg">
           At Nestpane, accessible from <a href="https://nestpane.kneeraazon.com"
-            class="text-[#FF6B00] hover:underline">https://nestpane.kneeraazon.com</a> and via the Nestpane Chrome
+            class="text-[#f2935c] hover:underline">https://nestpane.kneeraazon.com</a> and via the Nestpane Chrome
           Extension, we prioritize your privacy. This Privacy Policy details exactly what data the extension accesses,
           how it's handled, where it's stored, and who (if anyone) it's shared with — permission by permission.
         </p>
@@ -142,7 +148,7 @@
             recovered, including by us.</p>
           <p class="mt-4">Turning off sync, or signing out, stops any further backup activity; it does not delete a
             backup already sitting in your Drive app-data folder (you can remove it yourself via Google's own
-            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-[#FF6B00] hover:underline">third-party app permissions</a> page, which also fully revokes Nestpane's access).</p>
+            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-[#f2935c] hover:underline">third-party app permissions</a> page, which also fully revokes Nestpane's access).</p>
         </div>
 
         <!-- Section 4 -->
@@ -188,7 +194,7 @@
             the relevant text (your query, or your open tabs' titles/URLs for Smart Organize) is sent directly from
             your browser to Anthropic's API (<code>api.anthropic.com</code>) using your key. We do not see, log, or
             relay this data — it goes directly from your device to Anthropic, governed by
-            <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-[#FF6B00] hover:underline">Anthropic's privacy policy</a>.
+            <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-[#f2935c] hover:underline">Anthropic's privacy policy</a>.
             Your API key is stored only in your browser's local storage, excluded from Drive backups, and never
             transmitted anywhere except to Anthropic with each AI request you make.</p>
         </div>
@@ -222,7 +228,7 @@
             export on your behalf. You have complete control over your data:</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
             <li><strong>Local data:</strong> uninstall the Nestpane extension, or use "Clear All Data" inside the extension's settings, to remove everything described in Section 1.</li>
-            <li><strong>Google Drive backup (if used):</strong> visit Google's <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-[#FF6B00] hover:underline">third-party app permissions</a> page to revoke Nestpane's access, and delete the backup file directly from your Drive's app-data storage if you want it removed.</li>
+            <li><strong>Google Drive backup (if used):</strong> visit Google's <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-[#f2935c] hover:underline">third-party app permissions</a> page to revoke Nestpane's access, and delete the backup file directly from your Drive's app-data storage if you want it removed.</li>
             <li><strong>To Export:</strong> use the extension's built-in export feature (Settings → Data Management) to download your data as a file, or copy individual items from the UI.</li>
           </ul>
         </div>
@@ -242,7 +248,7 @@
             contact us at:</p>
           <div class="mt-4 bg-white/5 p-6 rounded-xl border border-white/10">
             <p class="text-white font-semibold">Nestpane Support</p>
-            <a href="mailto:kneeraazon@gmail.com" class="text-[#FF6B00] hover:underline">kneeraazon@gmail.com</a>
+            <a href="mailto:kneeraazon@gmail.com" class="text-[#f2935c] hover:underline">kneeraazon@gmail.com</a>
           </div>
         </div>
 
@@ -256,7 +262,7 @@
       <div class="flex items-center gap-3">
         <img src="logo.svg" alt="Nestpane logo" class="w-9 h-9 rounded-lg shadow-md shadow-[#FF6B00]/30" />
         <span class="text-lg font-display font-bold tracking-[-0.02em]"><span class="text-white">Nest</span><span
-            class="text-[#FF6B00]">pane</span></span>
+            class="text-[#f2935c]">pane</span></span>
       </div>
       <div class="flex gap-6 text-sm text-gray-500">
         <a href="dashboard/" class="hover:text-white transition-colors">Dashboard</a>

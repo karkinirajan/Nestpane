@@ -7,6 +7,9 @@ function init() {
   let quickAccess = [];
   let folders = [];
   let importedBookmarks = [];
+  let kanban = { todo: [], doing: [], done: [] };
+  let readingQueue = [];
+  let notes = [];
   let destMode = "quick";
   let creatingNewFolder = false;
   let selectedFolder = null;
@@ -49,11 +52,17 @@ function init() {
       items.forEach((item) => {
         const div = document.createElement("div");
         div.className = "combo-item" + (selected === item.value ? " selected" : "");
-        div.innerHTML = `
-          ${item.emoji ? `<span class="combo-item-emoji">${item.emoji}</span>` : ""}
-          <span class="combo-item-label">${item.label}</span>
-          ${CHECK_SVG}
-        `;
+        if (item.emoji) {
+          const emojiSpan = document.createElement("span");
+          emojiSpan.className = "combo-item-emoji";
+          emojiSpan.textContent = item.emoji;
+          div.appendChild(emojiSpan);
+        }
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "combo-item-label";
+        labelSpan.textContent = item.label;
+        div.appendChild(labelSpan);
+        div.insertAdjacentHTML("beforeend", CHECK_SVG);
         div.addEventListener("click", () => {
           selected = item.value;
           valEl.textContent = (item.emoji ? item.emoji + " " : "") + item.label;
@@ -112,7 +121,7 @@ function init() {
     if (tasksEl) tasksEl.textContent = `${doneTasks}/${totalTasks}`;
     if (tasksSub) tasksSub.textContent = totalTasks ? `${Math.round(doneTasks / totalTasks * 100)}% done` : "no tasks";
     const habits = st.habits || [];
-    const habitDone = habits.filter((h) => (h.days || {})[today]).length;
+    const habitDone = habits.filter((h) => Array.isArray(h.completedDates) ? h.completedDates.includes(today) : Boolean((h.days || {})[today])).length;
     const habitsEl = el("dashHabitsVal");
     const habitsSub = el("dashHabitsSub");
     if (habitsEl) habitsEl.textContent = `${habitDone}/${habits.length}`;
@@ -137,7 +146,7 @@ function init() {
   });
   Promise.all([
     new Promise((res) => chrome.tabs.query({ active: true, currentWindow: true }, res)),
-    new Promise((res) => chrome.storage.local.get(["quickAccess", "folders", "importedBookmarks"], res))
+    new Promise((res) => chrome.storage.local.get(["quickAccess", "folders", "importedBookmarks", "kanban", "readingQueue", "notes"], res))
   ]).then(([[tab], stored]) => {
     const mainForm = el("mainForm");
     const pageTitle = el("pageTitle");
@@ -167,33 +176,47 @@ function init() {
     quickAccess = stored.quickAccess || [];
     folders = stored.folders || [];
     importedBookmarks = stored.importedBookmarks || [];
+    kanban = stored.kanban && typeof stored.kanban === "object" ? stored.kanban : { todo: [], doing: [], done: [] };
+    readingQueue = Array.isArray(stored.readingQueue) ? stored.readingQueue : [];
+    notes = Array.isArray(stored.notes) ? stored.notes : [];
     populateFolders();
   }).catch((err) => {
     console.warn("Nestpane popup load error:", err);
   });
   const destQuick = el("destQuick");
   const destFolder = el("destFolder");
+  const destTask = el("destTask");
+  const destReading = el("destReading");
   const folderRow = el("folderRow");
   const newFolderRow = el("newFolderRow");
   const newFolderBtn = el("newFolderBtn");
-  if (destQuick) destQuick.addEventListener("click", () => {
-    destMode = "quick";
-    destQuick.classList.add("active");
-    if (destFolder) destFolder.classList.remove("active");
-    if (folderRow) folderRow.style.display = "none";
-    if (newFolderRow) newFolderRow.style.display = "none";
-    creatingNewFolder = false;
-    if (newFolderBtn) {
-      newFolderBtn.textContent = "+";
-      newFolderBtn.classList.remove("active");
+  function setDestMode(mode) {
+    destMode = mode;
+    [
+      [destQuick, "quick"],
+      [destFolder, "folder"],
+      [destTask, "task"],
+      [destReading, "reading"]
+    ].forEach(([btn, m]) => {
+      if (!btn) return;
+      const active = m === mode;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    if (folderRow) folderRow.style.display = mode === "folder" ? "flex" : "none";
+    if (mode !== "folder") {
+      if (newFolderRow) newFolderRow.style.display = "none";
+      creatingNewFolder = false;
+      if (newFolderBtn) {
+        newFolderBtn.textContent = "+";
+        newFolderBtn.classList.remove("active");
+      }
     }
-  });
-  if (destFolder) destFolder.addEventListener("click", () => {
-    destMode = "folder";
-    destFolder.classList.add("active");
-    if (destQuick) destQuick.classList.remove("active");
-    if (folderRow) folderRow.style.display = "flex";
-  });
+  }
+  if (destQuick) destQuick.addEventListener("click", () => setDestMode("quick"));
+  if (destFolder) destFolder.addEventListener("click", () => setDestMode("folder"));
+  if (destTask) destTask.addEventListener("click", () => setDestMode("task"));
+  if (destReading) destReading.addEventListener("click", () => setDestMode("reading"));
   if (newFolderBtn) newFolderBtn.addEventListener("click", () => {
     creatingNewFolder = !creatingNewFolder;
     if (newFolderRow) newFolderRow.style.display = creatingNewFolder ? "block" : "none";
@@ -214,12 +237,41 @@ function init() {
       showToast("This page can't be bookmarked.", "err");
       return;
     }
+    let toastMessage = "Bookmark saved!";
+    const now = Date.now();
     if (destMode === "quick") {
       if (quickAccess.some((b) => b.url === currentUrl)) {
         showToast("Already in Quick Access.", "err");
         return;
       }
-      quickAccess.push({ id: Date.now(), name: title, url: currentUrl });
+      quickAccess.push({ id: now, name: title, url: currentUrl });
+    } else if (destMode === "task") {
+      if (!Array.isArray(kanban.todo)) kanban.todo = [];
+      kanban.todo.unshift({
+        id: "k_" + now,
+        title,
+        desc: currentUrl,
+        priority: "med",
+        due: (new Date()).toISOString().slice(0, 10),
+        subtasks: [],
+        _updatedAt: now
+      });
+      toastMessage = "Clipped to Kanban To-Do!";
+    } else if (destMode === "reading") {
+      if (!readingQueue.some((r) => r && r.url === currentUrl)) {
+        readingQueue.unshift({ id: "rq_" + now, title, url: currentUrl, read: false, addedAt: now });
+      }
+      notes.unshift({
+        id: now,
+        title,
+        content: `Clipped from [${title}](${currentUrl})\n\n- `,
+        category: "Reading",
+        pinned: false,
+        color: "default",
+        updatedAt: now,
+        _updatedAt: now
+      });
+      toastMessage = "Saved to Reading Queue & Notes!";
     } else {
       let folderName;
       if (creatingNewFolder) {
@@ -243,16 +295,16 @@ function init() {
         showToast("Already in that folder.", "err");
         return;
       }
-      importedBookmarks.push({ id: "p_" + Date.now(), title, url: currentUrl, folderName });
+      importedBookmarks.push({ id: "p_" + now, title, url: currentUrl, folderName });
     }
     saveBtn.disabled = true;
     try {
       await new Promise((res, rej) => {
-        chrome.storage.local.set({ quickAccess, folders, importedBookmarks }, () => {
+        chrome.storage.local.set({ quickAccess, folders, importedBookmarks, kanban, readingQueue, notes, _savedAt: now }, () => {
           chrome.runtime.lastError ? rej(chrome.runtime.lastError) : res();
         });
       });
-      showToast("Bookmark saved!", "ok");
+      showToast(toastMessage, "ok");
       setTimeout(() => window.close(), 900);
     } catch {
       saveBtn.disabled = false;

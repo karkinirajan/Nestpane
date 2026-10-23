@@ -25,7 +25,7 @@ const OUT = path.join(ROOT, "webapp", "dashboard");
 const esbuild = require(path.join(EXT, "node_modules", "esbuild"));
 
 const JS_FILES = ["app.js", "fouc.js"];
-const LIB_FILES = ["format.js", "migrations.js", "drive-conflict.js", "autosave.js", "bookmarks-store.js"];
+const LIB_FILES = ["format.js", "migrations.js", "drive-conflict.js", "autosave.js", "bookmarks-store.js", "wikilinks.js", "snapshots.js"];
 const ICON_FILES = ["favicon.png", "favicon.svg", "icon-16.png", "icon-48.png"];
 
 async function minifyJs(srcPath) {
@@ -59,7 +59,11 @@ function buildIndexHtml() {
       '  <meta name="robots" content="index, follow">'
     ].join("\n")
   );
-  return html;
+  return html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/\n\s+/g, "\n")
+    .replace(/>\n+</g, "><")
+    .trim();
 }
 
 async function build() {

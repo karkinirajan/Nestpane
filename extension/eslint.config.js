@@ -15,6 +15,8 @@ module.exports = [
         NestpaneDriveConflict: "readonly",
         NestpaneAutosave: "readonly",
         NestpaneBookmarksStore: "readonly",
+        NestpaneWikiLinks: "readonly",
+        NestpaneSnapshots: "readonly",
       },
     },
     rules: {

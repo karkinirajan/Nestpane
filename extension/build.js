@@ -35,7 +35,9 @@ const REQUIRED_FILES = [
   "lib/migrations.js",
   "lib/drive-conflict.js",
   "lib/autosave.js",
-  "lib/bookmarks-store.js"
+  "lib/bookmarks-store.js",
+  "lib/wikilinks.js",
+  "lib/snapshots.js"
 ];
 const REQUIRED_PERMISSIONS = [
   "tabs",
@@ -158,7 +160,31 @@ async function build() {
   const jsFiles = REQUIRED_FILES.filter((f) => f.endsWith(".js"));
   const cssFiles = REQUIRED_FILES.filter((f) => f.endsWith(".css"));
   if (esbuild && MINIFY) {
-    console.log("\nMinifying JS/CSS with esbuild...");
+    console.log("\nMinifying JS/CSS/HTML with esbuild...");
+    const htmlFiles = REQUIRED_FILES.filter((f) => f.endsWith(".html"));
+    for (const file of htmlFiles) {
+      const srcPath = path.join(ROOT, file);
+      let html = fs.readFileSync(srcPath, "utf8");
+      const orig = Buffer.byteLength(html, "utf8");
+      const styleBlocks = [];
+      html = html.replace(/<style>([\s\S]*?)<\/style>/gi, (_, cssText) => {
+        const idx = styleBlocks.length;
+        styleBlocks.push(cssText);
+        return `<style>__ESBUILD_CSS_${idx}__</style>`;
+      });
+      for (let i = 0; i < styleBlocks.length; i++) {
+        const minCss = await esbuild.transform(styleBlocks[i], { minify: true, loader: "css" });
+        html = html.replace(`__ESBUILD_CSS_${i}__`, minCss.code.trim());
+      }
+      html = html
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .replace(/\n\s+/g, "\n")
+        .replace(/>\n+</g, "><")
+        .trim();
+      fs.writeFileSync(path.join(DIST, file), html);
+      const min = Buffer.byteLength(html, "utf8");
+      console.log(`  \u2713 ${file} (${(orig / 1024).toFixed(1)}kB \u2192 ${(min / 1024).toFixed(1)}kB, ${Math.round((1 - min / orig) * 100)}% smaller)`);
+    }
     for (const file of jsFiles) {
       const result = await esbuild.transform(fs.readFileSync(path.join(ROOT, file), "utf8"), {
         minify: true,

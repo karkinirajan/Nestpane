@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nestpane</title>
   <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,700&display=swap" rel="stylesheet">
+  <link id="gfontsLink" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print">
   <script src="fouc.js"></script>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -458,7 +458,10 @@
           </button>
           <h1>Tab Sessions</h1>
         </div>
-        <div class="view-header-right">
+        <div class="view-header-right" style="display:flex;gap:8px">
+          <button class="btn-secondary" id="stashSessionBtn" data-tip="Save open tabs into a session and close them">
+            Stash &amp; Clear Tabs
+          </button>
           <button class="btn-primary" id="saveSessionBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             Save Current Tabs
@@ -506,7 +509,8 @@
             </div>
           </div>
           <label class="sr-only" for="journalTextarea">Journal entry</label>
-          <textarea class="journal-textarea" id="journalTextarea" placeholder="Write your thoughts for the day…"></textarea>
+          <textarea class="journal-textarea" id="journalTextarea" placeholder="Write your thoughts for the day… (use [[Note Title]] to link notes &amp; tasks)"></textarea>
+          <div id="journalBacklinksBar" class="note-backlinks-bar" style="display:none"></div>
           <div class="journal-footer">
             <span class="journal-word-count" id="journalWordCount">0 words</span>
             <button class="btn-primary" id="saveJournalBtn2">Save</button>
@@ -558,12 +562,12 @@
       <div class="settings-row">
         <div class="settings-label"><span>Avatar Color</span></div>
         <div class="color-swatches" id="avatarColors">
-          <div class="color-swatch active" data-color="#6366f1" style="background:#6366f1"></div>
+          <div class="color-swatch active" data-color="#e86c2c" style="background:#e86c2c"></div>
           <div class="color-swatch" data-color="#2563eb" style="background:#2563eb"></div>
           <div class="color-swatch" data-color="#059669" style="background:#059669"></div>
           <div class="color-swatch" data-color="#d97706" style="background:#d97706"></div>
           <div class="color-swatch" data-color="#dc2626" style="background:#dc2626"></div>
-          <div class="color-swatch" data-color="#db2777" style="background:#db2777"></div>
+          <div class="color-swatch" data-color="#6366f1" style="background:#6366f1"></div>
         </div>
       </div>
     </div>
@@ -573,33 +577,48 @@
       <div class="settings-row-block">
         <div class="settings-sub-label">Theme</div>
         <div class="theme-grid" id="themeGrid">
-          <button class="theme-card active" data-theme="dark" title="Gruvbox Dark">
-            <span class="theme-card-swatches"><span style="background:#1d2021"></span><span style="background:#282828"></span><span style="background:#fe8019"></span></span>
-            <span>Dark</span>
+          <button class="theme-card active" data-theme="dark" title="Obsidian Dark">
+            <span class="theme-card-swatches"><span style="background:#0c0d0e"></span><span style="background:#141619"></span><span style="background:#e86c2c"></span></span>
+            <span>Obsidian</span>
           </button>
-          <button class="theme-card" data-theme="light" title="Light">
-            <span class="theme-card-swatches"><span style="background:#fafafa"></span><span style="background:#f2f2f2"></span><span style="background:#af3a03"></span></span>
-            <span>Light</span>
+          <button class="theme-card" data-theme="light" title="Warm Paper">
+            <span class="theme-card-swatches"><span style="background:#f6f5f0"></span><span style="background:#ffffff"></span><span style="background:#d95616"></span></span>
+            <span>Paper</span>
+          </button>
+          <button class="theme-card" data-theme="nord" title="Nord Polar">
+            <span class="theme-card-swatches"><span style="background:#1c2028"></span><span style="background:#242933"></span><span style="background:#88c0d0"></span></span>
+            <span>Nord</span>
+          </button>
+          <button class="theme-card" data-theme="catppuccin" title="Catppuccin Mocha">
+            <span class="theme-card-swatches"><span style="background:#181825"></span><span style="background:#1e1e2e"></span><span style="background:#cba6f7"></span></span>
+            <span>Mocha</span>
+          </button>
+          <button class="theme-card" data-theme="gruvbox" title="Gruvbox Warm">
+            <span class="theme-card-swatches"><span style="background:#1d2021"></span><span style="background:#282828"></span><span style="background:#fe8019"></span></span>
+            <span>Gruvbox</span>
+          </button>
+          <button class="theme-card" data-theme="solarized" title="Solarized Deep">
+            <span class="theme-card-swatches"><span style="background:#00212b"></span><span style="background:#073642"></span><span style="background:#2aa198"></span></span>
+            <span>Solarized</span>
           </button>
         </div>
       </div>
       <div class="settings-row-block">
         <div class="settings-sub-label">Accent Color</div>
         <div class="color-swatches" id="accentColors">
-          <div class="color-swatch active" data-color="#fe8019" style="background:#fe8019"></div>
-          <div class="color-swatch" data-color="#fb4934" style="background:#fb4934"></div>
-          <div class="color-swatch" data-color="#b8bb26" style="background:#b8bb26"></div>
-          <div class="color-swatch" data-color="#fabd2f" style="background:#fabd2f"></div>
-          <div class="color-swatch" data-color="#83a598" style="background:#83a598"></div>
-          <div class="color-swatch" data-color="#d3869b" style="background:#d3869b"></div>
-          <div class="color-swatch" data-color="#8ec07c" style="background:#8ec07c"></div>
-          <div class="color-swatch" data-color="#6366f1" style="background:#6366f1"></div>
-          <div class="color-swatch" data-color="#2563eb" style="background:#2563eb"></div>
-          <div class="color-swatch" data-color="#059669" style="background:#059669"></div>
-          <div class="color-swatch" data-color="#d97706" style="background:#d97706"></div>
-          <div class="color-swatch" data-color="#dc2626" style="background:#dc2626"></div>
-          <div class="color-swatch" data-color="#db2777" style="background:#db2777"></div>
-          <input type="color" class="color-swatch accent-color-custom-input" id="accentColorCustomInput" value="#fe8019" title="Pick any color">
+          <div class="color-swatch active" data-color="#e86c2c" style="background:#e86c2c" title="Terracotta Ember"></div>
+          <div class="color-swatch" data-color="#fe8019" style="background:#fe8019" title="Warm Amber"></div>
+          <div class="color-swatch" data-color="#d97706" style="background:#d97706" title="Ochre Gold"></div>
+          <div class="color-swatch" data-color="#10b981" style="background:#10b981" title="Jade Green"></div>
+          <div class="color-swatch" data-color="#0ea5e9" style="background:#0ea5e9" title="Cerulean"></div>
+          <div class="color-swatch" data-color="#3b82f6" style="background:#3b82f6" title="Cobalt Blue"></div>
+          <div class="color-swatch" data-color="#6366f1" style="background:#6366f1" title="Indigo"></div>
+          <div class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6" title="Iris"></div>
+          <div class="color-swatch" data-color="#ec4899" style="background:#ec4899" title="Rose"></div>
+          <div class="color-swatch" data-color="#ef4444" style="background:#ef4444" title="Vermilion"></div>
+          <div class="color-swatch" data-color="#83a598" style="background:#83a598" title="Sage"></div>
+          <div class="color-swatch" data-color="#a1a1aa" style="background:#a1a1aa" title="Graphite"></div>
+          <input type="color" class="color-swatch accent-color-custom-input" id="accentColorCustomInput" value="#e86c2c" title="Pick any color">
         </div>
       </div>
     </div>
@@ -612,8 +631,8 @@
           <small>Cards, folders &amp; quick access</small>
         </div>
         <div class="toggle-group" id="cardGlowGroup">
-          <button class="toggle-opt" data-glow="off">Off</button>
-          <button class="toggle-opt active" data-glow="glow">Glow</button>
+          <button class="toggle-opt active" data-glow="off">Off</button>
+          <button class="toggle-opt" data-glow="glow">Glow</button>
           <button class="toggle-opt" data-glow="neon">Neon</button>
         </div>
       </div>
@@ -720,6 +739,8 @@
           Import Data
         </button>
         <input type="file" id="importFileInput" accept=".json" style="display:none">
+        <div class="settings-sub-label" style="margin-top:8px">Daily Snapshot Time Machine (7-Day Rolling)</div>
+        <div id="snapshotsList" class="snapshots-list"></div>
         <div class="settings-sub-label" style="margin-top:8px">Clear Specific Data</div>
         <button class="settings-action-btn danger-soft" id="clearNotesBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -751,7 +772,7 @@
         <div class="about-logo"><img src="icons/favicon.png" alt="Nestpane logo" width="32" height="32" style="border-radius:6px;object-fit:contain"></div>
         <div>
           <div style="font-weight:700;font-size:15px">Nestpane</div>
-          <div style="color:var(--text-2);font-size:12px" id="aboutVersion">Version 1.3.0</div>
+          <div style="color:var(--text-2);font-size:12px" id="aboutVersion">Version 2.1.4</div>
           <div style="color:var(--text-2);font-size:12px;margin-top:4px">Your new tab, your way</div>
         </div>
       </div>
@@ -847,8 +868,9 @@
           Preview
         </button>
       </div>
-      <textarea id="noteContent" placeholder="Start writing… (supports **bold**, *italic*, # heading, `code`, - lists, [link](url))" class="note-editor-content"></textarea>
+      <textarea id="noteContent" placeholder="Start writing… (supports **bold**, *italic*, # heading, `code`, - lists, [link](url), [[Wiki-Links]])" class="note-editor-content"></textarea>
       <div id="noteMdPreview" class="note-md-preview" style="display:none"></div>
+      <div id="noteBacklinksBar" class="note-backlinks-bar" style="display:none"></div>
     </div>
     <div class="note-editor-footer">
       <div class="note-tags-row">
@@ -1413,6 +1435,8 @@
 <script src="lib/drive-conflict.js"></script>
 <script src="lib/autosave.js"></script>
 <script src="lib/bookmarks-store.js"></script>
+<script src="lib/wikilinks.js"></script>
+<script src="lib/snapshots.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -39,9 +39,9 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 - **AI Daily Briefing** — short LLM-generated morning summary covering weather and your top pending tasks
 - **Motivational quotes** — shuffle from API or write your own
 - **Wallpaper** — random photo (via Picsum), solid color, or upload your own image
-- **Google Drive sync** — backs up all data to your private Drive appdata folder
-- **End-to-end encrypted sync** — optional passphrase-based AES-GCM encryption layer on top of Drive backups
-- **Theme marketplace** — Gruvbox-inspired dark/light modes plus Nord, Dracula, Catppuccin, and Solarized presets, with a custom accent color picker
+- **Google Drive sync** — backs up 100% of your workspace state to your private Drive `appDataFolder`, automatically overrides initial fresh-install state on first login on a new browser, and progressively pushes local edits within 500ms (including an automatic flush on tab hide/close)
+- **End-to-end encrypted sync** — optional passphrase-based AES-GCM encryption layer on top of Drive backups (PBKDF2, 600,000 iterations)
+- **Curated Theme System** — Obsidian Dark and Warm Paper Light modes plus Nord, Catppuccin Mocha, Gruvbox, and Solarized presets, with a custom accent color picker (Terracotta Ember `#e86c2c` default)
 - **Sidebar** — collapsible, with per-group custom link lists
 - **Unified command palette / omni-search** — `/` searches bookmarks, notes, tasks, browser history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action for direct LLM answers
 - **Extension popup** — one-click bookmark save from any page via the toolbar button

@@ -2,120 +2,103 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About — Nestpane</title>
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
-        rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0F0F0F;
-            color: #E0E0E0;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        .font-display {
-            font-family: 'Space Grotesk', sans-serif;
-        }
-
-        .grid-bg {
-            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — Nestpane</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0c0d0e;
+      color: #f3f2ee;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    .font-serif-editorial { font-family: 'Instrument Serif', Georgia, serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+  </style>
 </head>
 
-<body class="grid-bg antialiased">
+<body class="antialiased selection:bg-[#e86c2c]/25 selection:text-[#f3f2ee]">
 
-    <!-- Navigation -->
-    <nav id="top" class="fixed top-0 w-full z-50 backdrop-blur-lg bg-[#0F0F0F]/70 border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-4 flex justify-between items-center">
-            <a href="index.html" class="flex items-center gap-3 group">
-                <img src="logo.svg" alt="Nestpane logo" class="w-10 h-10 transition-transform group-hover:scale-105 shadow-md shadow-[#FF6B00]/30 rounded-xl" />
-                <span class="text-xl font-display font-bold tracking-[-0.02em]">
-                    <span class="text-white">Nest</span><span class="text-[#FF6B00]">pane</span>
-                </span>
-            </a>
-            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-                <a href="index.html" class="hover:text-white transition-colors">Home</a>
-                <a href="dashboard/" class="hover:text-white transition-colors">Dashboard</a>
-                <a href="about.html" class="text-white">About</a>
-                <a href="changelog.html" class="hover:text-white transition-colors">Changelog</a>
-                <a href="privacy.html" class="hover:text-white transition-colors">Privacy</a>
-                <a href="terms.html" class="hover:text-white transition-colors">Terms</a>
-            </div>
-            <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
-                class="hidden md:inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition-colors">Add
-                to Chrome</a>
-        </div>
-    </nav>
+  <!-- Navigation -->
+  <nav id="top" class="fixed top-0 w-full z-50 backdrop-blur-md bg-[#0c0d0e]/85 border-b border-[#23262a]">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8 py-3.5 flex justify-between items-center">
+      <a href="index.html" class="flex items-center gap-2.5">
+        <img src="logo.svg" alt="Nestpane logo" class="w-8 h-8 rounded-lg" />
+        <span class="text-[15px] font-semibold tracking-[-0.02em] text-[#f3f2ee]">Nestpane</span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-[#a6a49e]">
+        <a href="index.html" class="hover:text-[#f3f2ee] transition-colors">Home</a>
+        <a href="dashboard/" class="hover:text-[#f3f2ee] transition-colors">Web Dashboard</a>
+        <a href="about.html" class="text-[#f3f2ee]">About</a>
+        <a href="changelog.html" class="hover:text-[#f3f2ee] transition-colors">Changelog</a>
+        <a href="privacy.html" class="hover:text-[#f3f2ee] transition-colors">Privacy</a>
+        <a href="terms.html" class="hover:text-[#f3f2ee] transition-colors">Terms</a>
+      </div>
+      <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 bg-[#e86c2c] hover:bg-[#d85f20] text-white px-4 py-1.5 rounded-md text-[13px] font-semibold transition-colors">Add to Chrome</a>
+    </div>
+  </nav>
 
-    <!-- Hero -->
-    <header class="pt-40 pb-16 px-6 text-center">
-        <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">Our Mission</h1>
-        <p class="text-lg text-gray-400 max-w-2xl mx-auto">We believe the browser new tab screen is prime real estate.
-            Instead of wasting it on a blank page or a search bar, we wanted to create a space that feels like home.</p>
-    </header>
+  <!-- Hero -->
+  <header class="pt-36 pb-12 px-6">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-[11.5px] font-mono-code uppercase tracking-[0.08em] text-[#f2935c] mb-2">Philosophy</div>
+      <h1 class="text-4xl sm:text-5xl font-bold text-[#f3f2ee] mb-4 tracking-[-0.03em]">Built like a physical desk, <span class="font-serif-editorial italic font-normal text-[#f2935c]">not an ad billboard.</span></h1>
+      <p class="text-[17px] text-[#a6a49e] leading-relaxed">
+        The browser new tab screen is opened dozens of times a day. Instead of wasting it on a blank page or a bloated feed, Nestpane turns it into a calm, local-first workspace that respects your attention and your data.
+      </p>
+    </div>
+  </header>
 
-    <!-- Content -->
-    <section class="py-16 px-6">
-        <div class="max-w-3xl mx-auto space-y-12 text-lg text-gray-300 leading-relaxed">
-            <div>
-                <h2 class="text-2xl font-bold text-white mb-4">Why Nestpane?</h2>
-                <p>Nestpane was born out of frustration with cluttered, ad-heavy new tab extensions. We wanted a
-                    dashboard that is lightning fast, beautiful to look at, and strictly private. Your data never leaves
-                    your browser.</p>
-            </div>
-            <div>
-                <h2 class="text-2xl font-bold text-white mb-4">The Design</h2>
-                <p>Our branding revolves around the concept of a "Nest" (a cozy, organized home base) and a "Pane" (a
-                    window or glass panel). The logo is a nest, cradling two eggs — modular, customizable, and
-                    structured. We use a deep charcoal background to reduce eye strain, with vibrant orange accents to
-                    keep the energy high.</p>
-            </div>
-            <div>
-                <h2 class="text-2xl font-bold text-white mb-4">Open Source & Free</h2>
-                <p>Nestpane is free and its source code is open on GitHub under the MIT License — read it, fork it, or
-                    send a pull request. We're committed to keeping the core experience free forever, and we rely on
-                    community support and feedback to push updates that matter to you.</p>
-                <p class="mt-4">
-                    <a href="https://github.com/karkinirajan/Nestpane" target="_blank" rel="noopener noreferrer"
-                        class="inline-flex items-center gap-2 text-[#FF6B00] hover:underline font-semibold">
-                        View the source on GitHub →
-                    </a>
-                </p>
-            </div>
-        </div>
-    </section>
+  <!-- Content -->
+  <section class="py-12 px-6">
+    <div class="max-w-3xl mx-auto space-y-8 text-[16px] text-[#a6a49e] leading-relaxed">
+      <div class="p-6 rounded-xl bg-[#131517] border border-[#23262a]">
+        <h2 class="text-[18px] font-semibold text-[#f3f2ee] mb-2.5">Why Nestpane?</h2>
+        <p>Nestpane was born out of frustration with slow, account-gated, or ad-heavy new tab extensions. We wanted a workspace that loads in zero milliseconds from local storage, feels calm and intentional to use all day, and keeps your data strictly in your own hands.</p>
+      </div>
+      <div class="p-6 rounded-xl bg-[#131517] border border-[#23262a]">
+        <h2 class="text-[18px] font-semibold text-[#f3f2ee] mb-2.5">Craft &amp; Visual Restraint</h2>
+        <p>The name combines a <strong class="text-[#f3f2ee]">Nest</strong> (a personal, organized home base) and a <strong class="text-[#f3f2ee]">Pane</strong> (a crisp architectural window). Our default Obsidian Dark and Warm Paper themes use warm mineral neutrals, 1px hairline dividers, tabular monospace numerals, and a restrained Terracotta Ember accent to prevent eye strain across long sessions.</p>
+      </div>
+      <div class="p-6 rounded-xl bg-[#131517] border border-[#23262a]">
+        <h2 class="text-[18px] font-semibold text-[#f3f2ee] mb-2.5">Open Source &amp; Local-First</h2>
+        <p>Nestpane is free and its source code is open on GitHub under the MIT License. You can inspect every permission, audit the Google Drive <code class="font-mono-code text-[13.5px] text-[#f3f2ee]">appDataFolder</code> sync engine and AES-GCM encryption, or build it from source yourself.</p>
+        <p class="mt-4">
+          <a href="https://github.com/karkinirajan/Nestpane" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 text-[#f2935c] hover:underline font-medium text-[15px]">
+            Inspect the repository on GitHub &rarr;
+          </a>
+        </p>
+      </div>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="py-12 px-6 border-t border-white/5 mt-16">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="flex items-center gap-3">
-                <img src="logo.svg" alt="Nestpane logo" class="w-9 h-9 rounded-lg shadow-md shadow-[#FF6B00]/30" />
-                <span class="text-lg font-display font-bold tracking-[-0.02em]"><span
-                        class="text-white">Nest</span><span class="text-[#FF6B00]">pane</span></span>
-            </div>
-            <div class="flex gap-6 text-sm text-gray-500">
-                <a href="dashboard/" class="hover:text-white transition-colors">Dashboard</a>
-                <a href="about.html" class="hover:text-white transition-colors">About</a>
-                <a href="changelog.html" class="hover:text-white transition-colors">Changelog</a>
-                <a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a>
-                <a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a>
-            </div>
-            <p class="text-sm text-gray-500">© 2026 Nestpane. Source code MIT licensed.</p>
-        </div>
-    </footer>
+  <!-- Footer -->
+  <footer class="py-12 px-6 border-t border-[#23262a] mt-12">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-2.5">
+        <img src="logo.svg" alt="Nestpane logo" class="w-7 h-7 rounded-md" />
+        <span class="text-[14px] font-semibold tracking-[-0.02em] text-[#f3f2ee]">Nestpane</span>
+      </div>
+      <div class="flex flex-wrap justify-center gap-6 text-[13px] text-[#a6a49e]">
+        <a href="dashboard/" class="hover:text-[#f3f2ee] transition-colors">Dashboard</a>
+        <a href="about.html" class="hover:text-[#f3f2ee] transition-colors">About</a>
+        <a href="changelog.html" class="hover:text-[#f3f2ee] transition-colors">Changelog</a>
+        <a href="privacy.html" class="hover:text-[#f3f2ee] transition-colors">Privacy Policy</a>
+        <a href="terms.html" class="hover:text-[#f3f2ee] transition-colors">Terms of Service</a>
+      </div>
+      <p class="text-[13px] text-[#6e6c67]">&copy; 2026 Nestpane. MIT Licensed.</p>
+    </div>
+  </footer>
 </body>
 
 </html>

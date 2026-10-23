@@ -70,9 +70,9 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 - **Analytics / Insights** — top visited sites, browsing activity, and a 14-day activity trend
 - **Weather widget** — current conditions + 3-day forecast (auto-detect or manual city, no API key)
 - **AI Daily Briefing** — short LLM-generated morning summary of weather and pending tasks
-- **Motivational quotes**, **custom wallpaper**, and a **theme marketplace** (Gruvbox-inspired dark/light, plus Nord, Dracula, Catppuccin, Solarized, and a custom accent color picker)
+- **Motivational quotes**, **custom wallpaper**, and a **curated theme system** (Obsidian Dark, Warm Paper Light, Nord, Catppuccin Mocha, Gruvbox, and Solarized, plus a custom accent color picker with Terracotta Ember `#e86c2c` default)
 - **Unified command palette** (`/`) — search bookmarks, notes, tasks, history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action
-- **Google Drive sync (optional)** — backs up your data to a private, hidden `drive.appdata` folder only Nestpane can see, with sign-in that works in Chrome and every other Chromium-based browser (Brave, Vivaldi, Opera, Arc, Edge)
+- **Google Drive sync (optional)** — backs up 100% of your workspace state to a private, hidden `drive.appdata` folder only Nestpane can see, automatically overrides default fresh-install state on first sign-in on a new browser, progressively pushes local changes within 500ms (with tab-hide flush), and works in Chrome and every other Chromium-based browser (Brave, Vivaldi, Opera, Arc, Edge)
 - **End-to-end encryption (optional)** — passphrase-based AES-GCM encryption layer on top of Drive backups (PBKDF2, 600,000 iterations)
 - **Extension popup** — one-click bookmark save from any page via the toolbar button
 
@@ -117,7 +117,7 @@ A static site (no build step, no framework beyond Tailwind via CDN) serving as N
 
 ### Design system
 
-Dark-mode-first, built with Tailwind CSS via CDN. Brand accent `#FF6B00`, background `#0F0F0F`/`#1A1A1A`, `Space Grotesk` for display type and `Inter` for body text. Full details in **[`webapp/README.md`](webapp/README.md)**.
+Obsidian Dark-first, built with Tailwind CSS via CDN to match the extension's exact token system: background `#0c0d0e`, elevated surface `#131517`, hairline border `#23262a`, primary text `#f3f2ee`, and Terracotta Ember accent `#e86c2c` (`#f2935c` highlight), pairing `Inter`, `Instrument Serif`, and `JetBrains Mono`. Full details in **[`webapp/README.md`](webapp/README.md)** and **[`docs/features.md`](docs/features.md)**.
 
 ### Local development
 
