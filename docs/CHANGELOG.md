@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.1.4 — 2026-10-23
+
+### Added — Top 5 Distinguishing Features
+- **Workspace Tab Stash & 1-Click Context Switch:** Added **Stash & Clear Tabs** (`#stashSessionBtn`) and **Switch Here** (`data-action="switch-session"`) in Tab Sessions (`extension/app.js`, `extension/newtab.html`), allowing users to stash all open unpinned tabs into a timestamped session and switch their browser window to another saved session in one click.
+- **Bidirectional `[[Wiki-Links]]` & Live Backlinks:** Added `extension/lib/wikilinks.js` (`NestpaneWikiLinks`, 3 unit tests) and wired `_mdRender()`, the Note Editor (`#noteBacklinksBar`), and the Daily Journal (`#journalBacklinksBar`) so `[[Note Title]]`, `[[Task Title]]`, `[[Bookmark]]`, and `[[YYYY-MM-DD]]` render as interactive pills and display live incoming backlinks.
+- **Task-Bound Focus Flow Contracts:** Added 1-click `🎯` Focus triggers on To-Do widget items and Nestodo Kanban cards (`startFocusOnTask`), binding the active task to the Pomodoro timer (`#timerModeBadge`) and automatically logging completed focus minutes (`⏱ Xm`) onto the task card.
+- **4-Mode Instant Web Clipper in Toolbar Popup:** Upgraded `extension/popup.html` and `extension/popup.js` so any active tab can be clipped not only to **Quick Access** or a **Bookmark Folder**, but also directly as a **Kanban Task** (`kanban.todo`) or **Reading Queue + Markdown Note** (`readingQueue` + `notes`), stamping `_savedAt` for instant Drive sync.
+- **Rolling 7-Day Snapshot Time Machine:** Added `extension/lib/snapshots.js` (`NestpaneSnapshots`, 2 unit tests) and Settings → Data Management → **Daily Snapshot Time Machine** (`#snapshotsList`), automatically recording up to 7 daily restore points (`S._snapshots`, synced to Google Drive) with 1-click full workspace restore.
+
+### Fixed — Google OAuth & Google Drive Backup/Sync
+- **Fixed fresh installs overwriting existing Google Drive backups on first sign-in:** Previously, `_finishSignIn()` and `checkGoogleIdentity()` called `save()` *before* `syncWithDriveOnConnect()`, stamping the default fresh-install state with `S._savedAt = Date.now()` and causing the fresh install to overwrite the user's cloud backup. Pre-sync profile updates now write only `googleUser` without bumping `S._savedAt`, and `reconcileOnConnect()` (`extension/lib/drive-conflict.js`) unconditionally pulls and applies the remote cloud backup when `!S._driveHasEverSynced` and a backup exists in Google Drive.
+- **Fixed legacy migration re-seeding default links on every second tab load:** `migrateAddSocials()` and `migrateSyncSbLinksToQA()` now only run when migrating an actual legacy pre-sidebar storage object (`S._hadLegacyWithoutSidebar`), preventing deleted default shortcuts from re-appearing or bumping `S._savedAt`.
+- **Made progressive Google Drive sync near-instant and lossless:**
+  - Reduced `scheduleDriveSync()` debounce from `2000ms` to `500ms`.
+  - Added in-flight push queueing (`Drive._syncing` + `Drive._pendingPush`) so edits made while a Drive upload is in progress are never dropped and immediately trigger a follow-up push.
+  - Added `_flushPendingDrivePush()` on `visibilitychange` (hidden) and `pagehide` so closing a tab immediately flushes pending Drive changes.
+  - Persisted `_driveLastRemoteSavedAt` and `_driveHasEverSynced` in `chrome.storage.local` across tab loads.
+  - Added pre-POST `findDriveFiles()` verification and automatic 404 file recreation retry in `_doPush()`.
+- **Complete Drive backup payload coverage:** `buildDrivePayload()` and `applyCloudData()` now include `_focusSessions`, `_focusMinutes`, `_webBookmarksTree`, and `ai` preferences (with `apiKey` stripped so keys stay device-local), and refresh all active views immediately after applying cloud state.
+- **Toolbar popup Drive sync & habit counter fix:** Saving a bookmark from `popup.js` now stamps `_savedAt: Date.now()` so open tabs and subsequent sessions push the change to Google Drive; fixed the popup's today-habits counter to check `completedDates.includes(today)`.
+
+### Changed — Human-Crafted Design & Color System (Extension + Website)
+- **Obsidian Dark & Warm Paper Design System:** Refined `extension/style.css`, `extension/newtab.html`, `extension/fouc.js`, and `extension/popup.html` with warm mineral neutrals (`#0c0d0e` canvas, `#131517` card surface, `#23262a` 1px architectural hairlines, `#f3f2ee` warm alabaster text, and `#e86c2c` Terracotta Ember accent), Warm Paper light mode (`#f8f6f2`), and complete CSS token sets for `nord`, `catppuccin`, `gruvbox`, and `solarized`.
+- **Typography:** Paired `Inter` (`cv02`, `cv03`, `cv04`, `cv11`) with `Instrument Serif` and `JetBrains Mono` (`tabular-nums` on timers, KPI counters, and shortcut badges).
+- **Website Overhaul (`webapp/`):** Redesigned `index.html`, `about.html`, `changelog.html`, `privacy.html`, `terms.html`, and `dashboard/oauth-callback.html` to match the Obsidian Dark + Terracotta Ember system, replacing the placeholder hero mockup with an authentic architectural workspace preview while preserving all Google OAuth verification requirements.
+
 ## 2.1.3 — 2026-10-22
 
 ### Fixed

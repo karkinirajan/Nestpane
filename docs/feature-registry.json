@@ -115,7 +115,15 @@
         "no conflict when remote matches what we last knew about",
         "no conflict when remote equals the payload we're about to push (our own echo)",
         "conflict when another device advanced the remote past what we last knew, and it differs from our push",
-        "concrete scenario: device A pushes, device B (stale) tries to push over it"
+        "concrete scenario: device A pushes, device B (stale) tries to push over it",
+        "after reconciling, push proceeds when local is newer than the remote",
+        "after reconciling, push proceeds when local exactly ties the remote",
+        "after reconciling, push is skipped only when the remote is strictly newer",
+        "regression: this device's existing, newer local data must still push even on the first sync of a session",
+        "new-browser restore scenario: fresh install with no local data pulls the cloud backup instead of pushing over it",
+        "reconcileOnConnect: first login on a new browser ALWAYS pulls cloud backup even if local was touched before login",
+        "reconcileOnConnect: first login when no cloud backup exists pushes local state to seed Drive",
+        "reconcileOnConnect: already-synced browser compares timestamps accurately"
       ],
       "status": "active",
       "notes": "Conflict-detection logic is unit tested; the full push/pull network flow is not."
@@ -210,6 +218,31 @@
         "safeUrl allows http/https and assumes https when no scheme given",
         "safeUrl rejects javascript: URIs",
         "safeUrl rejects empty/garbage input"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "wikilinks-backlinks",
+      "name": "Bidirectional [[Wiki-Links]] & live backlinks",
+      "entryPoint": "newtab.html",
+      "browsers": ["chromium", "firefox", "safari", "web-dashboard"],
+      "files": ["extension/lib/wikilinks.js", "extension/app.js (_mdRender, renderNoteBacklinks, renderJournalBacklinks)"],
+      "tests": [
+        "extractWikiLinks parses unique [[Target]] references in order",
+        "resolveWikiLink resolves notes, tasks, bookmarks, and journal dates case-insensitively",
+        "findBacklinks finds all notes, tasks, and journal entries referencing a target title"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "daily-snapshots",
+      "name": "7-Day rolling snapshot time machine",
+      "entryPoint": "newtab.html",
+      "browsers": ["chromium", "firefox", "safari", "web-dashboard"],
+      "files": ["extension/lib/snapshots.js", "extension/app.js (save, renderSnapshotsList, restoreSnapshotByDate)"],
+      "tests": [
+        "summarizePayload counts active notes, tasks, bookmarks, habits, and journal entries",
+        "recordDailySnapshot deduplicates same-day snapshots and caps at maxSnapshots"
       ],
       "status": "active"
     }

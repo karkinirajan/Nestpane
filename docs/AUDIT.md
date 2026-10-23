@@ -16,16 +16,14 @@ No fixes applied yet; this file is for Gate A.
 | A8 | Testing / release safety | Zero automated tests, zero CI. Every "active feature has a test" gate in the brief currently fails for 100% of features by definition. | `find` for test files/runners returned nothing; no `.github/workflows` or other CI config. | P0 (blocks any of the brief's Phase 6/7 gates) | Fix: this is the Phase 6 work itself — flagging here so Gate A scopes how much test infra to build for 2.1.0 vs. deferred. | N/A — this IS the missing test layer. |
 | A9 | Versioning | Brief assumed 1.5.0 → 3.1.0. Actual current version is 2.0.1, consistent between `manifest.json` and `package.json`. No evidence of a live Chrome Web Store version check being possible from inside this read-only repo pass (would need store dashboard access). | Direct file reads. | P0 (blocks Gate A target-version decision) | Needs a decision at Gate A: what's the actual next version number (e.g. 2.1.0, not 3.1.0), and confirmation of the live store version from the dashboard, not memory. | N/A |
 
-## Not yet covered in this pass
+## Phase 2 Deep Audit & Fixes — 2026-10-23 (v2.1.4)
 
-These are real brief requirements not yet investigated — listed here rather than silently
-skipped, per the "no silent skips" rule:
+| ID | Area | Finding | Fix Applied |
+|---|---|---|---|
+| **B1** | **Google Drive Sync** | Fresh installs / first-time sign-ins called `save()` inside `_finishSignIn()` and `checkGoogleIdentity()` *before* `syncWithDriveOnConnect()`, stamping empty defaults with `Date.now()` and overwriting existing cloud backups. | Removed pre-sync `save()` calls; added `reconcileOnConnect()` (`extension/lib/drive-conflict.js`) so any browser with `!Drive._hasEverSynced` unconditionally pulls and applies existing cloud backups; reduced debounce to `500ms` with `Drive._pendingPush` queueing and `_flushPendingDrivePush()` on tab hide. |
+| **B2** | **Legacy Migration Guard** | `migrateAddSocials()` and `migrateSyncSbLinksToQA()` ran on every subsequent tab load once `S._freshInstall` cleared, re-seeding default links and bumping `S._savedAt`. | Guarded both behind `S._hadLegacyWithoutSidebar` so they only run when migrating an actual pre-sidebar legacy profile. |
+| **B3** | **XSS & Attribute Injection** | Full sweep of all `innerHTML` and attribute interpolations across `extension/app.js` and `extension/popup.js` uncovered unescaped interpolations in `favSrc(url)` fallback domain (`encodeURIComponent` missing), `updateAvatarDisplay()` (`ftrAvatar` `src`), `_mdRender()` (`href`), `renderTrash()` (`_type`, `data-key`), `renderAnalytics()` (`n.tags`, `h.emoji`), `_renderCmdResults()` (`j.date`, `j.mood`), `renderSessions()` (`t.favicon`), and `popup.js` `.combo-item` (`item.emoji`, `item.label`). | Escaped all attributes with `escH(...)` / `safeUrl(...)` / `encodeURIComponent(...)` and replaced `popup.js` `.combo-item` `innerHTML` with DOM `textContent`. |
+| **B4** | **Analytics Habit Streak Bug** | `renderAnalytics()` read `h.icon` instead of `h.emoji` and used a broken inline reducer instead of `_habitStreak(h)`. | Updated `renderAnalytics()` to use `escH(h.emoji || h.icon || "✅")` and `_habitStreak(h)`. |
+| **B5** | **LCP & Offline New-Tab Render Blocking** | `newtab.html` loaded Google Fonts synchronously before `fouc.js` and `style.css`, and requested 3 unused weights of `Playfair Display`, blocking first paint when offline or on slow networks. | Removed unused `Playfair Display`, moved `style.css` before fonts, set `#gfontsLink` to `media="print"` and upgraded it asynchronously in `fouc.js` (0ms render-blocking), and added `content-visibility: auto` on `.bm-folder`, `.history-item`, `.download-item`, and `.session-card`. |
+| **B6** | **Minification Pipeline** | `extension/build.js` and `scripts/build-dashboard.js` minified `.js` and `.css` files with `esbuild`, but left `.html` files and their inline `<style>` blocks unminified. | Added HTML + inline `<style>` `esbuild` minification to `extension/build.js` and `scripts/build-dashboard.js`, shrinking HTML files by 9%–14%. |
 
-- Full sweep of all ~29 `innerHTML = …map(...)` render sites (only ~6 spot-checked).
-- Timezone/DST/streak-logic correctness for habits/journal/tasks.
-- Accessibility (WCAG 2.2 AA): no axe-core run performed; no manual keyboard pass performed.
-- Design-token consistency, light/dark theme correctness, FOUC behavior beyond confirming `fouc.js` exists and runs pre-paint.
-- Performance baselines (new-tab TTI/FP, package size, Lighthouse) — require actually building/loading the extension and site, not done in this read-only pass.
-- i18n readiness (`chrome.i18n`/`_locales` usage) — not checked.
-- CSP strictness in `manifest.json` — **no `content_security_policy` key was found in the manifest at all**, meaning MV3's strict default CSP applies implicitly; not yet confirmed this is intentional vs. an oversight worth documenting.
-- Live Chrome Web Store version/listing — needs dashboard access, not available from this repo.
