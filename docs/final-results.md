@@ -95,4 +95,4 @@ Documented across `docs/ROADMAP.md` and `docs/AUDIT.md` to differentiate Nestpan
 | **Static Analysis (ESLint)** | `npx eslint extension/app.js extension/popup.js extension/fouc.js --max-warnings 0` | **0 errors, 0 warnings** |
 | **Extension Minified Build** | `npm run build` | **Built cleanly to `extension/dist/`** |
 | **Dashboard Sync Build** | `node scripts/build-dashboard.js` | **Built cleanly to `webapp/dashboard/`** |
-| **Chrome Web Store Package** | `npm run zip` | **`extension/nestpane-v2.1.4-chrome.zip` (`123 KB`, SHA-256: `cdb1d1674b06b7e362d899d4a7e9e86203a4b58d38ab8179fa4ebed8a5c66436`)** |
+| **Chrome Web Store Package** | `npm run zip` | **`extension/nestpane-v2.1.4-chrome.zip` (`123 KB`, SHA-256: `26f09223e31b4daa0348a8d22713dea0d54b11a18d43ca3da7103fe8415d4249`)** |
