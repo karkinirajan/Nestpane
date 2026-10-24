@@ -1,21 +1,22 @@
-# Release runbook — 2.1.4
+# Release runbook — 2.2.0
 
 History: 2.1.0 → 2.1.1 was a version-only bump after CWS rejected 2.1.0 as a duplicate. 2.1.1 →
 2.1.2 added real functionality — the web dashboard support code (bookmarks store, web OAuth,
 honest history/downloads degradation, notification/declarativeNetRequest hardening). 2.1.2 →
-2.1.3 was a same-day security fix for web dashboard sign-out token revocation. 2.1.3 → 2.1.4
-delivers the bulletproof Google Drive first-login override & progressive 500ms sync, the
-Obsidian Dark & Warm Paper human-crafted design overhaul across extension + website, and the
-Top 5 Distinguishing Features (`[[Wiki-Links]]` & Backlinks, Task-Bound Focus Flow Contracts,
-Workspace Tab Stash & Switch, 4-Mode Popup Web Clipper, and 7-Day Rolling Snapshot Time Machine).
+2.1.3 was a same-day security fix for web dashboard sign-out token revocation. 2.1.3 → 2.2.0
+delivers the bulletproof Google Drive first-login override & progressive 500ms sync, 100%
+Web/Extension bookmark & settings sync parity, the Obsidian Dark & Warm Paper human-crafted
+design overhaul across extension + website, and the Top 5 Distinguishing Features (`[[Wiki-Links]]`
+& Backlinks, Task-Bound Focus Flow Contracts, Workspace Tab Stash & Switch, 4-Mode Popup Web
+Clipper, and 7-Day Rolling Snapshot Time Machine).
 See `docs/CHANGELOG.md` for the full breakdown.
 
 ## Before anything else
 
 1. **Verify the live Chrome Web Store version manually before uploading.** This repo still
-   cannot check it (no dashboard access). If 2.1.4 is also already taken, same pattern: bump
+   cannot check it (no dashboard access). If 2.2.0 is also already taken, same pattern: bump
    again, rebuild, re-zip.
-2. Confirm `manifest.json` and `package.json` agree on `2.1.4`
+2. Confirm `manifest.json` and `package.json` agree on `2.2.0`
    (`grep -r '"version"' extension/manifest.json extension/package.json`).
 
 ## Build the Chrome extension, from a clean checkout
@@ -26,15 +27,15 @@ npm install
 npm test                 # expect: 52 passing
 npm run lint              # expect: 0 errors, 0 warnings (checked at --max-warnings 0)
 npm run build              # -> dist/
-npm run zip                 # -> nestpane-v2.1.4-chrome.zip
+npm run zip                 # -> nestpane-v2.2.0-chrome.zip
 ```
 
-All of the above were run on 2026-10-23 and produced the results shown.
+All of the above were run on 2026-10-24 and produced the results shown.
 
 ## SHA-256 of the Chrome package
 
 ```
-26f09223e31b4daa0348a8d22713dea0d54b11a18d43ca3da7103fe8415d4249  nestpane-v2.1.4-chrome.zip  (123 KB)
+315dc79607aa79044300f2ae0cfdf1fddb3086caf7ac5ed2afa83ee1c38e86ac  nestpane-v2.2.0-chrome.zip  (123 KB)
 ```
 
 52/52 tests and `eslint --max-warnings 0` clean at this hash. Regenerate and re-verify at actual
