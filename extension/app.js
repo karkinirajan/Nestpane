@@ -198,9 +198,12 @@ async function _loadWebBookmarksTree() {
   _webBookmarksTree = Array.isArray(d._webBookmarksTree) ? d._webBookmarksTree : NestpaneBookmarksStore.createDefaultTree();
   return _webBookmarksTree;
 }
-function _persistWebBookmarksTree() {
+function _persistWebBookmarksTree(triggerSync = true) {
   API.setLocal({ _webBookmarksTree }).catch(() => {
   });
+  if (triggerSync) {
+    save();
+  }
 }
 const SB_ICONS = {
   dashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
@@ -1747,7 +1750,7 @@ function applyCloudData(cloud, opts = {}) {
   }
   if (Array.isArray(cloud._webBookmarksTree)) {
     _webBookmarksTree = cloud._webBookmarksTree;
-    _persistWebBookmarksTree();
+    _persistWebBookmarksTree(false);
   }
   if (cloud.weatherLocation !== void 0)
     S.weatherLocation = cloud.weatherLocation;
@@ -1843,6 +1846,7 @@ function _refreshAfterCloudApply() {
   _syncFocusModeUI();
   _syncAiUI();
   renderAll();
+  loadBookmarks();
   renderHabits();
   renderReadingQueue();
   renderSessions();
@@ -1853,13 +1857,61 @@ function _refreshAfterCloudApply() {
   updateAvatarDisplay();
 }
 function _registerLiveStorageSync() {
-  if (!IS_CHROME || !chrome.storage?.onChanged) return;
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== "local" || !changes._savedAt) return;
-    const newSavedAt = changes._savedAt.newValue || 0;
-    if (newSavedAt <= S._savedAt) return;
-    _applyLiveStorageChange(changes);
-  });
+  if (IS_CHROME && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes._savedAt) return;
+      const newSavedAt = changes._savedAt.newValue || 0;
+      if (newSavedAt <= S._savedAt) return;
+      _applyLiveStorageChange(changes);
+    });
+    return;
+  }
+  if (!IS_CHROME && typeof window !== "undefined") {
+    window.addEventListener("storage", async (e) => {
+      if (e.key !== "ftL__savedAt" || !e.newValue) return;
+      let newSavedAt = 0;
+      try {
+        newSavedAt = JSON.parse(e.newValue) || 0;
+      } catch {
+        return;
+      }
+      if (newSavedAt <= S._savedAt) return;
+      const d = await API.getLocal([
+        "user",
+        "googleUser",
+        "quickAccess",
+        "notes",
+        "folders",
+        "importedBookmarks",
+        "settings",
+        "habits",
+        "readingQueue",
+        "tabSessions",
+        "journal",
+        "kanban",
+        "reminders",
+        "calEvents",
+        "weatherLocation",
+        "trash",
+        "_savedAt",
+        "_focusSessions",
+        "_focusMinutes",
+        "_snapshots",
+        "_qaDeleted",
+        "_driveLastRemoteSavedAt",
+        "_driveHasEverSynced",
+        "_webBookmarksTree"
+      ]);
+      if (Array.isArray(d._webBookmarksTree)) {
+        _webBookmarksTree = d._webBookmarksTree;
+      }
+      const changes = {};
+      Object.entries(d).forEach(([k, v]) => {
+        if (v !== void 0) changes[k] = { newValue: v };
+      });
+      _applyLiveStorageChange(changes);
+    });
+  }
 }
 function _applyLiveStorageChange(changes) {
   if (changes.user) S.user = changes.user.newValue || S.user;
@@ -2771,6 +2823,9 @@ async function loadBookmarks() {
   if (el("sidebarFoldersList"))
     el("sidebarFoldersList").innerHTML = '<div style="color:var(--text-muted);font-size:11.5px;padding:4px 9px">Loading...</div>';
   const tree = await API.bookmarks();
+  if (IS_CHROME && Array.isArray(tree) && tree.length) {
+    _webBookmarksTree = tree;
+  }
   S.allBookmarks = parseBookmarkTree(tree);
   el("bookmarksLoading").style.display = "none";
   S.bmFolderFilter = null;
@@ -2819,17 +2874,15 @@ function openFolderModal(folderId) {
   el("folderModalCount").textContent = `${folder.items.length} bookmarks`;
   const actionsEl = el("folderModalActions");
   if (actionsEl) {
-    actionsEl.innerHTML = IS_CHROME ? `
+    actionsEl.innerHTML = `
       <button class="icon-btn" id="_fmRename" data-tip="Rename folder" style="width:26px;height:26px">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
       <button class="icon-btn" id="_fmDelete" data-tip="Delete folder" style="width:26px;height:26px;color:var(--red)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-      </button>` : "";
-    if (IS_CHROME) {
-      actionsEl.querySelector("#_fmRename")?.addEventListener("click", () => openEditFolderModal(folderId));
-      actionsEl.querySelector("#_fmDelete")?.addEventListener("click", () => deleteChromeFolder(folderId));
-    }
+      </button>`;
+    actionsEl.querySelector("#_fmRename")?.addEventListener("click", () => openEditFolderModal(folderId));
+    actionsEl.querySelector("#_fmDelete")?.addEventListener("click", () => deleteChromeFolder(folderId));
   }
   const editIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
   const delIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>`;
@@ -2845,27 +2898,23 @@ function openFolderModal(folderId) {
         </div>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:.4"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       </a>
-      ${IS_CHROME ? `
-        <button class="folder-modal-action-btn" data-bmid="${escH(item.id)}" data-action="edit" data-tip="Edit bookmark">${editIcon}</button>
-        <button class="folder-modal-action-btn folder-modal-del-btn" data-bmid="${escH(item.id)}" data-action="del" data-tip="Delete bookmark">${delIcon}</button>
-      ` : ""}
+      <button class="folder-modal-action-btn" data-bmid="${escH(item.id)}" data-action="edit" data-tip="Edit bookmark">${editIcon}</button>
+      <button class="folder-modal-action-btn folder-modal-del-btn" data-bmid="${escH(item.id)}" data-action="del" data-tip="Delete bookmark">${delIcon}</button>
     </div>`
-  ).join("") + (IS_CHROME ? `<button class="bm-add-item-btn" id="_fmAddBm" style="padding:9px 12px;border-top:1px solid var(--border);margin-top:4px;width:100%">+ Add bookmark to this folder</button>` : "");
+  ).join("") + `<button class="bm-add-item-btn" id="_fmAddBm" style="padding:9px 12px;border-top:1px solid var(--border);margin-top:4px;width:100%">+ Add bookmark to this folder</button>`;
   itemsEl.querySelectorAll(".folder-modal-item").forEach((a) => {
     a.addEventListener("click", () => closeModal("folderModal"));
   });
-  if (IS_CHROME) {
-    itemsEl.querySelectorAll('[data-action="edit"]').forEach((btn) => {
-      btn.addEventListener(
-        "click",
-        () => openEditBookmarkModal(btn.dataset.bmid)
-      );
-    });
-    itemsEl.querySelectorAll('[data-action="del"]').forEach((btn) => {
-      btn.addEventListener("click", () => deleteChromeBm(btn.dataset.bmid));
-    });
-    itemsEl.querySelector("#_fmAddBm")?.addEventListener("click", () => openAddBookmarkModal(folderId));
-  }
+  itemsEl.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      () => openEditBookmarkModal(btn.dataset.bmid)
+    );
+  });
+  itemsEl.querySelectorAll('[data-action="del"]').forEach((btn) => {
+    btn.addEventListener("click", () => deleteChromeBm(btn.dataset.bmid));
+  });
+  itemsEl.querySelector("#_fmAddBm")?.addEventListener("click", () => openAddBookmarkModal(folderId));
   openModal("folderModal");
 }
 function renderBmToolbar(folderNames) {
@@ -2918,10 +2967,8 @@ function renderAllBookmarks(folders) {
         <span class="bm-folder-chevron">\u25B6</span>
         <div class="bm-folder-icon-wrap">\u{1F4C1}</div>
         <span class="bm-folder-name">${escH(f.title)}</span>
-        ${IS_CHROME ? `
-          <button class="bm-action-btn" data-action="edit-folder" data-fid="${escH(f.id)}" data-tip="Rename">${editIcon}</button>
-          <button class="bm-action-btn bm-del-btn" data-action="delete-folder" data-fid="${escH(f.id)}" data-tip="Delete">${delIcon}</button>
-        ` : ""}
+        <button class="bm-action-btn" data-action="edit-folder" data-fid="${escH(f.id)}" data-tip="Rename">${editIcon}</button>
+        <button class="bm-action-btn bm-del-btn" data-action="delete-folder" data-fid="${escH(f.id)}" data-tip="Delete">${delIcon}</button>
         <span class="bm-folder-count">${f.items.length}</span>
       </div>
       <div class="bm-items">
@@ -2932,13 +2979,13 @@ function renderAllBookmarks(folders) {
               <img src="${favSrc(it.url)}" alt="" width="16" height="16" style="border-radius:3px;flex-shrink:0">
               <span class="bm-item-title">${escH(it.title || it.url)}</span>
               <span class="bm-item-url">${escH(getDomain(it.url))}</span>
-              ${IS_CHROME ? `<span class="bm-item-actions">
+              <span class="bm-item-actions">
                 <button class="bm-action-btn" data-action="edit-bm" data-bmid="${escH(it.id)}" data-tip="Edit">${editIcon}</button>
                 <button class="bm-action-btn bm-del-btn" data-action="delete-bm" data-bmid="${escH(it.id)}" data-tip="Delete">${delIcon}</button>
-              </span>` : ""}
+              </span>
             </a>`
     ).join("")}
-          ${IS_CHROME ? `<button class="bm-add-item-btn" data-action="add-bm" data-fid="${escH(f.id)}">+ Add bookmark</button>` : ""}
+          <button class="bm-add-item-btn" data-action="add-bm" data-fid="${escH(f.id)}">+ Add bookmark</button>
         </div>
       </div>
     </div>`
@@ -2997,10 +3044,6 @@ function populateFolderSelect(selectId, selectedId) {
   ).join("");
 }
 function openAddBookmarkModal(parentId) {
-  if (!IS_CHROME) {
-    showToast("Bookmark editing requires Chrome", "error");
-    return;
-  }
   _bmEditId = null;
   _bmEditParentId = parentId || S.allBookmarks[0] && S.allBookmarks[0].id || "1";
   el("bookmarkEditModalTitle").textContent = "Add Bookmark";
@@ -3011,10 +3054,6 @@ function openAddBookmarkModal(parentId) {
   openModal("bookmarkEditModal");
 }
 function openEditBookmarkModal(bmId) {
-  if (!IS_CHROME) {
-    showToast("Bookmark editing requires Chrome", "error");
-    return;
-  }
   let item = null, parentId = null;
   for (const f of S.allBookmarks) {
     const found = f.items.find((i) => i.id === bmId);
@@ -3069,13 +3108,9 @@ async function saveBookmarkEdit() {
   await loadBookmarks();
 }
 function deleteChromeBm(bmId) {
-  if (!IS_CHROME) {
-    showToast("Requires Chrome", "error");
-    return;
-  }
   confirm2(
     "Delete Bookmark?",
-    "This will permanently remove it from Chrome.",
+    "This will permanently remove this bookmark.",
     async () => {
       await API.removeBookmark(bmId);
       closeModal("bookmarkEditModal");
@@ -3086,10 +3121,6 @@ function deleteChromeBm(bmId) {
   );
 }
 function openAddFolderModal(parentId) {
-  if (!IS_CHROME) {
-    showToast("Folder creation requires Chrome", "error");
-    return;
-  }
   _folderEditId = null;
   _folderParentId = parentId || "1";
   el("folderEditModalTitle").textContent = "New Folder";
@@ -3098,10 +3129,6 @@ function openAddFolderModal(parentId) {
   openModal("folderEditModal");
 }
 function openEditFolderModal(folderId) {
-  if (!IS_CHROME) {
-    showToast("Folder editing requires Chrome", "error");
-    return;
-  }
   const folder = S.allBookmarks.find((f) => f.id === folderId);
   if (!folder) return;
   _folderEditId = folderId;
@@ -3134,15 +3161,11 @@ async function saveFolderEdit() {
   await loadBookmarks();
 }
 function deleteChromeFolder(folderId) {
-  if (!IS_CHROME) {
-    showToast("Requires Chrome", "error");
-    return;
-  }
   const folder = S.allBookmarks.find((f) => f.id === folderId);
   const title = folder ? folder.title : "this folder";
   confirm2(
     `Delete "${title}"?`,
-    "All bookmarks inside will be permanently deleted from Chrome.",
+    "All bookmarks inside will be permanently deleted.",
     async () => {
       await API.removeBookmarkTree(folderId);
       closeModal("folderModal");
@@ -3154,10 +3177,6 @@ function deleteChromeFolder(folderId) {
 function renderWorkspaceBookmarks() {
   const section = el("wsBmSection");
   if (!section) return;
-  if (!IS_CHROME) {
-    section.style.display = "none";
-    return;
-  }
   section.style.display = "";
   const grid = el("wsBmGrid");
   const groups = {};
@@ -6152,25 +6171,11 @@ function applyWidgetVisibility() {
   show("widget-reminders", w.reminders);
 }
 function exportData() {
-  const blob = new Blob(
-    [
-      JSON.stringify(
-        {
-          user: S.user,
-          quickAccess: S.quickAccess,
-          notes: S.notes,
-          folders: S.folders,
-          importedBookmarks: S.importedBookmarks,
-          settings: S.settings,
-          trash: S.trash,
-          exportedAt: (new Date()).toISOString()
-        },
-        null,
-        2
-      )
-    ],
-    { type: "application/json" }
-  );
+  const payload = {
+    ...buildDrivePayload(),
+    exportedAt: (new Date()).toISOString()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `nestpane-backup-${(new Date()).toISOString().slice(0, 10)}.json`;
@@ -6204,32 +6209,22 @@ function importData(file) {
   reader.onload = (e) => {
     try {
       const d = JSON.parse(e.target.result);
-      if (Array.isArray(d.workspaces) || d.wsData && typeof d.wsData === "object") {
-        const flat = _flattenLegacyWorkspaceData(d);
-        const clean = _sanitizeImportedFlatData(flat);
-        S.quickAccess = clean.quickAccess;
-        S.notes = flat.notes;
-        S.folders = flat.folders;
-        S.importedBookmarks = clean.importedBookmarks;
-        S.kanban = flat.kanban;
-        S.reminders = flat.reminders;
-      } else {
-        const clean = _sanitizeImportedFlatData(d);
-        if (Array.isArray(d.quickAccess)) S.quickAccess = clean.quickAccess;
-        if (Array.isArray(d.notes)) S.notes = d.notes;
-        if (Array.isArray(d.folders)) S.folders = d.folders;
-        if (Array.isArray(d.importedBookmarks)) S.importedBookmarks = clean.importedBookmarks;
+      const clean = _sanitizeImportedFlatData(d);
+      const normalized = {
+        _version: 2,
+        ...d,
+        ...(Array.isArray(d.quickAccess) ? { quickAccess: clean.quickAccess } : {}),
+        ...(Array.isArray(d.importedBookmarks) ? { importedBookmarks: clean.importedBookmarks } : {})
+      };
+      if (normalized.settings?.sidebar) {
+        normalized.settings = {
+          ...normalized.settings,
+          sidebar: _sanitizeImportedSidebar(normalized.settings.sidebar)
+        };
       }
-      if (d.user) S.user = d.user;
-      if (d.settings) {
-        S.settings = { ...S.settings, ...d.settings };
-        if (d.settings.sidebar) S.settings.sidebar = _sanitizeImportedSidebar(d.settings.sidebar);
-      }
-      if (d.trash) S.trash = d.trash;
+      applyCloudData(normalized, { overrideInitialState: true });
       save();
-      renderAll();
-      applyTheme(S.settings.theme);
-      applyAccent(S.settings.accentColor);
+      _refreshAfterCloudApply();
       showToast("Data imported successfully!", "success");
     } catch {
       showToast("Invalid file format", "error");
@@ -7916,10 +7911,11 @@ function restoreSession(id) {
   const s = S.tabSessions.find((x) => x.id === id);
   if (!s) return;
   if (!IS_CHROME || !chrome.tabs) {
-    // This session may have been synced in via Drive backup from a device
-    // running the real extension \u2014 S.tabSessions can be non-empty here even
-    // though this device (the web dashboard) has no chrome.tabs API at all.
-    showToast("Opening saved tabs requires the browser extension", "error");
+    s.tabs.forEach((t) => {
+      const clean = safeUrl(t.url);
+      if (clean) window.open(clean, "_blank", "noopener,noreferrer");
+    });
+    showToast(`Opening ${s.tabs.length} tabs\u2026`, "success");
     return;
   }
   s.tabs.forEach((t) => chrome.tabs.create({ url: t.url, active: false }));

@@ -101,8 +101,8 @@
 
   <!-- Navigation -->
   <nav id="top" class="fixed top-0 w-full z-50 backdrop-blur-md bg-[#0c0d0e]/85 border-b border-[#23262a]">
-    <div class="max-w-6xl mx-auto px-6 sm:px-8 py-3.5 flex justify-between items-center">
-      <a href="index.html" class="flex items-center gap-2.5 group">
+    <div class="max-w-6xl mx-auto px-4 sm:px-8 py-3.5 flex justify-between items-center gap-3">
+      <a href="index.html" class="flex items-center gap-2.5 group shrink-0">
         <img src="logo.svg" alt="Nestpane logo" class="w-8 h-8 rounded-lg" />
         <span class="text-[15px] font-semibold tracking-[-0.02em] text-[#f3f2ee]">
           Nestpane
@@ -110,8 +110,7 @@
       </a>
 
       <div class="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-[#a6a49e]">
-        <a href="index.html" class="text-[#f3f2ee]">Home</a>
-        <a href="dashboard/" class="hover:text-[#f3f2ee] transition-colors">Web Dashboard</a>
+        <a href="index.html" class="text-[#f3f2ee]" aria-current="page">Home</a>
         <a href="about.html" class="hover:text-[#f3f2ee] transition-colors">About</a>
         <a href="changelog.html" class="hover:text-[#f3f2ee] transition-colors">Changelog</a>
         <a href="privacy.html" class="hover:text-[#f3f2ee] transition-colors">Privacy</a>
@@ -119,12 +118,42 @@
         <a href="https://github.com/karkinirajan/Nestpane" target="_blank" rel="noopener noreferrer" class="hover:text-[#f3f2ee] transition-colors">GitHub</a>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a href="dashboard/" class="hidden sm:inline-flex items-center px-3.5 py-1.5 rounded-md text-[13px] font-medium text-[#a6a49e] hover:text-[#f3f2ee] border border-[#23262a] hover:border-[#30343a] transition-colors">
-          Open Web App
+      <div class="flex items-center gap-2.5">
+        <a href="dashboard/" class="inline-flex items-center px-3.5 py-1.5 rounded-md text-[13px] font-medium text-[#a6a49e] hover:text-[#f3f2ee] border border-[#23262a] hover:border-[#30343a] transition-colors">
+          Web Version
         </a>
         <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
-          class="inline-flex items-center gap-2 bg-[#e86c2c] hover:bg-[#d85f20] text-white px-4 py-1.5 rounded-md text-[13px] font-semibold transition-colors">
+          class="hidden sm:inline-flex items-center gap-2 bg-[#e86c2c] hover:bg-[#d85f20] text-white px-4 py-1.5 rounded-md text-[13px] font-semibold transition-colors">
+          Add to Chrome
+        </a>
+        <button type="button" id="mobile-menu-btn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-nav-menu"
+          class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md text-[#a6a49e] hover:text-[#f3f2ee] hover:bg-[#131517] border border-[#23262a] transition-colors">
+          <svg id="mobile-menu-icon-open" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <svg id="mobile-menu-icon-close" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div id="mobile-nav-menu" class="hidden md:hidden border-t border-[#23262a] bg-[#0c0d0e]/95 backdrop-blur-md px-4 sm:px-8 py-4">
+      <div class="flex flex-col gap-1 text-[14px] font-medium text-[#a6a49e]">
+        <a href="index.html" class="px-3 py-2 rounded-md bg-[#131517] text-[#f3f2ee]" aria-current="page">Home</a>
+        <a href="about.html" class="px-3 py-2 rounded-md hover:bg-[#131517] hover:text-[#f3f2ee] transition-colors">About</a>
+        <a href="changelog.html" class="px-3 py-2 rounded-md hover:bg-[#131517] hover:text-[#f3f2ee] transition-colors">Changelog</a>
+        <a href="privacy.html" class="px-3 py-2 rounded-md hover:bg-[#131517] hover:text-[#f3f2ee] transition-colors">Privacy</a>
+        <a href="terms.html" class="px-3 py-2 rounded-md hover:bg-[#131517] hover:text-[#f3f2ee] transition-colors">Terms</a>
+        <a href="https://github.com/karkinirajan/Nestpane" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-md hover:bg-[#131517] hover:text-[#f3f2ee] transition-colors">GitHub</a>
+      </div>
+      <div class="mt-3 pt-3 border-t border-[#23262a] flex flex-col sm:flex-row gap-2.5">
+        <a href="dashboard/" class="inline-flex items-center justify-center px-3.5 py-2 rounded-md text-[13px] font-medium text-[#a6a49e] hover:text-[#f3f2ee] border border-[#23262a] hover:border-[#30343a] transition-colors">
+          Web Version
+        </a>
+        <a href="https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol" target="_blank" rel="noopener noreferrer"
+          class="inline-flex items-center justify-center gap-2 bg-[#e86c2c] hover:bg-[#d85f20] text-white px-4 py-2 rounded-md text-[13px] font-semibold transition-colors">
           Add to Chrome
         </a>
       </div>
@@ -160,7 +189,7 @@
           </a>
           <a href="dashboard/"
             class="inline-flex items-center gap-2 bg-[#131517] hover:bg-[#1a1d20] text-[#f3f2ee] px-5 py-2.5 rounded-md text-[14px] font-medium border border-[#23262a] hover:border-[#30343a] transition-colors">
-            Try Live Web Dashboard
+            Web Version
           </a>
           <a href="https://github.com/karkinirajan/Nestpane" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-2 text-[#a6a49e] hover:text-[#f3f2ee] px-4 py-2.5 rounded-md text-[14px] font-medium transition-colors">
@@ -308,7 +337,7 @@
 
   <!-- Purpose Section (Required for Google OAuth Verification) -->
   <section id="purpose" class="py-20 px-6 border-t border-[#23262a]">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
       <div class="mb-10">
         <div class="text-[11.5px] font-mono-code uppercase tracking-[0.08em] text-[#f2935c] mb-2">Transparency &amp; Data Ownership</div>
         <h2 class="text-3xl sm:text-4xl font-bold text-[#f3f2ee] tracking-[-0.025em]">Purpose of Nestpane</h2>
@@ -418,7 +447,8 @@
         <span class="text-[14px] font-semibold tracking-[-0.02em] text-[#f3f2ee]">Nestpane</span>
       </div>
       <div class="flex flex-wrap justify-center gap-6 text-[13px] text-[#a6a49e]">
-        <a href="dashboard/" class="hover:text-[#f3f2ee] transition-colors">Dashboard</a>
+        <a href="index.html" class="hover:text-[#f3f2ee] transition-colors">Home</a>
+        <a href="dashboard/" class="hover:text-[#f3f2ee] transition-colors">Web Version</a>
         <a href="about.html" class="hover:text-[#f3f2ee] transition-colors">About</a>
         <a href="changelog.html" class="hover:text-[#f3f2ee] transition-colors">Changelog</a>
         <a href="privacy.html" class="hover:text-[#f3f2ee] transition-colors">Privacy Policy</a>
@@ -429,6 +459,29 @@
     </div>
   </footer>
 
+  <script>
+    (function () {
+      var btn = document.getElementById('mobile-menu-btn');
+      var menu = document.getElementById('mobile-nav-menu');
+      var iconOpen = document.getElementById('mobile-menu-icon-open');
+      var iconClose = document.getElementById('mobile-menu-icon-close');
+      if (!btn || !menu) return;
+      function setOpen(open) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        menu.classList.toggle('hidden', !open);
+        if (iconOpen && iconClose) {
+          iconOpen.classList.toggle('hidden', open);
+          iconClose.classList.toggle('hidden', !open);
+        }
+      }
+      btn.addEventListener('click', function () {
+        setOpen(menu.classList.contains('hidden'));
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !menu.classList.contains('hidden')) setOpen(false);
+      });
+    })();
+  </script>
 </body>
 
 </html>

@@ -1,14 +1,14 @@
-# Nestpane v2.1.4 — Final Audit, Craft & Production Readiness Report
+# Nestpane v2.2.0 — Final Audit, Craft & Production Readiness Report
 
-**Status:** Production-Ready (`v2.1.4`)
+**Status:** Production-Ready (`v2.2.0`)
 **Date:** April 2026
-**Target:** Chrome Extension (`extension/dist/`, `extension/nestpane-v2.1.4-chrome.zip`) & Web Platform (`webapp/`)
+**Target:** Chrome Extension (`extension/dist/`, `extension/nestpane-v2.2.0-chrome.zip`) & Web Platform (`webapp/`)
 
 ---
 
 ## 1. Executive Summary
 
-Nestpane `v2.1.4` completes a full end-to-end engineering, design, security, performance, and minification pass across both the Chrome Extension and the marketing/dashboard web application:
+Nestpane `v2.2.0` completes a full end-to-end engineering, design, security, performance, and minification pass across both the Chrome Extension and the marketing/dashboard web application:
 
 1. **Human-Crafted Editorial Design Overhaul:** Eliminated generic "AI-slop" visual tropes (neon rainbow blobs, spinning conic gradients, ungrounded glass cards, and bouncy scales) in favor of a tactile **Warm Obsidian & Champagne Gold** dark palette (`#0C0C0E` canvas, `#131316` elevated surfaces, `#D4A853` amber-gold accent, `1px` specular top-edge highlights) and a **Warm Alabaster Paper & Amber-Bronze** light palette (`#F6F5F1` paper canvas, `#B4781E` bronze accent).
 2. **100% Google OAuth & Cloud Backup Integrity (`appDataFolder`):** Hardened first-login restore, progressive instant sync (`2.5s` debounce), atomic `nestpane-backup.json` updates (`PATCH` + duplicate cleanup), offline queue replay via `np_cloud_dirty`, and pre-unload emergency flushing.
@@ -55,7 +55,7 @@ Upgraded both the Chrome extension build script and the web dashboard build scri
 | `popup.html` | 13.1 KB | 11.9 KB | **-9.2%** |
 | `privacy.html` | 12.4 KB | 10.8 KB | **-12.9%** |
 | `terms.html` | 7.6 KB | 6.6 KB | **-13.2%** |
-| **Packaged ZIP (`nestpane-v2.1.4-chrome.zip`)** | — | **123 KB** | — |
+| **Packaged ZIP (`nestpane-v2.2.0-chrome.zip`)** | — | **123 KB** | — |
 
 ---
 
@@ -95,4 +95,4 @@ Documented across `docs/ROADMAP.md` and `docs/AUDIT.md` to differentiate Nestpan
 | **Static Analysis (ESLint)** | `npx eslint extension/app.js extension/popup.js extension/fouc.js --max-warnings 0` | **0 errors, 0 warnings** |
 | **Extension Minified Build** | `npm run build` | **Built cleanly to `extension/dist/`** |
 | **Dashboard Sync Build** | `node scripts/build-dashboard.js` | **Built cleanly to `webapp/dashboard/`** |
-| **Chrome Web Store Package** | `npm run zip` | **`extension/nestpane-v2.1.4-chrome.zip` (`123 KB`, SHA-256: `26f09223e31b4daa0348a8d22713dea0d54b11a18d43ca3da7103fe8415d4249`)** |
+| **Chrome Web Store Package** | `npm run zip` | **`extension/nestpane-v2.2.0-chrome.zip` (`123 KB`, SHA-256: `315dc79607aa79044300f2ae0cfdf1fddb3086caf7ac5ed2afa83ee1c38e86ac`)** |
