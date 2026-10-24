@@ -34,7 +34,7 @@ All of the above were run on 2026-10-23 and produced the results shown.
 ## SHA-256 of the Chrome package
 
 ```
-cdb1d1674b06b7e362d899d4a7e9e86203a4b58d38ab8179fa4ebed8a5c66436  nestpane-v2.1.4-chrome.zip  (123 KB)
+26f09223e31b4daa0348a8d22713dea0d54b11a18d43ca3da7103fe8415d4249  nestpane-v2.1.4-chrome.zip  (123 KB)
 ```
 
 52/52 tests and `eslint --max-warnings 0` clean at this hash. Regenerate and re-verify at actual
@@ -60,7 +60,7 @@ earlier this engagement to auto-deploy on push to `main`).
 for real.** When approved:
 
 1. Build fresh per above.
-2. Upload `nestpane-v2.1.3-chrome.zip` via Developer Dashboard → Package.
+2. Upload `nestpane-v2.1.4-chrome.zip` via Developer Dashboard → Package.
 3. Listing text: no changes required unless `docs/features.md`'s top-5 picks are adopted into
    the public listing copy (currently internal-only).
 4. No permission/scope changes — should not trigger re-review, but CWS's own validation is the
@@ -73,7 +73,7 @@ Install from the same Chrome Web Store listing — no separate package needed
 
 ## Firefox
 
-Buildable (`npm run build:firefox`, re-verified against 2.1.3 this session). **Not submitted —
+Buildable (`npm run build:firefox`, re-verified against 2.1.4 this session). **Not submitted —
 left to the project owner**, by their own request: AMO account, `web-ext lint`, and the actual
 submission are all still open.
 
@@ -101,8 +101,8 @@ privacy policy).
 CWS requires a strictly higher version to publish, so a rollback is a forward-fix:
 1. Keep the last known-good published zip (2.0.1, or whatever CWS actually has live — still
    unverified from this session) as a release asset. Not currently archived anywhere in this
-   repo — add it before shipping 2.1.3.
-2. If 2.1.3 needs to be pulled, prepare 2.1.4 reverting the problematic change and publish that.
+   repo — add it before shipping 2.1.4.
+2. If 2.1.4 needs to be pulled, prepare 2.1.5 reverting the problematic change and publish that.
 3. The web dashboard has no version number of its own and no store review — rolling it back
    means re-running `node scripts/build-dashboard.js` against whatever `extension/` commit was
    last known-good, then redeploying `webapp/`.
