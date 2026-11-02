@@ -24,12 +24,12 @@ None — `manifest.json` *is* the Chromium manifest; there is no delta file for 
 ## 3. API differences and how they're handled
 
 All `chrome.*` calls in `app.js` target Chromium's API surface directly (see
-`docs/discovery.md` for the full usage table). No abstraction layer exists for this target
+`docs/02-architecture/codebase-discovery.md` for the full usage table). No abstraction layer exists for this target
 because none is needed — Chromium is the native surface the code was written against.
 
 2026-10-22: audited every `chrome.*` reference in `app.js` for a latent crash risk once the same
 file started shipping as a plain web page too (`webapp/dashboard/`, see
-`docs/browsers/dashboard.md`) — a handful of call sites (`FOCUS_RULE_CEILING`'s top-level
+`docs/03-platforms/dashboard.md`) — a handful of call sites (`FOCUS_RULE_CEILING`'s top-level
 initializer, Tab Sessions save/restore) referenced `chrome.*` without the `IS_CHROME` guard every
 other call site already has, which is harmless inside the real extension (where `chrome` always
 exists) but would throw a `ReferenceError` on Firefox/Safari viewing a page with no `chrome`
@@ -50,13 +50,13 @@ present) against the published extension ID before writing `dist/` (`build.js:52
 ## 5. Test procedure for this browser
 
 ```
-npm test             # unit tests — 44 passing as of 2.1.3, see docs/final-results.md
+npm test             # unit tests — 44 passing as of 2.1.3, see docs/04-quality/v2.2.0-final-report.md
 npm run lint          # eslint --max-warnings 0 — 0 errors, 0 warnings as of 2.1.3
-npm run check-registry # feature-registry.json coverage gate — currently FAILS, see docs/final-results.md
+npm run check-registry # feature-registry.json coverage gate — currently FAILS, see docs/04-quality/v2.2.0-final-report.md
 ```
 
 No E2E suite exists yet for this target (Playwright + persistent context with the unpacked
-extension loaded) — not built this session; tracked as an open item in `docs/RELEASE.md`.
+extension loaded) — not built this session; tracked as an open item in `docs/05-release/release-runbook.md`.
 
 ## 6. Submission and deployment steps
 
@@ -67,8 +67,8 @@ it:
    strictly greater than whatever that is. 2.1.0 was already rejected as a duplicate during this
    engagement; bump again if 2.1.3 also collides with something already uploaded.
 2. Upload `nestpane-v2.1.3-chrome.zip` via the Developer Dashboard's Package tab.
-3. Update listing text/screenshots if `docs/features.md`'s top-5 changed.
-4. No permission changes in 2.1.3 (`docs/permissions.md`) — no re-review trigger expected, but
+3. Update listing text/screenshots if `docs/01-overview/features.md`'s top-5 changed.
+4. No permission changes in 2.1.3 (`docs/01-overview/permissions.md`) — no re-review trigger expected, but
    that's a belief, not something CWS confirms until actually submitted.
 
 ## 7. Known review rejections and how to avoid them
@@ -84,7 +84,7 @@ session.
 Re-publish the previous accepted package via the Dashboard (likely 2.0.1, still unverified from
 this session). CWS requires a *higher* version number to publish, so a same-version rollback
 isn't directly possible — prepare a 2.1.3 "rollback-by-forward-fix" build that simply reverts
-the problematic change, per `docs/RELEASE.md`.
+the problematic change, per `docs/05-release/release-runbook.md`.
 
 ## 9. Verification record
 

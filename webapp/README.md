@@ -40,7 +40,7 @@ Run this any time `../extension/app.js`, `../extension/lib/*.js`, `../extension/
 `../extension/fouc.js`, or `../extension/newtab.html` change. It is not wired into any
 CI/deploy hook yet — nothing currently reminds you to re-run it, so the dashboard can silently
 go stale if this is forgotten. `dashboard/oauth-callback.html` is hand-written, not generated —
-see `../docs/browsers/dashboard.md` for what it does and the one Google Cloud Console step it
+see `../docs/03-platforms/dashboard.md` for what it does and the one Google Cloud Console step it
 still needs before Google sign-in works there.
 
 ---

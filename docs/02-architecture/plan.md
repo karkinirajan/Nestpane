@@ -26,7 +26,7 @@ Updated 2026-10-23.
 
 ## 3. Top 5 Distinguishing Roadmap Features
 
-Documented in detail in [`docs/features.md`](features.md):
+Documented in detail in [`docs/01-overview/features.md`](../01-overview/features.md):
 1. **Context-Switching "Workspace Spaces"** (Live Tab Hibernation + Chrome Tab Group Sync)
 2. **Bidirectional `[[Wiki-Links]]` Across Notes, Tasks, Bookmarks & Journal ("Daily Log")**
 3. **Deep-Work "Flow Contracts"** (Task-Bound Focus Timer + Hard Intention Gate)

@@ -25,7 +25,7 @@ already applies to Firefox/Safari lacking Chromium-only APIs:
   actually work and persist — it just isn't the same list as your browser's native bookmarks bar.
 - **History / Downloads**: same root cause — no web API exists to read either on any browser.
   These views now honestly show "Requires the browser extension" instead of fabricated demo
-  data (previous behavior, fixed this session — see `docs/CHANGELOG.md`).
+  data (previous behavior, fixed this session — see `docs/05-release/changelog.md`).
 - **Tab Sessions** (save/restore open tabs): same root cause (`chrome.tabs`). Guarded with a
   clear message; a tab-session synced in from another device via Drive backup won't try to open
   tabs and silently fail.

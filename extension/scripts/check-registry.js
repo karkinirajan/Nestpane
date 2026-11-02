@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * Fails if any `active` feature in docs/feature-registry.json has no test,
+ * Fails if any `active` feature in docs/02-architecture/feature-registry.json has no test,
  * or lists a test name that doesn't actually exist in extension/tests/.
- * This is meant to run in CI once CI exists (see docs/RELEASE.md) — today
+ * This is meant to run in CI once CI exists (see docs/05-release/release-runbook.md) — today
  * it's run manually via `node scripts/check-registry.js` and is EXPECTED to
  * fail for most 2.1.0 features, because most of them have no tests yet.
- * That failure is the correct, honest signal — see docs/REPORT.md.
+ * That failure is the correct, honest signal — see docs/04-quality/v2.2.0-final-report.md.
  */
 const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
-const registryPath = path.join(ROOT, "..", "docs", "feature-registry.json");
+const registryPath = path.join(ROOT, "..", "docs", "02-architecture", "feature-registry.json");
 const testsDir = path.join(ROOT, "tests");
 
 function collectDeclaredTestNames() {

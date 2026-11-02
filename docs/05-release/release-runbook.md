@@ -1,45 +1,45 @@
-# Release runbook — 2.2.0
+# Release runbook — 3.1.0
 
 History: 2.1.0 → 2.1.1 was a version-only bump after CWS rejected 2.1.0 as a duplicate. 2.1.1 →
-2.1.2 added real functionality — the web dashboard support code (bookmarks store, web OAuth,
-honest history/downloads degradation, notification/declarativeNetRequest hardening). 2.1.2 →
-2.1.3 was a same-day security fix for web dashboard sign-out token revocation. 2.1.3 → 2.2.0
-delivers the bulletproof Google Drive first-login override & progressive 500ms sync, 100%
-Web/Extension bookmark & settings sync parity, the Obsidian Dark & Warm Paper human-crafted
-design overhaul across extension + website, and the Top 5 Distinguishing Features (`[[Wiki-Links]]`
-& Backlinks, Task-Bound Focus Flow Contracts, Workspace Tab Stash & Switch, 4-Mode Popup Web
-Clipper, and 7-Day Rolling Snapshot Time Machine).
-See `docs/CHANGELOG.md` for the full breakdown.
+2.1.2 added the web dashboard support code. 2.1.2 → 2.1.3 was a same-day security fix for web
+dashboard sign-out token revocation. 2.1.3 → 2.2.0 delivered the first-login Drive override,
+progressive 500 ms sync, the design overhaul, and the top-5 features. 2.2.0 → 3.1.0 makes the
+Google sign-in persistent (saves can no longer erase it, tokens refresh silently), adds the theme
+dropdown, rewrites sidebar drag-and-drop and editing, makes the layout responsive from 640 px up,
+and cleans up the repo.
+See `docs/05-release/changelog.md` for the full breakdown.
 
 ## Before anything else
 
-1. **Verify the live Chrome Web Store version manually before uploading.** This repo still
-   cannot check it (no dashboard access). If 2.2.0 is also already taken, same pattern: bump
-   again, rebuild, re-zip.
-2. Confirm `manifest.json` and `package.json` agree on `2.2.0`
+1. **Verify the live Chrome Web Store version manually before uploading.** This repo cannot
+   check it (no dashboard access). CWS needs a strictly higher version than the live one; if
+   3.1.0 is somehow taken, bump `extension/manifest.json` and `extension/package.json`,
+   rebuild, and re-zip.
+2. Confirm `manifest.json` and `package.json` agree on `3.1.0`
    (`grep -r '"version"' extension/manifest.json extension/package.json`).
 
 ## Build the Chrome extension, from a clean checkout
 
 ```
 cd extension
-npm install
-npm test                 # expect: 52 passing
-npm run lint              # expect: 0 errors, 0 warnings (checked at --max-warnings 0)
+npm ci
+npm test                 # expect: 65 passing
+npm run lint              # expect: exit 0, no warnings
 npm run build              # -> dist/
-npm run zip                 # -> nestpane-v2.2.0-chrome.zip
+npm run zip                 # -> nestpane-v3.1.0-chrome.zip (reproducible; no `zip` binary needed)
 ```
 
-All of the above were run on 2026-10-24 and produced the results shown.
+All of the above were run on 2026-11-02 and produced the results shown. `npm run zip` builds
+`dist/` first, then packs it with `scripts/zip-dist.js`; running it twice produced byte-identical
+files.
 
 ## SHA-256 of the Chrome package
 
 ```
-315dc79607aa79044300f2ae0cfdf1fddb3086caf7ac5ed2afa83ee1c38e86ac  nestpane-v2.2.0-chrome.zip  (123 KB)
+84887f2a27351046dab5ee3f65d323788b003d4ad15d7b14244016cd74b59b7d  nestpane-v3.1.0-chrome.zip  (125816 bytes, 21 files)
 ```
 
-52/52 tests and `eslint --max-warnings 0` clean at this hash. Regenerate and re-verify at actual
-release time.
+65/65 tests and `eslint` clean at this hash. Regenerate and re-verify at actual release time.
 
 ## Build the web dashboard
 
@@ -47,10 +47,9 @@ release time.
 node scripts/build-dashboard.js   # regenerates webapp/dashboard/ from extension/ source
 ```
 
-Run in this session on 2026-10-22 — produced a `webapp/dashboard/` tree, every `.js` file
-syntax-checked, `index.html` validated as well-formed HTML. **Google sign-in on the dashboard
+Re-run on 2026-11-02 — regenerated the `webapp/dashboard/` tree for 3.1.0. **Google sign-in on the dashboard
 will not work until a redirect URI is registered in Google Cloud Console** — see
-`docs/browsers/dashboard.md` §3; this is a manual console step, not something fixable by
+`docs/03-platforms/dashboard.md` §3; this is a manual console step, not something fixable by
 rebuilding. Nothing else about the dashboard needs a server or build step beyond this script —
 it's static files, deployed the same way the rest of `webapp/` already is (Vercel, confirmed
 earlier this engagement to auto-deploy on push to `main`).
@@ -61,8 +60,8 @@ earlier this engagement to auto-deploy on push to `main`).
 for real.** When approved:
 
 1. Build fresh per above.
-2. Upload `nestpane-v2.1.4-chrome.zip` via Developer Dashboard → Package.
-3. Listing text: no changes required unless `docs/features.md`'s top-5 picks are adopted into
+2. Upload `nestpane-v3.1.0-chrome.zip` via Developer Dashboard → Package.
+3. Listing text: no changes required unless `docs/01-overview/features.md`'s top-5 picks are adopted into
    the public listing copy (currently internal-only).
 4. No permission/scope changes — should not trigger re-review, but CWS's own validation is the
    actual authority, not this document.
@@ -70,18 +69,18 @@ for real.** When approved:
 ## Edge / Brave / Opera / Vivaldi / Arc
 
 Install from the same Chrome Web Store listing — no separate package needed
-(`docs/browsers/chrome.md`).
+(`docs/03-platforms/chrome.md`).
 
 ## Firefox
 
-Buildable (`npm run build:firefox`, re-verified against 2.1.4 this session). **Not submitted —
+Buildable (`npm run build:firefox`, builds cleanly at 3.1.0). **Not submitted —
 left to the project owner**, by their own request: AMO account, `web-ext lint`, and the actual
 submission are all still open.
 
 ## Safari
 
 **Not started — left to the project owner**, by their own request. Needs a macOS host with
-Xcode. See `docs/browsers/safari.md`.
+Xcode. See `docs/03-platforms/safari.md`.
 
 ## Staged rollout (Chrome)
 
@@ -94,7 +93,7 @@ percentage): 10% → 50% → 100% over a few days, watching:
 
 **Rollback trigger**: any confirmed report of data loss on upgrade, or a migration error rate
 above zero in whatever telemetry is available (none is currently instrumented — see
-`docs/discovery.md` telemetry note, which found none exists, and that's intentional per the
+`docs/02-architecture/codebase-discovery.md` telemetry note, which found none exists, and that's intentional per the
 privacy policy).
 
 ## Rollback procedure
@@ -102,8 +101,8 @@ privacy policy).
 CWS requires a strictly higher version to publish, so a rollback is a forward-fix:
 1. Keep the last known-good published zip (2.0.1, or whatever CWS actually has live — still
    unverified from this session) as a release asset. Not currently archived anywhere in this
-   repo — add it before shipping 2.1.4.
-2. If 2.1.4 needs to be pulled, prepare 2.1.5 reverting the problematic change and publish that.
+   repo — add it before shipping 3.1.0.
+2. If 3.1.0 needs to be pulled, prepare 3.1.1 reverting the problematic change and publish that.
 3. The web dashboard has no version number of its own and no store review — rolling it back
    means re-running `node scripts/build-dashboard.js` against whatever `extension/` commit was
    last known-good, then redeploying `webapp/`.
