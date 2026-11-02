@@ -21,10 +21,12 @@ They share no build step, no dependencies, and no source code. The link between 
 ```
 nestpane/
 ├── README.md              ← you are here — repo-wide overview
+├── docs/                   Documentation, as numbered chapters — start at docs/README.md
+├── scripts/                Repo-level scripts (build-dashboard.js regenerates webapp/dashboard/)
 ├── extension/              The Chrome extension (Manifest V3)
 │   ├── README.md            Full extension documentation (features, OAuth setup, build, deploy, permissions)
 │   ├── manifest.json         Name, version, permissions, OAuth client, icons
-│   ├── app.js                 All application logic (~8,600 lines, comment-free)
+│   ├── app.js                 All application logic (~8,800 lines; minified at build time)
 │   ├── newtab.html            New tab page — full dashboard markup
 │   ├── style.css              Design system and component styles
 │   ├── popup.html / popup.js  Toolbar popup — quick-save a bookmark
@@ -53,7 +55,7 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 ### Features
 
 - **Bookmarks & Quick Access** — import Chrome bookmarks, organize into folders, pin frequently-used sites as one-click shortcuts (30 curated defaults across Google, socials, AI tools, and popular sites), search, sort, and manage via context menu
-- **Grouped sidebar** — collapsible Home/Personal/Google/Socials/AI groups, each seeded with sensible default links and views, fully customizable (add/remove/reorder groups and items)
+- **Grouped sidebar** — collapsible Home/Personal/Google/Socials/AI groups, each seeded with sensible default links and views, fully customizable (add, edit, and remove groups and links; drag to reorder, or drag a link into another group)
 - **Smart Organize** — one click sorts your open tabs into existing bookmark folders using an LLM (requires your own Anthropic API key)
 - **Notes** — tagged notes with pin, full-text search, and a rich editor
 - **Nestodo** — a Kanban-style task board (To Do / In Progress / Done) with due-date reminders
@@ -70,7 +72,7 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 - **Analytics / Insights** — top visited sites, browsing activity, and a 14-day activity trend
 - **Weather widget** — current conditions + 3-day forecast (auto-detect or manual city, no API key)
 - **AI Daily Briefing** — short LLM-generated morning summary of weather and pending tasks
-- **Motivational quotes**, **custom wallpaper**, and a **curated theme system** (Obsidian Dark, Warm Paper Light, Nord, Catppuccin Mocha, Gruvbox, and Solarized, plus a custom accent color picker with Terracotta Ember `#e86c2c` default)
+- **Motivational quotes**, **custom wallpaper**, and a **curated theme system** (Obsidian Dark, Warm Paper Light, Nord, Catppuccin Mocha, Gruvbox, and Solarized, picked from a toolbar dropdown, plus a custom accent color picker with Terracotta Ember `#e86c2c` default)
 - **Unified command palette** (`/`) — search bookmarks, notes, tasks, history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action
 - **Google Drive sync (optional)** — backs up 100% of your workspace state to a private, hidden `drive.appdata` folder only Nestpane can see, automatically overrides default fresh-install state on first sign-in on a new browser, progressively pushes local changes within 500ms (with tab-hide flush), and works in Chrome and every other Chromium-based browser (Brave, Vivaldi, Opera, Arc, Edge)
 - **End-to-end encryption (optional)** — passphrase-based AES-GCM encryption layer on top of Drive backups (PBKDF2, 600,000 iterations)
@@ -78,7 +80,7 @@ A Manifest V3 Chrome extension. No framework, no backend — vanilla HTML/CSS/JS
 
 ### Tech stack
 
-Chrome Extension (Manifest V3) · vanilla JS/HTML/CSS (no framework) · `chrome.identity.getAuthToken()` for native Chrome sign-in, falling back to `chrome.identity.launchWebAuthFlow()` for every other Chromium-based browser (no client secret in either path) · `chrome.storage.local` for all data · Google Drive REST API v3 (`appdata` scope) for optional sync · WebCrypto for optional E2E encryption · Anthropic Messages API for optional AI features · Web Speech API for voice capture · `chrome.declarativeNetRequest` for focus-mode site blocking · esbuild for release minification (source ships comment-free for the smallest possible package).
+Chrome Extension (Manifest V3) · vanilla JS/HTML/CSS (no framework) · `chrome.identity.getAuthToken()` for native Chrome sign-in, falling back to `chrome.identity.launchWebAuthFlow()` for every other Chromium-based browser (no client secret in either path) · `chrome.storage.local` for all data · Google Drive REST API v3 (`appdata` scope) for optional sync · WebCrypto for optional E2E encryption · Anthropic Messages API for optional AI features · Web Speech API for voice capture · `chrome.declarativeNetRequest` for focus-mode site blocking · esbuild for release minification.
 
 ### Quick start (local development)
 
@@ -117,7 +119,7 @@ A static site (no build step, no framework beyond Tailwind via CDN) serving as N
 
 ### Design system
 
-Obsidian Dark-first, built with Tailwind CSS via CDN to match the extension's exact token system: background `#0c0d0e`, elevated surface `#131517`, hairline border `#23262a`, primary text `#f3f2ee`, and Terracotta Ember accent `#e86c2c` (`#f2935c` highlight), pairing `Inter`, `Instrument Serif`, and `JetBrains Mono`. Full details in **[`webapp/README.md`](webapp/README.md)** and **[`docs/features.md`](docs/features.md)**.
+Obsidian Dark-first, built with Tailwind CSS via CDN to match the extension's exact token system: background `#0c0d0e`, elevated surface `#131517`, hairline border `#23262a`, primary text `#f3f2ee`, and Terracotta Ember accent `#e86c2c` (`#f2935c` highlight), pairing `Inter`, `Instrument Serif`, and `JetBrains Mono`. Full details in **[`webapp/README.md`](webapp/README.md)** and **[`docs/01-overview/features.md`](docs/01-overview/features.md)**.
 
 ### Local development
 

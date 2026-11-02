@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.1.0 — 2026-11-02
+
+### Fixed — Staying signed in
+- **Background saves can no longer erase the Google login.** `save()` and `_persistLocalState()` used to write `googleUser: null` whenever a save ran before the saved login had been loaded (the legacy-migration paths), which silently signed the user out. They now write `googleUser` only when it is set, and only `signOut()` / Clear All Data remove it (`_endSession()` → `API.removeLocal`).
+- **Another tab can no longer sign this one out by accident.** `_applyLiveStorageChange` ignores empty `googleUser` values; a real sign-out in one tab (key removed) is propagated to the others.
+- **Access tokens are refreshed silently instead of expiring into "Connect Drive".** A keep-alive timer (`_armSessionKeepAlive` / `_refreshSession`) renews the token just after the cached one expires, on tab focus, and when the browser comes back online, with backoff (1 → 15 min) and without ever clearing the saved account. The web dashboard gained a hidden-iframe `prompt=none` refresh (`_plainWebSilentRefresh`, answered by `oauth-callback.html`).
+
+### Added / Changed
+- **Theme dropdown.** The topbar theme button now opens a menu with all six themes (Obsidian, Paper, Nord, Mocha, Gruvbox, Solarized): arrow-key navigation, Escape and outside-click to close, current theme marked. Settings → Appearance and the menu render from one `THEME_PRESETS` list.
+- **Sidebar editing.** Adding a link works while editing; link URLs can be edited and are validated; removing an item asks for confirmation.
+- **Sidebar drag and drop, rewritten.** One delegated handler with a drop indicator replaces per-render listeners. Groups and items reorder (drop on the upper or lower half of a target), and items can move between groups (drop on a row, or on a group header to append; collapsed groups open after a short hover). The ordering rules live in `lib/sidebar-order.js` with 9 unit tests. Previously, dragging an item did nothing because the enclosing group cancelled the drag.
+- **Responsive from 640px up.** Below 900px the sidebar collapses to its icon rail automatically (the saved preference is untouched); the Quick Access row stacks under 850px and no longer reserves an empty column when the To-Do widget is off. Layouts below 640px are out of scope.
+
+### Fixed
+- **Analytics threw on the web dashboard** (`Cannot set properties of null`) because three insight cards had no empty-state element; they now share `_insightsEmpty()`.
+
+### Removed / housekeeping
+- Dropped 79 unreferenced CSS classes (122.2 kB → 112.5 kB source), two unused and one duplicate `@keyframes`, and the `max-width: 520px` rule.
+- Removed the `npm run dev` / `--watch` mode (it required `chokidar`, which was never a dependency).
+- `npm run zip` now compresses at `-9` and strips extra file attributes; `npm run lint` also covers `scripts/`.
+- Docs reorganised into numbered chapters under `docs/` (see `docs/README.md`); removed the duplicate root `final-result.md`.
+
 ## 2.1.4 — 2026-10-23
 
 ### Added — Top 5 Distinguishing Features
@@ -46,7 +68,7 @@
 - **Web dashboard** at `nestpane.kneeraazon.com/dashboard/` — the same `app.js`/`lib/*.js` the
   extension uses, served as a plain web page so people can try Nestpane with no install. Built
   by `node scripts/build-dashboard.js` from the extension source (not a hand-duplicated copy).
-  See `docs/browsers/dashboard.md` for exactly what's identical to the extension and what can't
+  See `docs/03-platforms/dashboard.md` for exactly what's identical to the extension and what can't
   be (bookmarks/history/downloads/tab-sessions/site-blocking are extension-only browser
   privileges on every browser, not a Nestpane limitation).
 - A real, persisted bookmark store for contexts without `chrome.bookmarks` (the web dashboard):
@@ -57,7 +79,7 @@
   (`_plainWebOAuthToken` in `app.js`, `webapp/dashboard/oauth-callback.html`) since
   `chrome.identity` doesn't exist outside an extension. **Needs one manual step before it
   actually works**: a redirect URI for the dashboard's own origin must be registered in Google
-  Cloud Console — not something this session could do. Full detail in `dashboard.md` §3.
+  Cloud Console — not something this session could do. Full detail in `../03-platforms/dashboard.md` §3.
 - Reminders and habit notifications now fall back to the standard Web Notifications API when
   `chrome.notifications` isn't available, instead of just doing nothing.
 
@@ -108,9 +130,9 @@ the Drive-sync override-vs-restore fix) is included in this build; see that sect
 - A real automated test suite for the first time: 20 unit tests (Node's built-in `node:test`,
   zero new dependencies) covering HTML escaping, URL sanitizing, the migration framework, the
   Drive-conflict logic, and the manifest-merge logic. `npm test` runs them.
-- `docs/feature-registry.json` + `extension/scripts/check-registry.js`: a real, runnable gate
+- `docs/02-architecture/feature-registry.json` + `extension/scripts/check-registry.js`: a real, runnable gate
   that fails when an `active` feature has no mapped test. **It currently fails** for 11 of 14
-  registered features — see `docs/REPORT.md` for the honest current state; this is the gate
+  registered features — see `docs/04-quality/v2.2.0-final-report.md` for the honest current state; this is the gate
   doing its job, not a regression introduced by 2.1.0.
 
 ### Fixed
@@ -188,14 +210,14 @@ the Drive-sync override-vs-restore fix) is included in this build; see that sect
 
 ### Deferred to a later release
 - Full consolidation of `chrome.*` call sites into a single `platform` abstraction module
-  (`docs/AUDIT.md` A7) — the existing call sites already degrade gracefully per-browser; this is
+  (`docs/04-quality/audit.md` A7) — the existing call sites already degrade gracefully per-browser; this is
   a maintainability improvement, not a functional fix, and refactoring ~40 untested call sites
   wasn't justified for this release.
 - Full accessibility (WCAG 2.2 AA) audit, performance baselines, i18n readiness, and CSP-key
-  review — not started this session (`docs/discovery.md` "Not yet covered").
-- Safari support — blocked on a macOS host (`docs/browsers/safari.md`).
+  review — not started this session (`docs/02-architecture/codebase-discovery.md` "Not yet covered").
+- Safari support — blocked on a macOS host (`docs/03-platforms/safari.md`).
 - Firefox AMO submission and `web-ext lint` — buildable this session, not submitted or linted
   (no AMO credentials, `web-ext` not installed).
-- Reminders not firing while no new-tab tab is open (`docs/AUDIT.md` A4) — this needs a product
+- Reminders not firing while no new-tab tab is open (`docs/04-quality/audit.md` A4) — this needs a product
   decision (likely a background service worker + `chrome.alarms`, which is itself an
   architecture change) rather than a quick fix; deferred pending that decision.

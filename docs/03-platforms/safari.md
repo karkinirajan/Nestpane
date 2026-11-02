@@ -27,7 +27,7 @@ current Apple docs this session):
   `launchWebAuthFlow` fallback (`app.js:1223-1233`) should apply, but has never been tested
   against Safari's actual `launchWebAuthFlow`/redirect-URL behavior.
 - `chrome.topSites`, `chrome.search.query`, `chrome.downloads` are not expected to exist on
-  Safari — the topSites/search call sites already degrade gracefully (`docs/AUDIT.md` A7); the
+  Safari — the topSites/search call sites already degrade gracefully (`docs/04-quality/audit.md` A7); the
   Downloads *view* (`app.js:3609-3648`) has not been audited for a Safari-specific fallback.
 - `declarativeNetRequest` support/limits on Safari — not researched this session.
 
@@ -59,4 +59,4 @@ Not applicable — nothing has ever shipped to Safari.
 | Date | Version | Who | Evidence |
 |---|---|---|---|
 | 2026-10-21 | — | automated session | **No verification performed.** This entire file is unexecuted planning, explicitly marked as such per the "no silent skips" rule rather than presented as done. |
-| 2026-10-22 | — | automated session | Still no verification — still blocked on a macOS host. Source is now at 2.1.3; one relevant note for whoever eventually does the Xcode conversion: a few `chrome.*` references in `app.js` that weren't consistently guarded (`FOCUS_RULE_CEILING`, Tab Sessions save/restore) were hardened this session so they no longer assume `chrome` exists — worth being aware of if Safari's WebExtension `chrome.*` compat layer has gaps this uncovers during testing, though it wasn't written specifically for that case (see `docs/browsers/chrome.md` §3 and `dashboard.md` §2 for why it came up). |
+| 2026-10-22 | — | automated session | Still no verification — still blocked on a macOS host. Source is now at 2.1.3; one relevant note for whoever eventually does the Xcode conversion: a few `chrome.*` references in `app.js` that weren't consistently guarded (`FOCUS_RULE_CEILING`, Tab Sessions save/restore) were hardened this session so they no longer assume `chrome` exists — worth being aware of if Safari's WebExtension `chrome.*` compat layer has gaps this uncovers during testing, though it wasn't written specifically for that case (see `docs/03-platforms/chrome.md` §3 and `dashboard.md` §2 for why it came up). |

@@ -41,8 +41,8 @@ It is single-user and offline-first. All state lives in `chrome.storage.local`. 
 - **Wallpaper** — random photo (via Picsum), solid color, or upload your own image
 - **Google Drive sync** — backs up 100% of your workspace state to your private Drive `appDataFolder`, automatically overrides initial fresh-install state on first login on a new browser, and progressively pushes local edits within 500ms (including an automatic flush on tab hide/close)
 - **End-to-end encrypted sync** — optional passphrase-based AES-GCM encryption layer on top of Drive backups (PBKDF2, 600,000 iterations)
-- **Curated Theme System** — Obsidian Dark and Warm Paper Light modes plus Nord, Catppuccin Mocha, Gruvbox, and Solarized presets, with a custom accent color picker (Terracotta Ember `#e86c2c` default)
-- **Sidebar** — collapsible, with per-group custom link lists
+- **Curated Theme System** — Obsidian Dark and Warm Paper Light modes plus Nord, Catppuccin Mocha, Gruvbox, and Solarized presets, chosen from a keyboard-accessible dropdown in the toolbar (or Settings → Appearance), with a custom accent color picker (Terracotta Ember `#e86c2c` default)
+- **Sidebar** — collapsible (and automatically folded into an icon rail below 900px), with per-group custom link lists. In edit mode you can add, rename, re-URL, and delete groups and links, drag to reorder groups and links, and drag a link into another group
 - **Unified command palette / omni-search** — `/` searches bookmarks, notes, tasks, browser history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action for direct LLM answers
 - **Extension popup** — one-click bookmark save from any page via the toolbar button
 
@@ -83,9 +83,12 @@ dependencies; each is self-contained in its own folder.
 nestpane/
 ├── extension/         ← you are here — the Chrome extension itself
 │   ├── manifest.json  Manifest V3 — name, version, permissions, host permissions, icons
-│   ├── newtab.html    New tab page — full dashboard markup (~1800 lines)
-│   ├── app.js         All application logic, including the OAuth client ID (~10800 lines)
-│   ├── style.css      Design system and all component styles (~2150 lines)
+│   ├── newtab.html    New tab page — full dashboard markup (~1,400 lines)
+│   ├── app.js         All application logic, including the OAuth client ID (~8,800 lines)
+│   ├── style.css      Design system and all component styles (~2,000 lines)
+│   ├── lib/           Small dependency-free modules (storage migrations, Drive conflict rules, autosave, sidebar ordering, …), unit-tested
+│   ├── tests/         `node --test` suites for everything in lib/ and the build scripts
+│   ├── scripts/       Build helpers: manifest merge (Firefox), reproducible zip writer, feature-registry check
 │   ├── fouc.js        Runs before CSS loads — applies theme and accent color to avoid a flash
 │   ├── popup.html     Extension popup — save current page as a bookmark to a workspace
 │   ├── popup.js       Popup logic
@@ -98,8 +101,9 @@ nestpane/
 │   │   ├── favicon.png  128×128 extension icon (generated from SVG)
 │   │   ├── icon-16.png  16×16 toolbar icon (generated from SVG)
 │   │   └── icon-48.png  48×48 extension management icon (generated from SVG)
-│   └── dist/          Production build output — ZIP this folder for Chrome Web Store (gitignored)
-└── webapp/            Static Vercel site — landing page, privacy.html, terms.html
+│   ├── dist/          Production build output (gitignored)
+│   └── nestpane-v<version>-chrome.zip   Chrome Web Store package from `npm run zip` (gitignored)
+└── webapp/            Static site — landing page, privacy.html, terms.html, and the web dashboard
 ```
 
 ---
@@ -107,7 +111,7 @@ nestpane/
 ## Prerequisites
 
 - Chrome, Chromium, Edge, Brave, or Arc (any Chromium-based browser)
-- Node.js ≥ 18 plus `npm install` — needed only to run `build.js` and `eslint`; local development loads the unpacked sources directly and needs neither
+- Node.js ≥ 18 plus `npm install` — needed only to run `build.js`, the tests, and `eslint`; local development loads the unpacked sources directly and needs none of them
 - `rsvg-convert` (librsvg) or ImageMagick `convert` — only needed to regenerate PNG icons from `icons/favicon.svg`
 
 ---
@@ -191,9 +195,11 @@ This only works in actual Google Chrome — it depends on Google API keys baked 
 
 1. `chrome.identity.launchWebAuthFlow()` opens Google's standard OAuth consent page in a browser-controlled popup and watches for the redirect to `chrome.identity.getRedirectURL()` (`https://<extension-id>.chromiumapp.org/`) — this is a plain extensions API every Chromium-based browser implements the same way.
 2. Uses the implicit grant (`response_type=token`) against a **second**, `Web application`-type OAuth client (`WEB_AUTH_CLIENT_ID` in `app.js`) — the access token comes back directly in the redirect URL's fragment, so there's no client secret and no backend needed to exchange a code for a token.
-3. The token is cached in memory only (implicit-grant tokens have no refresh token) and silently re-requested (`prompt=none`) while still valid; a genuinely expired token just resolves to `null`, same as the native path.
+3. The token is kept in `chrome.storage.local` (implicit-grant tokens have no refresh token), so a new tab reuses it, and it is silently re-requested (`prompt=none`) shortly after it expires; if Google refuses, the account stays signed in and shows **Connect Drive** until the next successful silent or manual reconnect.
 
-Sign-out (and "Clear All Data") revoke the grant server-side via `oauth2.googleapis.com/revoke` **and** evict it from whichever cache is holding it (Chrome's native cache, or the in-memory fallback token).
+Sign-out (and "Clear All Data") revoke the grant server-side via `oauth2.googleapis.com/revoke` **and** evict it from whichever cache is holding it (Chrome's native cache, or the stored fallback token).
+
+**Staying signed in.** The signed-in account (`googleUser`) is only ever removed by Sign out or Clear All Data. Saves never overwrite it with an empty value, other tabs cannot clear it, and a keep-alive timer (`_armSessionKeepAlive` in `app.js`) renews the access token in the background, on tab focus, and when the browser comes back online. The web dashboard uses a hidden-iframe `prompt=none` request answered by `oauth-callback.html`. The one limit: the implicit grant has no refresh token, so if Google's own sign-in session has ended, the silent request is refused and a manual reconnect is needed; true "never reconnect" would need an OAuth code flow with a client secret on a server, which this project deliberately does not have.
 
 ### Setting up your own OAuth Clients
 

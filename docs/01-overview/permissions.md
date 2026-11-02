@@ -28,7 +28,7 @@ already in `manifest.json`, per the brief's "no new permission without justifica
 
 | Host | Why |
 |---|---|
-| `https://fonts.googleapis.com/*`, `https://fonts.gstatic.com/*` | Self-hosted-adjacent font loading (see `discovery.md` i18n/font note — not yet verified whether fonts are actually bundled or fetched live; flagged for the next audit pass). |
+| `https://fonts.googleapis.com/*`, `https://fonts.gstatic.com/*` | Self-hosted-adjacent font loading (see `../02-architecture/codebase-discovery.md` i18n/font note — not yet verified whether fonts are actually bundled or fetched live; flagged for the next audit pass). |
 | `https://www.googleapis.com/*`, `.../upload/drive/v3/*` | Google Drive sync (`app.js:1709-1930`). |
 | `https://oauth2.googleapis.com/*` | Token exchange for the Drive sign-in flow. |
 | `https://api.anthropic.com/*` | Optional, user-enabled BYOK AI features (`app.js:1485-1560`). The user's own Anthropic API key, entered in Settings, is sent directly from the browser to Anthropic — Nestpane's own servers never see it. Disclosed in `webapp/privacy.html` §6. |
@@ -41,6 +41,6 @@ verification review.
 
 ## Manifest deltas (Firefox)
 
-`manifest.firefox.json` (merged at build time, see `browsers/firefox.md`) adds only
+`manifest.firefox.json` (merged at build time, see `../03-platforms/firefox.md`) adds only
 `browser_specific_settings.gecko.id` / `strict_min_version` — no permission differs between
 targets.

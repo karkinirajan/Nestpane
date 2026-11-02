@@ -36,14 +36,14 @@ page being unable to redirect back to `about:newtab` — not expected to matter 
 
 ## 3. API differences and how the `platform` module handles each
 
-There is no consolidated `platform` module (see `docs/AUDIT.md` A7 — scoped down this release).
+There is no consolidated `platform` module (see `docs/04-quality/audit.md` A7 — scoped down this release).
 Per-call-site handling that already exists and is relevant to Firefox:
 
 - `chrome.identity.getAuthToken` does not exist in Firefox. `getAuthToken()` (`app.js:1223-1233`)
   already checks for it and falls through to `_webAuthFlowToken()` (`launchWebAuthFlow` +
   `getRedirectURL`) when absent — this is the correct cross-browser pattern and needs no change.
 - `chrome.topSites` and `chrome.search.query` don't exist in Firefox. Both call sites already
-  feature-detect and degrade (empty-state text / URL-open fallback) — see `docs/AUDIT.md` A7.
+  feature-detect and degrade (empty-state text / URL-open fallback) — see `docs/04-quality/audit.md` A7.
 - `chrome.declarativeNetRequest` (Focus Mode) is supported in Firefox 113+ per the brief's own
   premise — **not independently re-verified against Mozilla's current docs this session**; do
   that before claiming Focus Mode works identically on Firefox in a store listing.
