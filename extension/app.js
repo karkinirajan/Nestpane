@@ -62,6 +62,18 @@ const API = {
       }
     }
   }),
+  removeLocal: (keys) => new Promise((res) => {
+    const list = Array.isArray(keys) ? keys : [keys];
+    if (IS_CHROME && chrome.storage) {
+      chrome.storage.local.remove(list, () => res());
+    } else {
+      try {
+        list.forEach((k) => localStorage.removeItem("ftL_" + k));
+      } catch {
+      }
+      res();
+    }
+  }),
   bookmarks: () => new Promise((res) => {
     if (IS_CHROME && chrome.bookmarks) {
       chrome.bookmarks.getTree((tree) => res(tree || []));
@@ -639,9 +651,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Flush every pending autosave and pending Drive push immediately.
       _autosaveRegistry.flushAll();
       _flushPendingDrivePush();
-    } else if (S.googleUser && !Drive._dirty && !Drive._syncing) {
-      pullFromDrive();
+    } else if (S.googleUser && !Drive._syncing) {
+      if (Drive._status === "needs-auth") _refreshSession();
+      else if (!Drive._dirty) pullFromDrive();
     }
+  });
+  window.addEventListener("online", () => {
+    if (S.googleUser) _refreshSession();
   });
   window.addEventListener("pagehide", () => {
     // Last-resort flush for an actual unload/discard/crash recovery path —
@@ -903,14 +919,7 @@ async function loadState() {
   applyCardGlow(S.settings.cardGlow || "off");
   _syncFocusModeUI();
   _syncAiUI();
-  document.body.classList.toggle(
-    "sidebar-collapsed",
-    !!S.settings.sidebarCollapsed
-  );
-  el("sidebarToggleBtn")?.classList.toggle(
-    "active",
-    !!S.settings.sidebarCollapsed
-  );
+  syncSidebarCollapsed();
   updateAvatarDisplay();
 }
 function save() {
@@ -942,7 +951,7 @@ function save() {
   }
   const p = API.setLocal({
     user: S.user,
-    googleUser: S.googleUser,
+    ...S.googleUser ? { googleUser: S.googleUser } : {},
     trash: S.trash,
     settings: S.settings,
     weatherLocation: S.weatherLocation,
@@ -1252,6 +1261,50 @@ function _plainWebOAuthStart(interactive) {
   }).toString();
   window.location.href = authUrl;
 }
+let _silentRefreshInFlight = null;
+let _silentRefreshFailedAt = 0;
+function _plainWebSilentRefresh() {
+  if (_silentRefreshInFlight) return _silentRefreshInFlight;
+  if (Date.now() - _silentRefreshFailedAt < 6e4) return Promise.resolve(null);
+  _silentRefreshInFlight = new Promise((resolve) => {
+    const state = "silent." + Math.random().toString(36).slice(2);
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+    let timer = null;
+    const finish = (token) => {
+      window.removeEventListener("message", onMessage);
+      clearTimeout(timer);
+      frame.remove();
+      if (!token) _silentRefreshFailedAt = Date.now();
+      _silentRefreshInFlight = null;
+      resolve(token);
+    };
+    const onMessage = (e) => {
+      const d = e.data;
+      if (e.origin !== window.location.origin || e.source !== frame.contentWindow) return;
+      if (!d || d.type !== "nestpane-oauth" || d.state !== state) return;
+      if (!d.token) return finish(null);
+      _webAuthToken = d.token;
+      _webAuthTokenExpiresAt = Date.now() + Math.max((Number(d.expiresIn) || 3600) - 120, 60) * 1e3;
+      _persistWebAuthToken(_webAuthToken, _webAuthTokenExpiresAt);
+      finish(d.token);
+    };
+    window.addEventListener("message", onMessage);
+    timer = setTimeout(() => finish(null), 1e4);
+    frame.src = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+      client_id: WEB_AUTH_CLIENT_ID,
+      response_type: "token",
+      redirect_uri: _plainWebOAuthRedirectUri(),
+      scope: WEB_OAUTH_SCOPES.join(" "),
+      prompt: "none",
+      state
+    }).toString();
+    document.body.appendChild(frame);
+  });
+  return _silentRefreshInFlight;
+}
 async function _plainWebOAuthToken(interactive) {
   if (typeof window === "undefined" || typeof sessionStorage === "undefined") return null;
   if (!_webAuthToken) {
@@ -1264,7 +1317,7 @@ async function _plainWebOAuthToken(interactive) {
   if (_webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
     return _webAuthToken;
   }
-  if (!interactive) return null;
+  if (!interactive) return S.googleUser ? _plainWebSilentRefresh() : null;
   // No valid token and the caller wants one now — the only way to get one
   // on a plain web page is a full-page redirect. There is nothing to
   // `resolve()` here: the page navigates away and the token comes back on
@@ -1813,7 +1866,7 @@ async function _fetchCloudPayload(token, fileIds) {
 async function _persistLocalState() {
   await API.setLocal({
     user: S.user,
-    googleUser: S.googleUser,
+    ...S.googleUser ? { googleUser: S.googleUser } : {},
     quickAccess: S.quickAccess,
     notes: S.notes,
     folders: S.folders,
@@ -1841,8 +1894,7 @@ function _refreshAfterCloudApply() {
   applyTheme(S.settings.theme || "dark");
   applyAccent(S.settings.accentColor || "#e86c2c");
   applyCardGlow(S.settings.cardGlow || "off");
-  document.body.classList.toggle("sidebar-collapsed", !!S.settings.sidebarCollapsed);
-  el("sidebarToggleBtn")?.classList.toggle("active", !!S.settings.sidebarCollapsed);
+  syncSidebarCollapsed();
   _syncFocusModeUI();
   _syncAiUI();
   renderAll();
@@ -1859,6 +1911,7 @@ function _refreshAfterCloudApply() {
 function _registerLiveStorageSync() {
   if (IS_CHROME && chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes.googleUser && !changes.googleUser.newValue) _onRemoteSignOut();
       if (area !== "local" || !changes._savedAt) return;
       const newSavedAt = changes._savedAt.newValue || 0;
       if (newSavedAt <= S._savedAt) return;
@@ -1868,6 +1921,7 @@ function _registerLiveStorageSync() {
   }
   if (!IS_CHROME && typeof window !== "undefined") {
     window.addEventListener("storage", async (e) => {
+      if (e.key === "ftL_googleUser" && !e.newValue) _onRemoteSignOut();
       if (e.key !== "ftL__savedAt" || !e.newValue) return;
       let newSavedAt = 0;
       try {
@@ -1915,7 +1969,7 @@ function _registerLiveStorageSync() {
 }
 function _applyLiveStorageChange(changes) {
   if (changes.user) S.user = changes.user.newValue || S.user;
-  if (changes.googleUser) S.googleUser = changes.googleUser.newValue || null;
+  if (changes.googleUser?.newValue) S.googleUser = changes.googleUser.newValue;
   if (changes.quickAccess) S.quickAccess = changes.quickAccess.newValue || [];
   if (changes.notes) S.notes = changes.notes.newValue || [];
   if (changes.folders) S.folders = changes.folders.newValue || [];
@@ -2213,7 +2267,61 @@ function _showManualSyncBtns(show) {
   const d = el("sbSyncManual");
   if (d) d.style.display = show ? "flex" : "none";
 }
+const SESSION_KEEPALIVE_MS = 45 * 60 * 1e3;
+let _keepAliveTimer = null;
+let _keepAliveFails = 0;
+function _stopSessionKeepAlive() {
+  clearTimeout(_keepAliveTimer);
+  _keepAliveTimer = null;
+  _keepAliveFails = 0;
+}
+function _armSessionKeepAlive() {
+  clearTimeout(_keepAliveTimer);
+  _keepAliveTimer = null;
+  if (!S.googleUser) return;
+  let delay = SESSION_KEEPALIVE_MS;
+  if (_keepAliveFails) {
+    delay = Math.min(6e4 * 2 ** (_keepAliveFails - 1), 15 * 60 * 1e3);
+  } else if (_webAuthToken && _webAuthTokenExpiresAt > Date.now()) {
+    delay = Math.max(_webAuthTokenExpiresAt - Date.now() + 1e3, 3e4);
+  }
+  _keepAliveTimer = setTimeout(_refreshSession, delay);
+}
+async function _refreshSession() {
+  if (!S.googleUser) return;
+  if (Drive._syncing || !navigator.onLine) {
+    _armSessionKeepAlive();
+    return;
+  }
+  const token = await getAuthToken(false);
+  if (token) {
+    _keepAliveFails = 0;
+    if (Drive._status === "needs-auth" || Drive._status === "error") {
+      await checkGoogleIdentity();
+      return;
+    }
+  } else {
+    _keepAliveFails++;
+  }
+  _armSessionKeepAlive();
+}
+function _onRemoteSignOut() {
+  if (!S.googleUser) return;
+  S.googleUser = null;
+  S.user.googlePicture = null;
+  S.user.googleName = null;
+  _stopSessionKeepAlive();
+  updateAvatarDisplay();
+  setSyncStatus("signed-out");
+}
 async function checkGoogleIdentity() {
+  try {
+    await _checkGoogleIdentityOnce();
+  } finally {
+    _armSessionKeepAlive();
+  }
+}
+async function _checkGoogleIdentityOnce() {
   const token = await getAuthToken(false);
   if (!token) {
     if (S.googleUser?.email) {
@@ -2223,7 +2331,6 @@ async function checkGoogleIdentity() {
       if (info?.email) {
         setSyncStatus("needs-auth", info.email);
       } else {
-        S.googleUser = null;
         setSyncStatus("signed-out");
       }
     }
@@ -2379,6 +2486,8 @@ async function _finishSignIn(token) {
     profile
   });
   setSyncStatus("synced");
+  _keepAliveFails = 0;
+  _armSessionKeepAlive();
   showToast("Signed in & synced \u2601", "success");
 }
 async function _completeWebOAuthIfNeeded() {
@@ -2410,11 +2519,13 @@ async function _revokeGoogleAccess() {
   _webAuthTokenExpiresAt = 0;
   _clearPersistedWebAuthToken();
 }
-async function signOut() {
+async function _endSession() {
+  _stopSessionKeepAlive();
   await _revokeGoogleAccess();
   S.googleUser = null;
   S.user.googlePicture = null;
   S.user.googleName = null;
+  await API.removeLocal(["googleUser"]);
   await _setDriveFileId(null);
   Drive._lastSyncAt = 0;
   Drive._lastKnownRemoteSavedAt = 0;
@@ -2423,6 +2534,9 @@ async function signOut() {
   Drive._pendingPush = false;
   clearTimeout(Drive._syncTimer);
   Drive._syncTimer = null;
+}
+async function signOut() {
+  await _endSession();
   await _persistLocalState();
   updateAvatarDisplay();
   setSyncStatus("signed-out");
@@ -2484,7 +2598,7 @@ function renderAll() {
   renderTimerStats();
   updateSidebarTabActive();
 }
-const SB_DRAG_HANDLE = `<span class="sb-drag-handle" data-tip="Drag to reorder">
+const SB_DRAG_HANDLE = `<span class="sb-drag-handle" draggable="true" data-tip="Drag to reorder" aria-label="Drag to reorder">
   <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
     <circle cx="8" cy="6" r="1.6"/><circle cx="16" cy="6" r="1.6"/>
     <circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/>
@@ -2544,28 +2658,27 @@ function renderSidebar() {
             <span class="sb-group-label">${escH(group.label)}</span>
             <svg class="sb-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          ${S.sidebarEditMode ? groupEditActions : addBtn}
+          ${addBtn}${S.sidebarEditMode ? groupEditActions : ""}
         </div>
         <div class="sb-group-items">${itemsHtml}</div>
       </div>`;
   }).join("") + (S.sidebarEditMode ? `<button class="sb-add-group-btn" id="sbAddGroupBtn">+ Add group</button>` : "");
-  if (S.sidebarEditMode) {
-    _addDragDrop(container, ".sb-group", "sbGroupId", reorderSidebarGroups, ".sb-group-hd .sb-drag-handle");
-    container.querySelectorAll(".sb-group").forEach((groupEl) => {
-      const groupId = groupEl.dataset.sbGroupId;
-      const itemsContainer = groupEl.querySelector(".sb-group-items");
-      if (!itemsContainer) return;
-      _addDragDrop(
-        itemsContainer,
-        ".sb-item-row",
-        "sbRowItemId",
-        (fromId, toId) => reorderSidebarItemsInGroup(groupId, fromId, toId),
-        ".sb-drag-handle"
-      );
-    });
-  }
   initSidebarTabs();
   updateSidebarTabActive();
+}
+const _narrowMq = typeof matchMedia === "function" ? matchMedia("(max-width: 899px)") : null;
+function isSidebarCollapsed() {
+  return Boolean(S.settings.sidebarCollapsed || _narrowMq?.matches);
+}
+function syncSidebarCollapsed() {
+  const collapsed = isSidebarCollapsed();
+  document.body.classList.toggle("sidebar-collapsed", collapsed);
+  el("sidebarToggleBtn")?.classList.toggle("active", collapsed);
+  if (collapsed && S.sidebarEditMode) {
+    S.sidebarEditMode = false;
+    el("sbEditModeBtn")?.classList.remove("active");
+    renderSidebar();
+  }
 }
 function toggleSidebarEditMode() {
   S.sidebarEditMode = !S.sidebarEditMode;
@@ -2609,27 +2722,6 @@ function deleteSidebarGroup(id) {
     }
   );
 }
-function reorderSidebarGroups(fromId, toId) {
-  const arr = S.settings.sidebar;
-  const from = arr.findIndex((g) => g.id === fromId);
-  const to = arr.findIndex((g) => g.id === toId);
-  if (from < 0 || to < 0) return;
-  const [group] = arr.splice(from, 1);
-  arr.splice(to, 0, group);
-  save();
-  renderSidebar();
-}
-function reorderSidebarItemsInGroup(groupId, fromItemId, toItemId) {
-  const group = S.settings.sidebar.find((g) => g.id === groupId);
-  if (!group) return;
-  const from = group.items.findIndex((it) => String(it.id) === String(fromItemId));
-  const to = group.items.findIndex((it) => String(it.id) === String(toItemId));
-  if (from < 0 || to < 0) return;
-  const [item] = group.items.splice(from, 1);
-  group.items.splice(to, 0, item);
-  save();
-  renderSidebar();
-}
 function renameSidebarItem(groupId, itemId) {
   const group = S.settings.sidebar.find((g) => g.id === groupId);
   const item = group?.items.find((it) => it.id === itemId);
@@ -2637,22 +2729,26 @@ function renameSidebarItem(groupId, itemId) {
   sbPrompt(
     "Edit item",
     item.label,
-    (label) => {
+    (label, url) => {
       item.label = label;
+      if (item.kind === "link") item.url = url;
       save();
       renderSidebar();
     },
-    () => deleteSidebarItem(groupId, itemId)
+    () => deleteSidebarItem(groupId, itemId),
+    item.kind === "link" ? { url: item.url || "" } : null
   );
 }
 function deleteSidebarItem(groupId, itemId) {
   const group = S.settings.sidebar.find((g) => g.id === groupId);
   const item = group?.items.find((it) => it.id === itemId);
   if (!group || !item) return;
-  group.items = group.items.filter((it) => it.id !== itemId);
-  save();
-  renderSidebar();
-  showToast("Item removed", "success");
+  confirm2("Remove item?", `"${item.label}" will be removed from "${group.label}".`, () => {
+    group.items = group.items.filter((it) => it.id !== itemId);
+    save();
+    renderSidebar();
+    showToast("Item removed", "success");
+  });
 }
 function openSbAddLink(groupId) {
   S._sbAddLinkGroup = groupId;
@@ -2692,7 +2788,12 @@ function saveSbLink() {
   }
   const group = S.settings.sidebar.find((g) => g.id === S._sbAddLinkGroup);
   if (!group) return;
-  group.items.push({ id: `link-${Date.now()}`, label: name, url: safeUrl(url), icon: "link", kind: "link" });
+  const cleanUrl = safeUrl(url);
+  if (!cleanUrl) {
+    showToast("Enter a valid URL", "error");
+    return;
+  }
+  group.items.push({ id: `link-${Date.now()}`, label: name, url: cleanUrl, icon: "link", kind: "link" });
   save();
   renderSidebar();
   closeModal("sbAddLinkModal");
@@ -2734,7 +2835,7 @@ function initSidebarTabs() {
   document.querySelectorAll(".sb-group-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const group = btn.closest(".sb-group");
-      if (S.settings.sidebarCollapsed) {
+      if (isSidebarCollapsed()) {
         if (_sbFlyoutGroup === group) _sbCloseFlyout();
         else _sbOpenFlyout(group, btn);
         return;
@@ -2769,53 +2870,114 @@ function updateSidebarTabActive() {
     g.classList.toggle("tab-active", btn?.dataset?.group === activeTab);
   });
 }
-function _addDragDrop(container, itemSelector, dataAttr, onReorder, handleSelector) {
-  let dragId = null;
-  container.querySelectorAll(itemSelector).forEach((item) => {
-    const handle = handleSelector ? item.querySelector(handleSelector) : item;
-    if (!handle) return;
-    item.setAttribute("draggable", "true");
-    if (handleSelector) {
-      item.addEventListener("mousedown", (e) => {
-        item.dataset._dragOk = handle.contains(e.target) ? "1" : "";
-      });
-      item.addEventListener("dragstart", (e) => {
-        if (item.dataset._dragOk !== "1") {
-          e.preventDefault();
-          return;
-        }
-        dragId = item.dataset[dataAttr];
-        item.classList.add("drag-active");
-        e.dataTransfer.effectAllowed = "move";
-      });
-    } else {
-      item.addEventListener("dragstart", (e) => {
-        dragId = item.dataset[dataAttr];
-        item.classList.add("drag-active");
-        e.dataTransfer.effectAllowed = "move";
-      });
+let _sbDrag = null;
+let _sbHoverGroupId = null;
+let _sbHoverOpenTimer = null;
+function _sbClearDropUi() {
+  document.querySelectorAll("#sbGroupsContainer .drop-before, #sbGroupsContainer .drop-after, #sbGroupsContainer .drop-into").forEach((n) => n.classList.remove("drop-before", "drop-after", "drop-into"));
+}
+function _sbEndDrag() {
+  clearTimeout(_sbHoverOpenTimer);
+  _sbHoverOpenTimer = null;
+  _sbHoverGroupId = null;
+  _sbClearDropUi();
+  document.querySelectorAll("#sbGroupsContainer .drag-active").forEach((n) => n.classList.remove("drag-active"));
+  _sbDrag = null;
+}
+function _sbResolveDrop(e) {
+  if (!_sbDrag) return null;
+  const groupEl = e.target.closest?.(".sb-group");
+  if (!groupEl) return null;
+  const groupId = groupEl.dataset.sbGroupId;
+  const half = (rect) => e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+  if (_sbDrag.kind === "group") {
+    if (groupId === _sbDrag.id) return null;
+    return { kind: "group", el: groupEl, groupEl, groupId, position: half(groupEl.getBoundingClientRect()) };
+  }
+  const rowEl = e.target.closest(".sb-item-row");
+  if (rowEl && groupEl.contains(rowEl)) {
+    if (rowEl.dataset.sbRowItemId === _sbDrag.id) return null;
+    return { kind: "row", el: rowEl, groupEl, groupId, itemId: rowEl.dataset.sbRowItemId, position: half(rowEl.getBoundingClientRect()) };
+  }
+  return { kind: "into", el: groupEl, groupEl, groupId };
+}
+function _sbOnDragStart(e) {
+  const handle = e.target.closest?.(".sb-drag-handle");
+  const groupEl = handle?.closest(".sb-group");
+  if (!handle || !groupEl || !S.sidebarEditMode) return;
+  const rowEl = handle.closest(".sb-item-row");
+  _sbDrag = rowEl ? { kind: "item", id: rowEl.dataset.sbRowItemId, groupId: groupEl.dataset.sbGroupId } : { kind: "group", id: groupEl.dataset.sbGroupId };
+  const preview = rowEl || groupEl.querySelector(".sb-group-hd");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", _sbDrag.id);
+  e.dataTransfer.setDragImage(preview, 12, preview.offsetHeight / 2);
+  requestAnimationFrame(() => (rowEl || groupEl).classList.add("drag-active"));
+}
+function _sbOnDragOver(e) {
+  const drop = _sbResolveDrop(e);
+  if (!drop) {
+    if (_sbDrag) _sbClearDropUi();
+    return;
+  }
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  _sbClearDropUi();
+  if (drop.kind === "into") drop.groupEl.classList.add("drop-into");
+  else drop.el.classList.add(drop.position === "before" ? "drop-before" : "drop-after");
+  if (_sbDrag.kind === "item" && !drop.groupEl.classList.contains("open")) {
+    if (_sbHoverGroupId !== drop.groupId) {
+      clearTimeout(_sbHoverOpenTimer);
+      _sbHoverGroupId = drop.groupId;
+      _sbHoverOpenTimer = setTimeout(() => {
+        document.querySelectorAll("#sbGroupsContainer .sb-group").forEach((g) => g.classList.toggle("open", g === drop.groupEl));
+      }, 450);
     }
-    item.addEventListener("dragend", () => {
-      dragId = null;
-      container.querySelectorAll(itemSelector).forEach((el2) => el2.classList.remove("drag-active", "drag-over"));
+  } else {
+    clearTimeout(_sbHoverOpenTimer);
+    _sbHoverGroupId = null;
+  }
+}
+function _sbOnDrop(e) {
+  const drop = _sbResolveDrop(e);
+  const drag = _sbDrag;
+  _sbEndDrag();
+  if (!drag || !drop) return;
+  e.preventDefault();
+  const groups = S.settings.sidebar;
+  let next = null;
+  if (drag.kind === "group") {
+    next = NestpaneSidebarOrder.moveGroup(groups, drag.id, drop.groupId, drop.position);
+  } else {
+    next = NestpaneSidebarOrder.moveItem(groups, {
+      fromGroupId: drag.groupId,
+      itemId: drag.id,
+      toGroupId: drop.groupId,
+      targetItemId: drop.kind === "row" ? drop.itemId : null,
+      position: drop.position
     });
-    item.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      container.querySelectorAll(itemSelector).forEach((el2) => el2.classList.remove("drag-over"));
-      if (item.dataset[dataAttr] !== dragId) item.classList.add("drag-over");
-    });
-    item.addEventListener(
-      "dragleave",
-      () => item.classList.remove("drag-over")
-    );
-    item.addEventListener("drop", (e) => {
-      e.preventDefault();
-      item.classList.remove("drag-over");
-      if (dragId && item.dataset[dataAttr] !== dragId)
-        onReorder(dragId, item.dataset[dataAttr]);
-    });
+    if (!next && drag.groupId !== drop.groupId) {
+      const moved = groups.find((g) => String(g.id) === drag.groupId)?.items.find((it) => String(it.id) === drag.id);
+      const dst = groups.find((g) => String(g.id) === drop.groupId);
+      if (moved?.kind === "view" && dst?.items.some((it) => it.kind === "view" && it.view === moved.view)) {
+        showToast("That view is already in this group", "error");
+      }
+    }
+  }
+  if (!next) return;
+  S.settings.sidebar = next;
+  save();
+  renderSidebar();
+}
+function initSidebarDnD() {
+  const container = el("sbGroupsContainer");
+  if (!container) return;
+  container.addEventListener("dragstart", _sbOnDragStart);
+  container.addEventListener("dragover", _sbOnDragOver);
+  container.addEventListener("dragleave", (e) => {
+    if (!container.contains(e.relatedTarget)) _sbClearDropUi();
   });
+  container.addEventListener("drop", _sbOnDrop);
+  container.addEventListener("dragend", _sbEndDrag);
 }
 async function loadBookmarks() {
   el("bookmarksLoading").style.display = "flex";
@@ -5518,6 +5680,18 @@ function _drawBarChart(canvas, labels, values, unit, color) {
     if (val > 0) ctx.fillText(val + (unit || ""), x + barW / 2, y - 3);
   });
 }
+function _insightsEmpty(card, msg) {
+  if (!card) return;
+  card.querySelectorAll(".skeleton").forEach((n) => n.remove());
+  let empty = card.querySelector(".ins-empty");
+  if (!empty) {
+    empty = document.createElement("div");
+    empty.className = "ins-empty";
+    card.appendChild(empty);
+  }
+  empty.style.display = "";
+  empty.textContent = msg;
+}
 async function renderAnalytics() {
   const container = el("analyticsContent");
   if (!container) return;
@@ -5805,7 +5979,7 @@ async function renderAnalytics() {
       const card = el("an-topsites");
       if (!card) return;
       if (!sites || !sites.length) {
-        card.querySelector(".ins-empty").textContent = "No top sites data available.";
+        _insightsEmpty(card, "No top sites data available.");
         return;
       }
       card.innerHTML = `<div class="insights-card-hd"><span class="insights-card-title">Top Visited Sites</span><span class="insights-card-badge muted">${sites.length}</span></div>` + sites.slice(0, 8).map(
@@ -5820,9 +5994,7 @@ async function renderAnalytics() {
       ).join("");
     });
   } else {
-    const c = el("an-topsites");
-    if (c)
-      c.querySelector(".ins-empty").textContent = "Requires Chrome extension.";
+    _insightsEmpty(el("an-topsites"), "Requires Chrome extension.");
   }
   if (IS_CHROME && chrome.history) {
     const since = Date.now() - 7 * 864e5;
@@ -5862,9 +6034,7 @@ async function renderAnalytics() {
       }
     );
   } else {
-    const c = el("an-history");
-    if (c)
-      c.querySelector(".ins-empty").textContent = "Requires Chrome extension.";
+    _insightsEmpty(el("an-history"), "Requires Chrome extension.");
   }
   if (IS_CHROME && chrome.history) {
     const DAYS = 14;
@@ -5911,12 +6081,7 @@ async function renderAnalytics() {
       }
     );
   } else {
-    const c = el("an-activity");
-    const empty = c?.querySelector(".ins-empty");
-    if (empty) {
-      empty.style.display = "";
-      empty.textContent = "Requires Chrome extension.";
-    }
+    _insightsEmpty(el("an-activity"), "Requires Chrome extension.");
   }
   if (IS_CHROME && chrome.downloads) {
     const since = Date.now() - 30 * 864e5;
@@ -5947,9 +6112,7 @@ async function renderAnalytics() {
       }
     );
   } else {
-    const c = el("an-downloads");
-    if (c)
-      c.querySelector(".ins-empty").textContent = "Requires Chrome extension.";
+    _insightsEmpty(el("an-downloads"), "Requires Chrome extension.");
   }
 }
 function initTooltips() {
@@ -5962,7 +6125,7 @@ function initTooltips() {
     cur = target;
     const rect = target.getBoundingClientRect();
     tip.textContent = target.dataset.tip;
-    const inCollapsedSidebar = S.settings.sidebarCollapsed && (target.closest(".sb-nav") || target.closest(".sb-foot"));
+    const inCollapsedSidebar = isSidebarCollapsed() && (target.closest(".sb-nav") || target.closest(".sb-foot"));
     if (inCollapsedSidebar) {
       tip.dataset.dir = "right";
       tip.style.left = rect.right + 10 + "px";
@@ -6100,30 +6263,94 @@ function applyTheme(theme) {
     localStorage.setItem("__nt_theme", theme);
   } catch {
   }
+  if (!_themeChoicesRendered) renderThemeChoices();
+  const preset = THEME_PRESETS.find((t) => t.id === theme) || THEME_PRESETS[0];
   const icon = el("themeIcon"), label = el("themeLabel");
-  if (theme === "light") {
-    if (icon)
-      icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-    if (label) label.textContent = "Light";
-  } else {
-    if (icon)
-      icon.innerHTML = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
-    if (label)
-      label.textContent = THEME_PRESETS.find((t) => t.id === theme)?.label || "Dark";
-  }
+  if (icon) icon.innerHTML = preset.light ? THEME_ICON_SUN : THEME_ICON_MOON;
+  if (label) label.textContent = preset.label;
   _syncThemeGridUI();
 }
+const THEME_ICON_MOON = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+const THEME_ICON_SUN = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
 const THEME_PRESETS = [
-  { id: "dark", label: "Obsidian" },
-  { id: "light", label: "Paper" },
-  { id: "nord", label: "Nord" },
-  { id: "catppuccin", label: "Mocha" },
-  { id: "gruvbox", label: "Gruvbox" },
-  { id: "solarized", label: "Solarized" }
+  { id: "dark", label: "Obsidian", title: "Obsidian Dark", swatches: ["#0c0d0e", "#141619", "#e86c2c"] },
+  { id: "light", label: "Paper", title: "Warm Paper", swatches: ["#f6f5f0", "#ffffff", "#d95616"], light: true },
+  { id: "nord", label: "Nord", title: "Nord Polar", swatches: ["#1c2028", "#242933", "#88c0d0"] },
+  { id: "catppuccin", label: "Mocha", title: "Catppuccin Mocha", swatches: ["#181825", "#1e1e2e", "#cba6f7"] },
+  { id: "gruvbox", label: "Gruvbox", title: "Gruvbox Warm", swatches: ["#1d2021", "#282828", "#fe8019"] },
+  { id: "solarized", label: "Solarized", title: "Solarized Deep", swatches: ["#00212b", "#073642", "#2aa198"] }
 ];
+let _themeChoicesRendered = false;
+const THEME_CHECK_ICON = '<svg class="theme-menu-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+function renderThemeChoices() {
+  const swatches = (p) => `<span class="theme-card-swatches">${p.swatches.map((c) => `<span style="background:${c}"></span>`).join("")}</span>`;
+  const grid = el("themeGrid");
+  if (grid) {
+    grid.innerHTML = THEME_PRESETS.map(
+      (p) => `<button class="theme-card" data-theme="${p.id}" title="${p.title}">${swatches(p)}<span>${p.label}</span></button>`
+    ).join("");
+  }
+  const menu = el("themeMenu");
+  if (menu) {
+    menu.innerHTML = THEME_PRESETS.map(
+      (p) => `<button type="button" class="theme-menu-item" role="menuitemradio" aria-checked="false" data-theme-id="${p.id}" title="${p.title}">${swatches(p)}<span class="theme-menu-label">${p.label}</span>${THEME_CHECK_ICON}</button>`
+    ).join("");
+  }
+  _themeChoicesRendered = Boolean(grid || menu);
+}
 function _syncThemeGridUI() {
   document.querySelectorAll("#themeGrid .theme-card").forEach((c) => {
     c.classList.toggle("active", c.dataset.theme === S.settings.theme);
+  });
+  document.querySelectorAll("#themeMenu .theme-menu-item").forEach((c) => {
+    const on = c.dataset.themeId === S.settings.theme;
+    c.classList.toggle("active", on);
+    c.setAttribute("aria-checked", String(on));
+  });
+}
+function _setThemeMenu(open) {
+  const menu = el("themeMenu"), btn = el("themeBtn");
+  if (!menu || !btn) return;
+  menu.hidden = !open;
+  btn.setAttribute("aria-expanded", String(open));
+  btn.classList.toggle("active", open);
+  if (open) (menu.querySelector(".theme-menu-item.active") || menu.querySelector(".theme-menu-item"))?.focus();
+}
+function _initThemeMenu() {
+  const btn = el("themeBtn"), menu = el("themeMenu");
+  if (!btn || !menu) return;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    _setThemeMenu(menu.hidden);
+  });
+  menu.addEventListener("click", (e) => {
+    const item = e.target.closest(".theme-menu-item");
+    if (!item) return;
+    applyTheme(item.dataset.themeId);
+    save();
+    _setThemeMenu(false);
+    btn.focus();
+  });
+  document.addEventListener("click", (e) => {
+    if (!menu.hidden && !e.target.closest("#themeMenuWrap")) _setThemeMenu(false);
+  });
+  const move = (dir) => {
+    const items = [...menu.querySelectorAll(".theme-menu-item")];
+    const i = items.indexOf(document.activeElement);
+    items[(i + dir + items.length) % items.length]?.focus();
+  };
+  document.getElementById("themeMenuWrap").addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !menu.hidden) {
+      e.preventDefault();
+      _setThemeMenu(false);
+      btn.focus();
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (menu.hidden) _setThemeMenu(true);
+      else move(e.key === "ArrowDown" ? 1 : -1);
+    } else if (e.key === "Tab" && !menu.hidden) {
+      _setThemeMenu(false);
+    }
   });
 }
 function applyAccent(color) {
@@ -6168,6 +6395,7 @@ function applyWidgetVisibility() {
   show("widget-timer", w.timer);
   show("widget-calendar", w.calendar);
   show("widget-todo", w.todo);
+  document.querySelector(".qa-todo-row")?.classList.toggle("no-todo", w.todo === false);
   show("widget-reminders", w.reminders);
 }
 function exportData() {
@@ -6928,13 +7156,20 @@ function confirm2(title, msg, onOk, onCancel) {
   });
   openModal("confirmModal");
 }
-function sbPrompt(title, initialValue, onSave, onDelete) {
+function sbPrompt(title, initialValue, onSave, onDelete, opts = null) {
   el("sbPromptTitle").textContent = title;
   const input = el("sbPromptInput");
+  const urlInput = el("sbPromptUrl");
   input.value = initialValue || "";
-  input.onkeydown = (e) => {
+  if (urlInput) {
+    urlInput.style.display = opts && opts.url !== void 0 ? "" : "none";
+    urlInput.value = opts?.url || "";
+  }
+  const onEnter = (e) => {
     if (e.key === "Enter") el("sbPromptSaveBtn").click();
   };
+  input.onkeydown = onEnter;
+  if (urlInput) urlInput.onkeydown = onEnter;
   el("sbPromptSaveBtn").textContent = onDelete ? "Update" : "Create";
   el("sbPromptSaveBtn").onclick = () => {
     const value = input.value.trim();
@@ -6942,8 +7177,16 @@ function sbPrompt(title, initialValue, onSave, onDelete) {
       showToast("Enter a name", "error");
       return;
     }
+    let url;
+    if (urlInput && urlInput.style.display !== "none") {
+      url = safeUrl(urlInput.value);
+      if (!url) {
+        showToast("Enter a valid URL", "error");
+        return;
+      }
+    }
     closeModal("sbPromptModal");
-    onSave(value);
+    onSave(value, url);
   };
   const deleteBtn = el("sbPromptDeleteBtn");
   if (deleteBtn) {
@@ -6979,20 +7222,14 @@ function showToast(msg, type = "") {
 }
 function setupEventListeners() {
   initSidebarFlyout();
+  initSidebarDnD();
+  _narrowMq?.addEventListener("change", syncSidebarCollapsed);
   initSidebarTabs();
   el("analyticsBtn").addEventListener("click", () => navigateTo("analytics"));
   document.querySelectorAll(".view-back-btn").forEach((btn) => btn.addEventListener("click", () => navigateTo("home")));
   el("sidebarToggleBtn").addEventListener("click", () => {
     S.settings.sidebarCollapsed = !S.settings.sidebarCollapsed;
-    document.body.classList.toggle(
-      "sidebar-collapsed",
-      S.settings.sidebarCollapsed
-    );
-    if (S.settings.sidebarCollapsed && S.sidebarEditMode) {
-      S.sidebarEditMode = false;
-      el("sbEditModeBtn")?.classList.remove("active");
-      renderSidebar();
-    }
+    syncSidebarCollapsed();
     save();
   });
   el("sbEditModeBtn")?.addEventListener("click", toggleSidebarEditMode);
@@ -7104,10 +7341,7 @@ function setupEventListeners() {
     },
     true
   );
-  el("themeBtn").addEventListener("click", () => {
-    applyTheme(S.settings.theme === "dark" ? "light" : "dark");
-    save();
-  });
+  _initThemeMenu();
   el("settingsBtn").addEventListener("click", openSettings);
   el("topSettingsBtn").addEventListener("click", openSettings);
   el("closeSettingsBtn").addEventListener("click", closeSettings);
@@ -7246,18 +7480,7 @@ function setupEventListeners() {
       "Clear All Data",
       "This will permanently delete all your notes, tasks and settings, and sign you out of Google (revoking Drive sync access). This cannot be undone.",
       async () => {
-        await _revokeGoogleAccess();
-        S.googleUser = null;
-        S.user.googlePicture = null;
-        S.user.googleName = null;
-        await _setDriveFileId(null);
-        Drive._lastSyncAt = 0;
-        Drive._lastKnownRemoteSavedAt = 0;
-        Drive._hasEverSynced = false;
-        Drive._dirty = false;
-        Drive._pendingPush = false;
-        clearTimeout(Drive._syncTimer);
-        Drive._syncTimer = null;
+        await _endSession();
         S.quickAccess = DEFAULT_QUICK_ACCESS.map((q) => ({ ...q }));
         S.notes = [];
         S.folders = DEFAULT_FOLDERS.map((f) => ({ ...f }));

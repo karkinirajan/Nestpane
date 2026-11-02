@@ -25,7 +25,7 @@ const OUT = path.join(ROOT, "webapp", "dashboard");
 const esbuild = require(path.join(EXT, "node_modules", "esbuild"));
 
 const JS_FILES = ["app.js", "fouc.js"];
-const LIB_FILES = ["format.js", "migrations.js", "drive-conflict.js", "autosave.js", "bookmarks-store.js", "wikilinks.js", "snapshots.js"];
+const LIB_FILES = ["format.js", "migrations.js", "drive-conflict.js", "autosave.js", "bookmarks-store.js", "wikilinks.js", "snapshots.js", "sidebar-order.js"];
 const ICON_FILES = ["favicon.png", "favicon.svg", "icon-16.png", "icon-48.png"];
 
 async function minifyJs(srcPath) {

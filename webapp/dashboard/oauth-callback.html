@@ -31,6 +31,17 @@
       }
       try {
         var params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        if (window.parent !== window) {
+          // Hidden-iframe silent refresh (prompt=none): hand the result to the
+          // same-origin dashboard page; never touch the interactive-flow state.
+          window.parent.postMessage({
+            type: "nestpane-oauth",
+            state: params.get("state"),
+            token: params.get("access_token"),
+            expiresIn: Number(params.get("expires_in")) || 3600
+          }, window.location.origin);
+          return;
+        }
         var error = params.get("error");
         if (error) {
           fail("Sign-in failed: " + error);

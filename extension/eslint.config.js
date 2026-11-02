@@ -17,6 +17,7 @@ module.exports = [
         NestpaneBookmarksStore: "readonly",
         NestpaneWikiLinks: "readonly",
         NestpaneSnapshots: "readonly",
+        NestpaneSidebarOrder: "readonly",
       },
     },
     rules: {
@@ -25,7 +26,7 @@ module.exports = [
     },
   },
   {
-    files: ["lib/*.js"],
+    files: ["lib/*.js", "scripts/*.js", "tests/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "script",
