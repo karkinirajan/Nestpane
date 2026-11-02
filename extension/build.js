@@ -15,8 +15,7 @@ const TARGET = targetArg ? targetArg.split("=")[1] : "chromium";
 const DIST = TARGET === "chromium" ? path.join(ROOT, "dist") : path.join(ROOT, `dist-${TARGET}`);
 const manifest = require("./manifest.json");
 const VERSION = manifest.version;
-const WATCH = process.argv.includes("--watch");
-const MINIFY = !WATCH;
+const MINIFY = true;
 const REQUIRED_FILES = [
   "manifest.json",
   "newtab.html",
@@ -37,7 +36,8 @@ const REQUIRED_FILES = [
   "lib/autosave.js",
   "lib/bookmarks-store.js",
   "lib/wikilinks.js",
-  "lib/snapshots.js"
+  "lib/snapshots.js",
+  "lib/sidebar-order.js"
 ];
 const REQUIRED_PERMISSIONS = [
   "tabs",
@@ -223,22 +223,6 @@ async function build() {
   });
   console.log(`\n\u2713 Build complete \u2014 files ready in ${path.relative(ROOT, DIST)}/`);
   console.log("To package: npm run zip");
-  if (WATCH) {
-    console.log("\nWatch mode: re-running on file change...");
-    const chokidar = require("chokidar");
-    chokidar.watch([
-      path.join(ROOT, "app.js"),
-      path.join(ROOT, "style.css"),
-      path.join(ROOT, "newtab.html"),
-      path.join(ROOT, "popup.js"),
-      path.join(ROOT, "manifest.json")
-    ]).on("change", (filePath) => {
-      console.log(`
-[${(new Date()).toLocaleTimeString()}] Changed: ${path.basename(filePath)} \u2014 rebuilding...`);
-      fs.copyFileSync(filePath, path.join(DIST, path.basename(filePath)));
-      console.log("  \u2713 Done");
-    });
-  }
 }
 build().catch((err) => {
   console.error("Build error:", err);
