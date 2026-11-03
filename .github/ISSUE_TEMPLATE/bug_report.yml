@@ -1,0 +1,91 @@
+name: Bug report
+description: Something doesn't work the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. The more exact you are, the faster it gets fixed. Please don't paste personal data such as your notes, bookmarks, history or account details.
+  - type: input
+    id: version
+    attributes:
+      label: Nestpane version
+      description: Shown in Settings under About, or on chrome://extensions.
+      placeholder: "3.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Brave
+        - Edge
+        - Vivaldi
+        - Opera
+        - Arc
+        - Firefox (local build)
+        - Web dashboard (nestpane.kneeraazon.com/dashboard)
+        - Other Chromium browser
+    validations:
+      required: true
+  - type: input
+    id: browser-version
+    attributes:
+      label: Browser version and operating system
+      placeholder: "Brave 1.80 on Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a new tab
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors or screenshots
+      description: Optional. Open DevTools on the new tab page and paste any red errors, or drag in a screenshot. Remove anything personal first.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Sign-in or Google Drive backup
+        - Sidebar
+        - Bookmarks or quick access
+        - Notes, journal or habits
+        - Tasks or reminders
+        - Focus timer
+        - Themes or layout
+        - Command palette or search
+        - Settings or data export
+        - Not sure
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and didn't find this one.
+          required: true
+        - label: I removed personal data from anything I pasted.
+          required: true

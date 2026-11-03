@@ -158,7 +158,7 @@ If you change the logo, app name, or requested OAuth scopes, update both project
 
 ## Contributing
 
-Nestpane is open source and contributions are welcome — bug reports, feature requests, and pull requests alike. No build step is required to get started (see [Quick start](#quick-start-local-development) above); just load the `extension/` folder unpacked and start editing.
+Nestpane is open source and contributions are welcome — bug reports, feature requests, and pull requests alike. Start with **[`CONTRIBUTING.md`](CONTRIBUTING.md)**, which covers setup, the checks to run before a pull request, and the few changes that need an issue first. No build step is required to get started (see [Quick start](#quick-start-local-development) above); just load the `extension/` folder unpacked and start editing.
 
 Each project has its own detailed README with full setup, environment, permissions, and troubleshooting docs:
 

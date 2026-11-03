@@ -1,0 +1,35 @@
+name: Feedback and ideas
+description: Tell us how you use Nestpane, what's missing or what feels off
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is for general impressions rather than bugs or specific feature requests. Short answers are fine.
+  - type: textarea
+    id: use
+    attributes:
+      label: What do you use your new tab page for?
+      description: Even "nothing, I leave it blank" is useful to hear.
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to find that wasn't there?
+  - type: textarea
+    id: confusing
+    attributes:
+      label: Was anything confusing or annoying?
+  - type: dropdown
+    id: next
+    attributes:
+      label: Which of these would you use most?
+      options:
+        - Reminders that fire without a tab open
+        - A Firefox add-on release
+        - Import from other tab and bookmark tools
+        - Something else (tell us above)
+  - type: input
+    id: browser
+    attributes:
+      label: Browser you use
+      placeholder: "Chrome, Brave, Firefox..."

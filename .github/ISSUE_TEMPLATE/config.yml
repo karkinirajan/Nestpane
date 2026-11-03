@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Privacy policy
+    url: https://nestpane.kneeraazon.com/privacy.html
+    about: What Nestpane stores, what it sends, and to whom.
+  - name: Install from the Chrome Web Store
+    url: https://chromewebstore.google.com/detail/nestpane/aokkcpfoompjgeknhbkphogfcjjlbpol
+    about: Get the extension, or leave a review.
