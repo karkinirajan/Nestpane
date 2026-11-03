@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest something Nestpane should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Nestpane keeps your data local, has no server and has no runtime dependencies. Ideas that fit that are easiest to accept. If your idea needs a new permission or a network request, say so below.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not the solution. What do you do today, and where does it fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Other tools, workarounds, or designs.
+  - type: dropdown
+    id: permissions
+    attributes:
+      label: Would it need a new permission or contact a third party?
+      options:
+        - No
+        - Yes, a new browser permission
+        - Yes, a network request to another service
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Could you help build it?
+      options:
+        - I'd like to build it
+        - I can help test it
+        - I'm only suggesting it
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and didn't find this one.
+          required: true
