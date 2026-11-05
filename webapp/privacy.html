@@ -117,7 +117,7 @@
       <!-- Header -->
       <div class="mb-12 border-b border-white/10 pb-8">
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Privacy Policy</h1>
-        <p class="text-gray-500">Last updated: August 25, 2026</p>
+        <p class="text-gray-500">Last updated: November 5, 2026</p>
         <p class="text-gray-400 mt-4 text-lg">
           At Nestpane, accessible from <a href="https://nestpane.kneeraazon.com"
             class="text-[#f2935c] hover:underline">https://nestpane.kneeraazon.com</a> and via the Nestpane Chrome
@@ -139,8 +139,7 @@
             <li><strong>Notes & Nestodo:</strong> note text and tags, and Kanban task cards with their titles, descriptions, and due dates/reminders.</li>
             <li><strong>Reminders, Habits, Journal & Calendar:</strong> standalone reminders, daily habit streaks, journal entries with mood tags, and local calendar events you create.</li>
             <li><strong>Reading Queue & Tab Sessions:</strong> saved URLs to read later, and saved groups of open tabs.</li>
-            <li><strong>Sidebar & settings:</strong> your sidebar groups/links, theme, accent color, wallpaper choice, widget layout, and keyboard shortcut preferences.</li>
-            <li><strong>Location coordinates (optional):</strong> if you opt into the Weather widget, an approximate location is cached locally to avoid repeated permission prompts.</li>
+            <li><strong>Sidebar & settings:</strong> your sidebar groups/links, theme, accent color, widget layout, and keyboard shortcut preferences.</li>
             <li><strong>Anthropic API key (optional):</strong> if you enable AI features, your own API key is stored locally under a separate, non-synced key — see Section 6.</li>
           </ul>
           <p class="mt-4">All of this is deleted completely if you uninstall the extension, and none of it is sent to us.</p>
@@ -200,8 +199,7 @@
             <li><strong>declarativeNetRequest:</strong> Focus Mode's optional site-blocking, evaluated entirely on-device by Chrome — Nestpane never sees the sites you visit through this.</li>
             <li><strong>search:</strong> sends a query you type in the command bar to your own default search engine.</li>
             <li><strong>identity / identity.email (optional):</strong> Google sign-in — see Section 2.</li>
-            <li><strong>geolocation (optional):</strong> auto-detects your city for the Weather widget.</li>
-            <li><strong>notifications (optional):</strong> desktop notifications when a Focus session ends or a habit is untracked for the day.</li>
+            <li><strong>notifications (optional):</strong> desktop notifications when a reminder is due, a Focus session ends, or a habit is untracked for the day.</li>
           </ul>
           <p class="mt-4">History, bookmarks, downloads, tabs, and top-sites data are read directly from Chrome's own
             APIs to render inside the extension — they are never sent to us or any third party, and never leave your
@@ -225,7 +223,7 @@
           <h2 class="text-2xl font-bold text-white mb-3">6. AI Features (Optional)</h2>
           <p>Nestpane's AI features — the command palette's "Ask AI," Smart Organize, and the daily briefing — are
             entirely optional and disabled until you add your own Anthropic API key in Settings. When you use them,
-            the relevant text (your query, or your open tabs' titles/URLs for Smart Organize) is sent directly from
+            the relevant text (your question and the conversation so far for Ask AI; your display name and a few open task titles for the daily briefing; your open tabs' titles and site names, plus your bookmark folder names, for Smart Organize; the text you type when adding tasks with AI) is sent directly from
             your browser to Anthropic's API (<code>api.anthropic.com</code>) using your key. We do not see, log, or
             relay this data — it goes directly from your device to Anthropic, governed by
             <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-[#f2935c] hover:underline">Anthropic's privacy policy</a>.
@@ -238,10 +236,9 @@
           <h2 class="text-2xl font-bold text-white mb-3">7. Other Third-Party Services</h2>
           <p>A few features talk directly to third-party services, not through any server of ours:</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
-            <li><strong>Weather:</strong> if enabled, your approximate location (or manually-entered city) is sent to <code>wttr.in</code> to fetch forecast data; <code>ipwho.is</code> and <code>nominatim.openstreetmap.org</code> may be used for IP-based or manual city geocoding.</li>
             <li><strong>Search Engines:</strong> a query typed in the command bar is sent directly to your browser's default search engine.</li>
-            <li><strong>Wallpaper:</strong> the "random photo" wallpaper option fetches an image from <code>picsum.photos</code>.</li>
-            <li><strong>Google Fonts:</strong> typefaces are loaded from <code>fonts.googleapis.com</code>/<code>fonts.gstatic.com</code>.</li>
+            <li><strong>Site icons:</strong> each Quick Access tile loads the site's icon from Google's favicon service (<code>t3.gstatic.com</code>). That request includes the site's domain.</li>
+            <li><strong>Google Fonts:</strong> the Inter, Instrument Serif and JetBrains Mono typefaces are loaded from <code>fonts.googleapis.com</code>/<code>fonts.gstatic.com</code>.</li>
           </ul>
           <p class="mt-4">Your browser communicates with these services directly; we are not a party to those requests and do not control their own data practices.</p>
         </div>
