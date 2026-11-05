@@ -1,356 +1,240 @@
-# Nestpane
+# Nestpane extension
 
 A Manifest V3 extension that replaces the new tab page with a local-first productivity dashboard, for Chrome and Chromium-based browsers.
 
 ---
 
-## What this is and why it was built
+## What this is
 
-Nestpane overrides `chrome_url_overrides.newtab` with a single-page dashboard built entirely on browser extension APIs — no backend, no account, no subscription, and no data leaving the device unless Drive sync is explicitly enabled.
+Nestpane overrides `chrome_url_overrides.newtab` with a single-page dashboard built on browser extension APIs. There is no backend, no account and no analytics. Data leaves the device only if you turn on Drive backup or the optional AI features.
 
-The problem it solves is fragmentation: bookmarks live in the browser, tasks live in a separate app, notes live somewhere else. Nestpane consolidates them onto the surface you already open dozens of times a day, so the context switch disappears.
-
-It is single-user and offline-first. All state lives in `chrome.storage.local`. Google Drive sync is optional and scoped to `drive.appdata` alone — backups are written to a per-extension folder that is hidden from the Drive UI and unreadable by any other application.
-
----
+All state lives in `chrome.storage.local`. Google Drive backup is optional and scoped to `drive.appdata`, so backups go to a per-app folder that is hidden from the Drive UI and unreadable by other applications.
 
 ## Features
 
-- **Workspaces** — separate bookmark, note, and task environments (Home, AI, Dev, or custom)
-- **Shareable Workspaces** — export any workspace (bookmarks, notes, tasks) as a JSON file and import it elsewhere
-- **Quick Access** — icon grid for frequently visited sites, drag-to-reorder
-- **Bookmark manager** — import Chrome bookmarks, create folders, search, sort, context-menu actions
-- **Smart Organize** — AI sorts your open tabs into existing workspaces with one click
-- **Notes** — per-workspace notes with tags, pin, full-text search, and a rich editor
-- **Tasks** — daily task list with completion tracking
-- **Voice Quick-Capture** — speak a note, task, or journal entry using the Web Speech API
-- **Focus Mode** — Pomodoro-style 5/15/25-minute timer with visual ring, plus optional distracting-site blocking
-- **Calendar** — mini monthly calendar with one-time, daily, weekly, and custom-interval events
-- **Daily Journal** — date-stamped entries with mood tagging and word count
-- **Habit Tracker** — daily habit streaks with completion history
-- **Mood Tracker** — daily emoji log with optional notes
-- **Kanban Board** — three-column board (To Do / In Progress / Done) per workspace
-- **Reading Queue** — save URLs to read later, mark as done
-- **Tab Sessions** — save and restore groups of open tabs
-- **Browser History viewer** — searchable history list with per-URL delete
-- **Downloads viewer** — recent downloads with open-in-Finder support
-- **Analytics / Insights** — top visited sites, browsing activity, download stats, and a 14-day site-activity trend chart
-- **Weather widget** — current conditions + 3-day forecast via wttr.in (auto-detect or manual city)
-- **AI Daily Briefing** — short LLM-generated morning summary covering weather and your top pending tasks
-- **Motivational quotes** — shuffle from API or write your own
-- **Wallpaper** — random photo (via Picsum), solid color, or upload your own image
-- **Google Drive sync** — backs up 100% of your workspace state to your private Drive `appDataFolder`, automatically overrides initial fresh-install state on first login on a new browser, and progressively pushes local edits within 500ms (including an automatic flush on tab hide/close)
-- **End-to-end encrypted sync** — optional passphrase-based AES-GCM encryption layer on top of Drive backups (PBKDF2, 600,000 iterations)
-- **Curated Theme System** — Obsidian Dark and Warm Paper Light modes plus Nord, Catppuccin Mocha, Gruvbox, and Solarized presets, chosen from a keyboard-accessible dropdown in the toolbar (or Settings → Appearance), with a custom accent color picker (Terracotta Ember `#e86c2c` default)
-- **Sidebar** — collapsible (and automatically folded into an icon rail below 900px), with per-group custom link lists. In edit mode you can add, rename, re-URL, and delete groups and links, drag to reorder groups and links, and drag a link into another group
-- **Unified command palette / omni-search** — `/` searches bookmarks, notes, tasks, browser history, open tabs, the reading queue, saved sessions, and journal entries, plus an "Ask AI" action for direct LLM answers
-- **Extension popup** — one-click bookmark save from any page via the toolbar button
+- **Quick Access.** An icon grid of favorite sites with three display modes. Tiles can be added, edited, pinned from bookmarks and removed (to Trash).
+- **Bookmarks.** The browser's real bookmarks: search, folder filter, sorting, create, edit, move and delete.
+- **Sidebar.** Groups of views and links. In edit mode you can add, rename, re-URL and delete groups and links, drag to reorder, and drag a link into another group. It folds into an icon rail below 900 px.
+- **Notes.** Markdown with tags, pins, autosave, `[[wiki-links]]` that resolve to notes, tasks, bookmarks and journal dates, and a "Linked from" backlinks row.
+- **Nestodo.** A To Do / In Progress / Done board with reminders, drag between columns, and optional AI task parsing. A To-Do widget mirrors it on the home page.
+- **Reminders.** Standalone date and time reminders with desktop notifications. They fire only while a Nestpane page is open.
+- **Focus timer.** 25, 15 and 5 minute sessions, short and long breaks, daily totals, "focus on this task", and Focus Mode, which blocks listed sites with `declarativeNetRequest` while the timer runs.
+- **Habits, journal and mood.** Daily habits with streaks, a dated journal with a mood and word count.
+- **Calendar.** A mini monthly calendar with one-time, daily, weekly and custom-interval events.
+- **Tab sessions.** Save the tabs in a window, stash and clear them, open them all again, or switch the window to a saved session.
+- **Reading queue, History and Downloads.** Pages to read later, searchable history with per-URL delete, and recent downloads.
+- **Insights.** Top sites, activity, download stats and a 14 day site-activity trend.
+- **Command palette.** `/` searches bookmarks, notes, tasks, history, open tabs, the reading queue, sessions and journal entries, and offers Ask AI.
+- **Smart Organize and Ask AI.** Optional, with your own Anthropic key: bookmark open tabs into folders, answer questions, write a daily briefing.
+- **Voice capture.** Speak a note or task using the Web Speech API.
+- **Themes.** Obsidian, Paper, Nord, Mocha, Gruvbox and Solarized in a keyboard-accessible dropdown, plus an accent color.
+- **Backup.** Optional Drive backup that pushes changes within 500 ms, with optional end-to-end encryption (12+ character passphrase, AES-GCM, PBKDF2 with 600,000 iterations).
+- **Safety net.** A Trash for deleted items, seven rolling daily snapshots, and JSON export and import.
+- **Toolbar popup.** Saves the current page to Quick Access, a bookmark folder, Nestodo, the reading queue or a note.
 
----
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Runtime | Chrome Extension (Manifest V3) | Extension host, permissions, storage |
-| UI | Vanilla HTML, CSS, JavaScript (ES2022) | No framework, no build transpiler |
-| Auth | `chrome.identity.getAuthToken()` (Chrome Extension-type client), falling back to `chrome.identity.launchWebAuthFlow()` (Web application-type client) | Sign in with Google, no client secret in either path — native path is Chrome-only, fallback covers Brave/Vivaldi/Opera/Arc/etc. |
-| Storage | `chrome.storage.local` | All user data and tokens, local only |
-| Sync | Google Drive REST API v3 (`appdata` scope) | Optional cloud backup |
-| End-to-end encryption | WebCrypto (`crypto.subtle`, PBKDF2 + AES-GCM) | Optional passphrase-based encryption of cloud backups |
-| AI | Anthropic Messages API (`api.anthropic.com`) | Command bar "Ask AI", daily briefing, smart organize — requires a user-supplied API key |
-| Voice | Web Speech API (`SpeechRecognition`) | Voice quick-capture, transcribed locally by the browser |
-| Site blocking | `chrome.declarativeNetRequest` | Focus mode — blocks chosen sites while a focus session is running |
-| Weather | wttr.in JSON API | No API key required |
-| Quotes | Bundled static list (`HERO_QUOTES` in `app.js`) | No network request |
-| Fonts | Inter + Playfair Display via Google Fonts | Loaded via `<link>` with preconnect |
-| Icons | Inline SVG | No icon library dependency |
-| Build | Node.js script (`build.js`) + esbuild | Validates sources and manifest, copies static files to `dist/`, minifies JS/CSS |
+| Runtime | Chrome Extension (Manifest V3) | Host, permissions, storage |
+| UI | Vanilla HTML, CSS, JavaScript | No framework, no runtime dependencies |
+| Auth | `chrome.identity.getAuthToken()`, falling back to `chrome.identity.launchWebAuthFlow()` | Google sign-in with no client secret. The fallback covers Brave, Vivaldi, Opera, Arc and others |
+| Storage | `chrome.storage.local` | All user data |
+| Backup | Google Drive REST API v3, `appdata` scope | Optional cloud backup |
+| Encryption | WebCrypto (PBKDF2 and AES-GCM) | Optional encryption of backups |
+| AI | Anthropic Messages API | Optional, needs a user-supplied key |
+| Voice | Web Speech API | Voice capture, transcribed by the browser |
+| Site blocking | `chrome.declarativeNetRequest` | Focus Mode |
+| Fonts | Inter, Instrument Serif and JetBrains Mono via Google Fonts | Loaded with a preconnect and a non-blocking stylesheet |
+| Icons | Inline SVG, plus site icons from Google's favicon service | Quick Access tiles |
+| Build | Node.js (`build.js`) and esbuild | Validates sources and the manifest, minifies into `dist/` |
 
----
+## Project structure
 
-## Project Structure
-
-This repo is a monorepo with two independently-built projects: this extension, and a
-static marketing/legal site in the sibling [`webapp/`](../webapp/) folder (deployed on
-Vercel, served at `nestpane.kneeraazon.com` — a custom domain, required because Google's
-OAuth verification rejects homepages on shared platform subdomains like the default
-`nestpane.netlify.app` — the landing page, privacy policy, and terms of service that the
-OAuth consent screen and Chrome Web Store listing link to). They share no build step or
-dependencies; each is self-contained in its own folder.
+This repo has two independently deployed parts: this extension, and the static website and web version in [`webapp/`](../webapp/), served at `nestpane.kneeraazon.com`. The domain is custom because Google's OAuth verification rejects homepages on shared platform subdomains.
 
 ```
-nestpane/
-├── extension/         ← you are here — the Chrome extension itself
-│   ├── manifest.json  Manifest V3 — name, version, permissions, host permissions, icons
-│   ├── newtab.html    New tab page — full dashboard markup (~1,400 lines)
-│   ├── app.js         All application logic, including the OAuth client ID (~8,800 lines)
-│   ├── style.css      Design system and all component styles (~2,000 lines)
-│   ├── lib/           Small dependency-free modules (storage migrations, Drive conflict rules, autosave, sidebar ordering, …), unit-tested
-│   ├── tests/         `node --test` suites for everything in lib/ and the build scripts
-│   ├── scripts/       Build helpers: manifest merge (Firefox), reproducible zip writer, feature-registry check
-│   ├── fouc.js        Runs before CSS loads — applies theme and accent color to avoid a flash
-│   ├── popup.html     Extension popup — save current page as a bookmark to a workspace
-│   ├── popup.js       Popup logic
-│   ├── build.js       Validates sources, copies static files, minifies JS/CSS via esbuild
-│   ├── privacy.html   Privacy policy (bundled copy — also hosted from webapp/)
-│   ├── terms.html     Terms of service (bundled copy — also hosted from webapp/)
-│   ├── graphics-assets/  Chrome Web Store listing screenshots/icon
-│   ├── icons/         Brand & extension icons
-│   │   ├── favicon.svg  Source brand icon (32×32 SVG)
-│   │   ├── favicon.png  128×128 extension icon (generated from SVG)
-│   │   ├── icon-16.png  16×16 toolbar icon (generated from SVG)
-│   │   └── icon-48.png  48×48 extension management icon (generated from SVG)
-│   ├── dist/          Production build output (gitignored)
-│   └── nestpane-v<version>-chrome.zip   Chrome Web Store package from `npm run zip` (gitignored)
-└── webapp/            Static site — landing page, privacy.html, terms.html, and the web dashboard
+extension/
+├── manifest.json      Manifest V3: name, version, permissions, OAuth client, icons
+├── manifest.firefox.json  Delta merged onto the manifest for the Firefox build
+├── newtab.html        New tab page markup
+├── app.js             All application logic, including the OAuth client IDs
+├── style.css          Design tokens, themes and components
+├── fouc.js            Applies the theme and accent before first paint
+├── popup.html/js      Toolbar popup
+├── lib/               Small dependency-free modules, each unit tested
+├── tests/             node --test suites for lib/ and the build scripts
+├── scripts/           Zip writer, Firefox manifest merge, web dashboard generator
+├── build.js           Validates, copies and minifies into dist/
+├── privacy.html       Privacy policy (bundled copy, also hosted from webapp/)
+├── terms.html         Terms of service (bundled copy, also hosted from webapp/)
+├── graphics-assets/   Chrome Web Store listing images
+└── icons/             favicon.svg (source), favicon.png (128), icon-48.png, icon-16.png
 ```
 
----
+`dist/`, `dist-firefox/` and `nestpane-v<version>-chrome.zip` are build output and git-ignored.
 
 ## Prerequisites
 
-- Chrome, Chromium, Edge, Brave, or Arc (any Chromium-based browser)
-- Node.js ≥ 18 plus `npm install` — needed only to run `build.js`, the tests, and `eslint`; local development loads the unpacked sources directly and needs none of them
-- `rsvg-convert` (librsvg) or ImageMagick `convert` — only needed to regenerate PNG icons from `icons/favicon.svg`
+- Chrome, or another Chromium browser
+- Node.js 18 or newer, for the build, the tests and ESLint. Local development loads the sources directly and needs none of them
+- `rsvg-convert` (librsvg) or ImageMagick `convert`, only to regenerate the PNG icons from `icons/favicon.svg`
 
----
+## Local development
 
-## Local Development Setup
+1. Run `npm ci` in this folder.
+2. Open `chrome://extensions`, turn on Developer mode, choose Load unpacked and select this `extension/` folder.
+3. Open a new tab. After editing a file, reload the extension on `chrome://extensions` and open a new tab again.
 
-No build step is required for local development. Edit source files and reload the extension to see changes.
+| Command | What it does |
+|---|---|
+| `npm test` | Unit tests (`node --test`) |
+| `npm run lint` | ESLint, must exit 0 with no warnings |
+| `npm run build` | Validates and minifies into `dist/` |
+| `npm run build:firefox` | Firefox variant into `dist-firefox/` |
+| `npm run build:dashboard` | Regenerates `../webapp/dashboard/` from this source |
+| `npm run zip` | Builds and writes `nestpane-v<version>-chrome.zip` |
 
-**1. Clone the repository**
+The same app also runs as a plain web page. Serve this folder over HTTP (`python3 -m http.server`) and open `newtab.html`. `chrome.*` APIs are missing there, so storage falls back to `localStorage` and history and downloads show empty states. That is also how the web version works, and it is the easiest way to test the real UI with a headless browser.
 
-```bash
-git clone <your-repo-url>
-cd nestpane/extension
-```
-
-**2. Load as an unpacked extension**
-
-1. Open Chrome → `chrome://extensions`
-2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked** → select this `extension/` folder (not the repo root)
-4. Open a new tab — the dashboard loads immediately
-
-**3. Make changes**
-
-Edit `app.js`, `style.css`, `newtab.html`, or `popup.js` directly. After saving, go to `chrome://extensions` and click the reload icon (↻) under Nestpane, then open a new tab.
-
-**4. (Optional) Regenerate PNG icons after editing `icons/favicon.svg`**
+To regenerate the PNG icons after editing `icons/favicon.svg`:
 
 ```bash
-# Using rsvg-convert (recommended):
 cd icons
 rsvg-convert -w 128 -h 128 favicon.svg -o favicon.png
 rsvg-convert -w 48  -h 48  favicon.svg -o icon-48.png
 rsvg-convert -w 16  -h 16  favicon.svg -o icon-16.png
-
-# Or using ImageMagick:
-convert -background none -resize 128x128 favicon.svg favicon.png
-convert -background none -resize 48x48  favicon.svg icon-48.png
-convert -background none -resize 16x16  favicon.svg icon-16.png
-cd ..
 ```
 
----
+## Configuration
 
-## Environment Variables
-
-This project has no server and no environment variables. All configuration is embedded in source files.
+There is no server and there are no environment variables. Configuration lives in source.
 
 | Config | File | Key | Notes |
 |---|---|---|---|
-| Google OAuth Client ID (native, Chrome) | `manifest.json` | `oauth2.client_id` | Public identifier, safe to commit. Chrome Extension-type client — Google issues no client secret for this type at all |
-| Google OAuth Client ID (fallback, all other Chromium browsers) | `app.js` | `WEB_AUTH_CLIENT_ID` | Public identifier, safe to commit. Web application-type client used only by `chrome.identity.launchWebAuthFlow()` — see [Google OAuth Setup](#google-oauth-setup) |
-| OAuth Scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` — read by both the native and fallback auth paths |
-| Expected extension ID | `app.js` / `build.js` | `EXPECTED_EXTENSION_ID` / `PUBLISHED_EXTENSION_ID` | The CWS-assigned item ID; a mismatch only logs a warning, it never blocks sign-in |
-| Weather endpoint | `app.js` | wttr.in URL | No key required |
-| Quotes | Bundled static list (`HERO_QUOTES` in `app.js`) | No network request |
-| Anthropic API key | Settings → AI Assistant (`aiApiKey`) | User-supplied, optional | Entered by each user at runtime, stored only in `chrome.storage.local` on their device — never embedded in source or synced |
+| OAuth client (Chrome) | `manifest.json` | `oauth2.client_id` | Public identifier. Chrome Extension type, which has no client secret |
+| OAuth client (other browsers and the web version) | `app.js` | `WEB_AUTH_CLIENT_ID` | Public identifier. Web application type, used with the implicit grant |
+| OAuth scopes | `manifest.json` | `oauth2.scopes` | `userinfo.email`, `userinfo.profile`, `drive.appdata` |
+| Extension ID | `app.js`, `build.js` | `EXPECTED_EXTENSION_ID`, `PUBLISHED_EXTENSION_ID` | The Chrome Web Store item ID. A mismatch only logs a warning in the app, and fails the build if `manifest.json` has a `key` that does not match |
+| Anthropic API key | Settings, AI Assistant | `_aiApiKey` in storage | Entered by each user, stored only on their device, never synced |
 
-> The Google OAuth Client ID is a **public** identifier. It is not a secret. There is no `client_secret` anywhere in this project — the Chrome Extension OAuth client type Google issues doesn't have one, by design.
->
-> The Anthropic API key is **not** a build-time secret — it's entered per-user in Settings to power "Ask AI", the daily briefing, and Smart Organize. Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys). AI features are entirely optional and disabled by default.
+## Google OAuth setup
 
----
+### How sign-in works
 
-## Google OAuth Setup
+`getAuthToken(interactive)` picks one of three paths.
 
-### How the auth flow works
+1. **Chrome (native).** `chrome.identity.getAuthToken` shows Chrome's account picker. Chrome caches and refreshes the token itself. This works only in Google Chrome. Brave is detected up front with `navigator.brave.isBrave()` and skips straight to the fallback.
+2. **Other Chromium browsers (fallback).** `chrome.identity.launchWebAuthFlow` opens Google's consent page and reads the token from the redirect to `https://<extension-id>.chromiumapp.org/`. It uses the implicit grant (`response_type=token`) against the second, Web application client, so no client secret or backend is involved.
+3. **The web version.** A full-page redirect through `webapp/dashboard/oauth-callback.html`, using the same implicit grant.
 
-Nestpane tries two independent sign-in paths, in order, so Google sign-in and Drive sync work in every Chromium-based browser, not just Google Chrome:
+Implicit-grant tokens have no refresh token and last about an hour. They are stored in `_waToken` and `_waTokenExp`, so a new tab reuses them.
 
-**1. Native path (Google Chrome only)**
+**Staying signed in.** The account (`googleUser`) is removed only by Sign out or Clear All Data. Saves never write an empty value over it, other tabs cannot clear it, and a keep-alive (`_armSessionKeepAlive`) renews the token shortly after it expires, on tab focus and when the browser comes back online, backing off from 1 to 15 minutes on failure. On the web, the renewal is a hidden iframe with `prompt=none`. If Google refuses, the account stays and the sidebar shows Connect Drive until a silent or manual reconnect succeeds. A true "never reconnect" would need a code flow with a client secret on a server, which this project deliberately does not have.
 
-1. User clicks **Sign in with Google** in the sidebar (this also requests the `identity`/`identity.email` optional permissions just-in-time, if not already granted).
-2. `chrome.identity.getAuthToken({interactive: true})` shows Chrome's native account picker/consent UI — no separate tab, no manual OAuth redirect.
-3. Chrome returns an access token and caches it internally — no client secret involved anywhere in this exchange.
-4. Chrome manages token expiry and silent refresh itself; the extension just calls `getAuthToken({interactive: false})` again whenever it needs a token, and gets a valid one back (or `null` if the grant was revoked).
+Sign out revokes the grant at `oauth2.googleapis.com/revoke` and clears the cached tokens.
 
-This only works in actual Google Chrome — it depends on Google API keys baked into Chrome itself. It fails outright in Brave, Vivaldi, Opera, Arc, and other Chromium forks (Brave, for instance, is detected up front via `navigator.brave.isBrave()` and skipped straight to the fallback below — see `brave/brave-browser#38066`).
+### Setting up your own OAuth clients
 
-**2. Fallback path (Brave, Vivaldi, Opera, Arc, or any browser where the native path fails)**
+The client IDs in this repo belong to the current Google Cloud project. On a fork, or if the project or the extension ID changes, create your own. You need both clients.
 
-1. `chrome.identity.launchWebAuthFlow()` opens Google's standard OAuth consent page in a browser-controlled popup and watches for the redirect to `chrome.identity.getRedirectURL()` (`https://<extension-id>.chromiumapp.org/`) — this is a plain extensions API every Chromium-based browser implements the same way.
-2. Uses the implicit grant (`response_type=token`) against a **second**, `Web application`-type OAuth client (`WEB_AUTH_CLIENT_ID` in `app.js`) — the access token comes back directly in the redirect URL's fragment, so there's no client secret and no backend needed to exchange a code for a token.
-3. The token is kept in `chrome.storage.local` (implicit-grant tokens have no refresh token), so a new tab reuses it, and it is silently re-requested (`prompt=none`) shortly after it expires; if Google refuses, the account stays signed in and shows **Connect Drive** until the next successful silent or manual reconnect.
+1. Open [Google Cloud Console](https://console.cloud.google.com/), then APIs & Services, then Credentials.
+2. Enable the Google Drive API.
+3. Configure the OAuth consent screen (External). Add the `drive.appdata`, `userinfo.email` and `userinfo.profile` scopes, and add yourself as a test user.
+4. **Native client.** Create an OAuth client ID of type Chrome Extension. Put your extension ID in Application ID (shown on `chrome://extensions`). Copy the client ID into `manifest.json` as `oauth2.client_id`.
+5. **Fallback client.** Create a second client ID of type Web application. Add these Authorized redirect URIs:
+   - `https://<your-extension-id>.chromiumapp.org/` for other Chromium browsers (trailing slash included)
+   - `https://nestpane.kneeraazon.com/dashboard/oauth-callback.html` for the web version
+   Copy the client ID into `WEB_AUTH_CLIENT_ID` in `app.js`.
+6. Both client IDs are public identifiers. Neither type used here has a client secret, so both are safe to commit.
 
-Sign-out (and "Clear All Data") revoke the grant server-side via `oauth2.googleapis.com/revoke` **and** evict it from whichever cache is holding it (Chrome's native cache, or the stored fallback token).
+The extension ID changes if you load it from a different folder. The published Chrome Web Store ID is permanent.
 
-**Staying signed in.** The signed-in account (`googleUser`) is only ever removed by Sign out or Clear All Data. Saves never overwrite it with an empty value, other tabs cannot clear it, and a keep-alive timer (`_armSessionKeepAlive` in `app.js`) renews the access token in the background, on tab focus, and when the browser comes back online. The web dashboard uses a hidden-iframe `prompt=none` request answered by `oauth-callback.html`. The one limit: the implicit grant has no refresh token, so if Google's own sign-in session has ended, the silent request is refused and a manual reconnect is needed; true "never reconnect" would need an OAuth code flow with a client secret on a server, which this project deliberately does not have.
-
-### Setting up your own OAuth Clients
-
-If you fork this project, you must create your own Google OAuth clients — the client IDs in this repo belong to the original author's GCP project. You need **both** of the following; the native client covers Chrome, the web-application client covers every other Chromium-based browser.
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
-2. Enable the **Google Drive API**.
-3. Configure the **OAuth consent screen** (External, add `drive.appdata`, `userinfo.email`, and `userinfo.profile` scopes, add yourself as a test user).
-4. **Native client (Chrome):** Create an **OAuth 2.0 Client ID** → Application type: **Chrome Extension**. Add your extension ID to the **Application ID** field (found on `chrome://extensions`). Copy the Client ID into `manifest.json`'s `oauth2.client_id`. No redirect URI setup needed — this client type binds to the extension ID directly.
-5. **Fallback client (everyone else):** Create a second **OAuth 2.0 Client ID** → Application type: **Web application**. Under **Authorized redirect URIs**, add exactly `https://<your-extension-id>.chromiumapp.org/` (same extension ID as above, trailing slash included). Copy the Client ID into `app.js`'s `WEB_AUTH_CLIENT_ID` constant.
-6. Both client IDs are public identifiers, not secrets — Google issues no `client_secret` for either type used here, so both are safe to commit.
-
-### Finding your Extension ID
-
-Load the extension unpacked (see setup above). Your ID appears on `chrome://extensions` beneath the extension name — a 32-character lowercase string. The ID changes if you load from a different folder; the published Chrome Web Store ID is permanent.
-
----
-
-## Production Build
+## Build and package
 
 ```bash
-node build.js
+npm run build
 ```
 
-This script:
-
-1. Validates all required source files exist in the project root.
-2. Validates that required manifest permissions are declared.
-3. Warns if `manifest.json` no longer matches the published CWS extension ID.
-4. Copies static files (manifest, HTML, icons) to `dist/`.
-5. Minifies `app.js`, `fouc.js`, `popup.js`, and `style.css` into `dist/` with esbuild.
-
-**Package for Chrome Web Store:**
+`build.js` validates that every file in `REQUIRED_FILES` exists, that the manifest declares the required permissions, and that a `key` field (if present) produces the published extension ID. It then copies static files into `dist/` and minifies the HTML, JavaScript (esbuild, target `chrome110`) and CSS.
 
 ```bash
 npm run zip
 ```
 
-This builds and writes `nestpane-v<version>-chrome.zip` to the project root, reading `<version>` from `package.json` so it always matches the current release. The ZIP contains the **contents** of `dist/` at its root — not the `dist/` folder itself.
+This builds, then `scripts/zip-dist.js` packs the contents of `dist/` into `nestpane-v<version>-chrome.zip` using no external tools. The output is reproducible: entries are sorted and timestamps are fixed, so the same inputs give the same bytes.
 
----
+`npm run build:firefox` merges `manifest.firefox.json` onto the manifest (add-on ID and minimum Firefox version) and writes `dist-firefox/`. It builds, but it has not been published.
 
 ## Deployment (Chrome Web Store)
 
-**Step 1 — Ensure icons are generated and up to date**
-
-```bash
-cd icons
-rsvg-convert -w 128 -h 128 favicon.svg -o favicon.png
-rsvg-convert -w 48  -h 48  favicon.svg -o icon-48.png
-rsvg-convert -w 16  -h 16  favicon.svg -o icon-16.png
-cd ..
-```
-
-**Step 2 — Build and package**
-
-```bash
-npm run zip
-```
-
-Verify no errors are reported. This produces `nestpane-v<version>-chrome.zip` in the project root.
-
-**Step 3 — Submit**
-
-1. Go to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
-2. Click **New Item** → upload `nestpane-v<version>-chrome.zip`.
-3. Fill in the listing:
-   - **Category**: Productivity
-   - **Screenshots**: 1280×800 or 640×400 px (at least one required)
-   - **Privacy policy**: required — host [`privacy.html`](privacy.html) (e.g. via GitHub Pages) and link it here
-4. Complete the **Privacy practices** tab — cross-reference the `permissions`/`optional_permissions`/`host_permissions` arrays in `manifest.json` against what each one is used for (see the permissions table above) when answering CWS's data-usage questions.
+1. Run `npm run zip` and fix anything it reports.
+2. Open the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole). For a new item choose New Item and upload the zip. For an update, upload it on the Package tab.
+3. Fill in the listing: category Productivity, at least one 1280×800 or 640×400 screenshot, and the privacy policy URL (`https://nestpane.kneeraazon.com/privacy.html`).
+4. Complete Privacy practices by checking the `permissions`, `optional_permissions` and `host_permissions` arrays against the table below.
 5. Submit for review.
 
-**Step 4 — Update an existing listing**
+To release an update, set the same new `version` in `manifest.json` and `package.json` (the zip name comes from `package.json`, the published version from `manifest.json`), and make sure it is higher than the version live on the store.
 
-Bump `version` in both `manifest.json` and `package.json` (they must match — the ZIP filename comes from `package.json`, the published version from `manifest.json`), run `npm run zip`, and upload the new ZIP via the **Package** tab in the CWS dashboard.
-
----
-
-## Required Permissions
+## Permissions
 
 | Permission | Why |
 |---|---|
-| `tabs` | Tab Sessions, Smart Organize, and Omni-Search (open-tabs lookup) |
-| `bookmarks` | Read and write Chrome bookmarks |
-| `history` | History viewer, Analytics, Omni-Search |
-| `downloads` | Downloads viewer |
-| `storage` | Persist all user data (local storage) |
-| `topSites` | Analytics view — Top Visited Sites card |
-| `identity` | Google OAuth sign-in (`chrome.identity.getAuthToken()`) — optional, requested on first "Sign in with Google" click |
-| `identity.email` | Read signed-in Chrome account email for the sync card |
-| `geolocation` | Auto-detect city for weather widget |
-| `declarativeNetRequest` | Focus Mode — blocks chosen sites while a focus session is active |
-| `notifications` | Focus-session-complete and habit-reminder desktop notifications |
-| `search` | Runs a plain search query through the user's own default search engine via `chrome.search.query` |
+| `tabs` | Tab sessions, Smart Organize, open-tab search |
+| `bookmarks` | Read and write the browser's bookmarks |
+| `history` | History view, Insights, search |
+| `downloads` | Downloads view |
+| `storage` | All user data, in `chrome.storage.local` |
+| `topSites` | Most visited sites in Insights |
+| `declarativeNetRequest` | Focus Mode site blocking while a session runs |
+| `search` | `chrome.search.query`, to search with the user's default search engine |
+| `identity`, `identity.email` (optional) | Google sign-in for Drive backup, requested when the user signs in |
+| `notifications` (optional) | Reminder, habit and focus notifications |
 
 | Host | Why |
 |---|---|
-| `wttr.in` | Weather data |
-| `fonts.googleapis.com` / `fonts.gstatic.com` | Google Fonts (Inter, Playfair Display) |
-| `www.googleapis.com` | Google user profile API + Drive sync |
-| `oauth2.googleapis.com` | Token refresh and revocation |
-| `ipwho.is` | IP-based city detection for weather |
-| `nominatim.openstreetmap.org` | Geocoding city names to coordinates |
-| `picsum.photos` | Wallpaper photos |
-| `api.anthropic.com` | AI command bar, daily briefing, and smart organize (only used if you add an Anthropic API key in Settings) |
+| `fonts.googleapis.com`, `fonts.gstatic.com` | Web fonts |
+| `www.googleapis.com` | Google profile and the Drive API, including uploads |
+| `oauth2.googleapis.com` | Token revocation on sign-out |
+| `api.anthropic.com` | Optional AI features, only with a key the user adds |
 
----
+Quick Access tile icons are loaded as images from Google's favicon service (`t3.gstatic.com`). That needs no host permission, but the request includes the site's domain, and it is listed in the privacy policy.
 
-## Security Notes
+## Security notes
 
-- **No client secret anywhere.** Sign-in uses `chrome.identity.getAuthToken()` against a Chrome Extension-type OAuth client, which Google issues no client secret for at all — there's nothing to leak in source.
-- **Access tokens never leave the device.** Chrome caches and silently refreshes them internally via `chrome.identity`; the extension never stores a token or refresh token of its own in `chrome.storage.local`.
-- **All user-generated content is HTML-escaped** via `escH()` before DOM insertion. No `eval`, no `document.write`, no raw `innerHTML` with user input.
-- **URL sanitization.** All user-supplied URLs pass through `safeUrl()` which validates the scheme (http/https only), blocking `javascript:`, `data:`, and other dangerous protocols.
-- **MV3 CSP.** Chrome Extension pages follow Manifest V3's default Content Security Policy which disallows `eval` and external scripts.
-- **AI API key.** If you enable AI features, your Anthropic API key is stored only in `chrome.storage.local` on your device, excluded from both Drive sync and the E2E-encrypted payload, and sent only to `https://api.anthropic.com` with each AI request.
-- **End-to-end encryption.** When enabled (12+ character passphrase required), Drive backups are encrypted client-side with AES-GCM using a key derived from your passphrase via PBKDF2 (600,000 iterations). The passphrase is stored locally in `chrome.storage.local` and never transmitted — if you lose it, encrypted backups cannot be recovered.
-- **Privacy policy.** See [`privacy.html`](privacy.html) for the full data-handling disclosure (required for Chrome Web Store and OAuth consent screen verification).
-
----
+- **No client secret anywhere.** Neither OAuth client type used here has one.
+- **Tokens.** Native tokens are cached by Chrome. The fallback and web paths store an access token and its expiry in `chrome.storage.local` (or `localStorage` on the web). Tokens are excluded from backups.
+- **Escaping.** User-generated content is escaped with `escH()` before it reaches `innerHTML`. There is no `eval` and no `document.write`.
+- **URLs.** User-supplied URLs go through `safeUrl()`, which accepts only `http` and `https`.
+- **CSP.** Extension pages use Manifest V3's default policy, which disallows `eval` and remote scripts.
+- **AI key.** Stored only in `chrome.storage.local`, excluded from Drive backups, and sent only to `https://api.anthropic.com`.
+- **Encryption.** With Encrypt Cloud Backups on (passphrase of 12 or more characters), backups are encrypted in the browser with AES-GCM using a PBKDF2 key (600,000 iterations). The passphrase is stored only in `chrome.storage.local` and never uploaded. Without it, encrypted backups cannot be recovered.
+- **Privacy policy.** [`privacy.html`](privacy.html) is the full disclosure, required for the Web Store and for OAuth verification.
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---|---|
-| Extension icon is blank or broken | Regenerate `icons/favicon.png`, `icons/icon-16.png`, `icons/icon-48.png` from `icons/favicon.svg` and reload the extension |
-| "Sign in" button does nothing, or shows a permission-error toast | The `identity`/`identity.email` optional permission wasn't granted — try again and approve the browser's permission prompt |
-| Sign-in fails immediately every time | Extension ID mismatch — the Chrome Extension OAuth client is bound to one specific extension ID; check `EXPECTED_EXTENSION_ID` in `app.js` against `chrome://extensions` |
-| Sign-in shows "access_denied" | Add your Google account as a Test User on the OAuth consent screen in Google Cloud Console |
-| Sign-in doesn't work on Brave/Vivaldi/Opera/Arc/etc. | Should work via the `launchWebAuthFlow()` fallback — check that `WEB_AUTH_CLIENT_ID` in `app.js` is set to your own Web application-type client, and that its authorized redirect URI exactly matches `https://<your-extension-id>.chromiumapp.org/` |
-| Weather shows "--°C" | Check that `wttr.in` is reachable; verify `host_permissions` in `manifest.json` |
-| Data not syncing | Confirm you are signed in; check that the Drive API is enabled in your Google Cloud project |
-| Popup shows "No workspaces found" | Open a new tab first to initialise extension data, then try the popup |
-| Changes not reflected after edit | Reload the extension on `chrome://extensions` → click the reload icon (↻) |
-| Build validation fails | Run `node build.js` from the project root and check which file is listed as MISSING |
+| Sidebar shows Connect Drive with a name | The silent token renewal was refused. Click it to reconnect. Data and account details are untouched |
+| Sign in does nothing, or shows a permission toast | The `identity` optional permission was not granted. Try again and approve the prompt |
+| Sign-in fails immediately every time | The Chrome Extension OAuth client is bound to one extension ID. Compare `EXPECTED_EXTENSION_ID` with `chrome://extensions` |
+| Sign-in shows `access_denied` | Add your Google account as a test user on the OAuth consent screen |
+| Sign-in fails on Brave, Vivaldi, Opera or Arc | Check that `WEB_AUTH_CLIENT_ID` is your own Web application client and that its redirect URI is exactly `https://<extension-id>.chromiumapp.org/` |
+| Data not syncing | Confirm you are signed in and that the Drive API is enabled in your Google Cloud project |
+| Quick Access icons are blank | Offline, or the favicon request is blocked |
+| Changes not reflected after an edit | Reload the extension on `chrome://extensions`, then open a new tab |
+| Build validation fails | Run `npm run build` and look for the file marked MISSING |
 
----
+## Maintenance checklist
 
-## Maintenance Checklist
-
-- [ ] Bump `version` in `manifest.json` before each release
-- [ ] Regenerate PNG icons after any change to `icons/favicon.svg`
-- [ ] Run `node build.js` and confirm no errors before packaging
-- [ ] Test sign-in, Drive sync, and sign-out after any auth-related changes
-- [ ] Verify the extension ID still matches the OAuth redirect URI after any reinstall from a new folder
-- [ ] Review `manifest.json` permissions — remove any unused permissions before CWS submission
-- [ ] Test on Chrome stable and Edge before submitting to the Chrome Web Store
-
----
+- [ ] Bump `version` in `manifest.json` and `package.json` before each release
+- [ ] Regenerate the PNG icons after any change to `icons/favicon.svg`
+- [ ] Run `npm test`, `npm run lint` and `npm run build`, and confirm no errors
+- [ ] Run `npm run build:dashboard` if shared files changed
+- [ ] Test sign-in, Drive sync and sign-out after any auth change
+- [ ] Review `manifest.json` permissions and remove any that are unused
+- [ ] Test on Chrome stable and Edge before submitting
 
 ## License
 
-Nestpane is open source under the [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) — free to use, study, modify, and redistribute under the terms of the GPL-3.0. The **Nestpane name and logo** are the project's brand identity and are not covered by the code license.
+[GNU General Public License v3.0](../LICENSE). The Nestpane name and logo are not covered by the license.

@@ -33,15 +33,16 @@ This repository contains the official Nestpane landing site and comprehensive le
 logic, not two drifting copies:
 
 ```
-node ../scripts/build-dashboard.js
+cd ../extension && npm run build:dashboard
 ```
 
 Run this any time `../extension/app.js`, `../extension/lib/*.js`, `../extension/style.css`,
 `../extension/fouc.js`, or `../extension/newtab.html` change. It is not wired into any
 CI/deploy hook yet — nothing currently reminds you to re-run it, so the dashboard can silently
 go stale if this is forgotten. `dashboard/oauth-callback.html` is hand-written, not generated —
-see `../docs/03-platforms/dashboard.md` for what it does and the one Google Cloud Console step it
-still needs before Google sign-in works there.
+it handles the OAuth redirect for the web version. Google sign-in there also needs the redirect URI
+(`https://nestpane.kneeraazon.com/dashboard/oauth-callback.html`) registered on a Web application OAuth client in
+Google Cloud Console, which is a manual step.
 
 ---
 
@@ -125,15 +126,12 @@ nestpane/
 
 This site is built with pure HTML, Tailwind CSS (via CDN), and Vanilla JS. No build tools are required.
 
-1. Clone the repository:
+1. From the repository root, serve the site folder:
    ```bash
-   git clone https://github.com/yourusername/nestpane.git
+   cd webapp
+   python3 -m http.server 8000
    ```
-2. Navigate to the folder:
-   ```bash
-   cd nestpane
-   ```
-3. Open `index.html` in your browser to view the landing page locally.
+2. Open `http://127.0.0.1:8000/` in your browser.
 
 ## ☁️ Deployment (Vercel)
 

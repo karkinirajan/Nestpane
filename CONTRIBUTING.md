@@ -1,14 +1,14 @@
 # Contributing to Nestpane
 
-Thanks for taking a look. Bug reports, ideas, documentation fixes and code are all welcome. This page covers how to get set up, what a good change looks like here, and the few rules that keep the project small and private.
+Thanks for taking a look. Bug reports, ideas, documentation fixes and code are all welcome. This page covers how to get set up, what a good change looks like here, and the few rules that keep the project small and its users' data private.
 
 ## Ways to help
 
 - Report a bug or ask for a feature using the [issue forms](https://github.com/karkinirajan/Nestpane/issues/new/choose).
 - Tell us what you use your new tab for, or what you expected and didn't find. The "Feedback and ideas" form is for that.
 - Pick up an issue labeled `good first issue`.
-- Add tests. Several features have none, and the registry check lists them (see [Tests](#tests)).
-- Improve the docs. Start at [`docs/README.md`](docs/README.md).
+- Add tests. Much of the interface logic has none yet (see [Tests](#tests)).
+- Improve the README files.
 
 If you plan a large change, open an issue first so we can agree on the approach before you spend the time.
 
@@ -18,10 +18,9 @@ If you plan a large change, open an issue first so we can agree on the approach 
 |---|---|
 | `extension/` | The Chrome extension (Manifest V3). `app.js` holds the app, `lib/` holds small tested modules, `tests/` holds the unit tests |
 | `webapp/` | The marketing site, privacy policy and terms, plus `webapp/dashboard/`, a browser-only copy of the dashboard |
-| `scripts/` | Repo-level scripts. `build-dashboard.js` regenerates `webapp/dashboard/` |
-| `docs/` | Documentation in numbered chapters |
+| `.github/` | Issue forms and the pull request template |
 
-`extension/` and `webapp/` ship separately and share no build step. `webapp/dashboard/` is generated from `extension/`, so don't edit it by hand.
+`extension/` and `webapp/` ship separately. `webapp/dashboard/` is generated from `extension/` by `extension/scripts/build-dashboard.js`, so don't edit it by hand.
 
 ## Set up
 
@@ -53,10 +52,10 @@ npm run lint      # must exit 0 with no warnings
 npm run build     # sources validate and minify
 ```
 
-If you changed anything in `extension/` that the web dashboard also runs (`app.js`, `lib/`, `style.css`, `newtab.html`), regenerate the dashboard from the repo root and commit the result:
+If you changed anything in `extension/` that the web dashboard also runs (`app.js`, `lib/`, `style.css`, `newtab.html`), regenerate the dashboard and commit the result:
 
 ```bash
-node scripts/build-dashboard.js
+npm run build:dashboard
 ```
 
 Then check your change in a real browser. A passing build doesn't prove the screen looks right. For UI work, include a screenshot in the pull request.
@@ -76,7 +75,7 @@ A new file needs to be registered in four places, or it won't load or ship:
 
 1. A `<script src="lib/your-module.js">` tag in `extension/newtab.html`, before `app.js`
 2. `REQUIRED_FILES` in `extension/build.js`
-3. `LIB_FILES` in `scripts/build-dashboard.js`
+3. `LIB_FILES` in `extension/scripts/build-dashboard.js`
 4. The global name in `extension/eslint.config.js`
 
 Follow the existing pattern: an IIFE that exports for Node tests (`module.exports`) and attaches a `Nestpane...` global in the browser.
@@ -85,7 +84,7 @@ Follow the existing pattern: an IIFE that exports for Node tests (`module.export
 
 These change what the project promises to users, so please open an issue before sending code.
 
-- **New permissions or host permissions.** They can trigger a re-review in the Chrome Web Store and they widen what the extension can see. Every permission is justified in [`docs/01-overview/permissions.md`](docs/01-overview/permissions.md).
+- **New permissions or host permissions.** They can trigger a re-review in the Chrome Web Store and they widen what the extension can see. Every permission is explained in the permissions section of [`extension/README.md`](extension/README.md).
 - **New network requests.** Nestpane has no server, no analytics and no telemetry, and that is a feature. Anything that contacts a third party must be optional, off by default, and documented in the privacy policy.
 - **Changes to storage shape.** Stored data needs a migration (see `extension/lib/migrations.js`) so existing users keep their data.
 - **Changes to sign-in or Drive backup.** These touch OAuth and user data. Include the steps you used to test them.
@@ -94,11 +93,11 @@ These change what the project promises to users, so please open an issue before 
 
 Tests use Node's built-in runner and live in `extension/tests/`. Name a test after the behavior it proves.
 
-The feature registry in `docs/02-architecture/feature-registry.json` maps each feature to its tests, and `npm run check-registry` reports features with none. That check fails today because many features have no tests mapped. New and changed features should not make it worse, and adding tests for an unmapped feature is a welcome first contribution.
+New and changed logic should come with tests, and adding tests for logic that has none is a welcome first contribution.
 
 ## Releases
 
-Maintainers bump the version, build the Chrome Web Store package and publish it. Please don't change version numbers in a pull request. The steps are in [`docs/05-release/release-runbook.md`](docs/05-release/release-runbook.md).
+Maintainers bump the version, build the Chrome Web Store package and publish it. Please don't change version numbers in a pull request. The steps are in the Release section of the [README](README.md#release).
 
 ## Reporting a security problem
 
