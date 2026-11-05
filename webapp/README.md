@@ -149,7 +149,7 @@ This site is static HTML, deployed on Vercel at `nestpane.kneeraazon.com`.
 
 ## 📄 License
 
-Nestpane is open source under the [MIT License](https://github.com/karkinirajan/Nestpane/blob/main/LICENSE) — use, modify, and redistribute it freely, including commercially, as long as the copyright notice is kept.
+Nestpane is open source under the [GNU General Public License v3.0 (GPL-3.0)](https://github.com/karkinirajan/Nestpane/blob/main/LICENSE) — free to use, study, modify, and redistribute under the terms of the GPL-3.0 (any derivative work or redistributed build must also remain open source under GPL-3.0).
 
 The **Nestpane name and logo** are the project's brand identity and aren't covered by the code license — please don't use them to imply a modified or unofficial build is the official Nestpane product.
 

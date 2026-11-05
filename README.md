@@ -169,4 +169,4 @@ Since Google OAuth sign-in requires your own client IDs bound to your own extens
 
 ## License
 
-[MIT](LICENSE) — free to use, modify, and redistribute, including commercially, as long as the copyright notice is kept. The **Nestpane name and logo** are the project's brand identity and aren't covered by the code license. See [`webapp/terms.html`](webapp/terms.html) for full terms.
+[GPL-3.0](LICENSE) — free to use, study, modify, and redistribute under the terms of the GNU General Public License v3.0 (any derivative work or redistributed build must remain open source under GPL-3.0). The **Nestpane name and logo** are the project's brand identity and aren't covered by the code license. See [`webapp/terms.html`](webapp/terms.html) for full terms.

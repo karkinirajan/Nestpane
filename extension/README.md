@@ -348,3 +348,9 @@ Bump `version` in both `manifest.json` and `package.json` (they must match — t
 - [ ] Verify the extension ID still matches the OAuth redirect URI after any reinstall from a new folder
 - [ ] Review `manifest.json` permissions — remove any unused permissions before CWS submission
 - [ ] Test on Chrome stable and Edge before submitting to the Chrome Web Store
+
+---
+
+## License
+
+Nestpane is open source under the [GNU General Public License v3.0 (GPL-3.0)](../LICENSE) — free to use, study, modify, and redistribute under the terms of the GPL-3.0. The **Nestpane name and logo** are the project's brand identity and are not covered by the code license.
