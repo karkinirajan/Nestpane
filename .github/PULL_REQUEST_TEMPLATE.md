@@ -15,7 +15,7 @@
 - [ ] `npm test` passes in `extension/`
 - [ ] `npm run lint` exits 0 with no warnings
 - [ ] `npm run build` succeeds
-- [ ] I regenerated the web dashboard (`node scripts/build-dashboard.js`) if I changed `app.js`, `lib/`, `style.css` or `newtab.html`
+- [ ] I regenerated the web dashboard (`npm run build:dashboard`) if I changed `app.js`, `lib/`, `style.css` or `newtab.html`
 - [ ] New or changed logic has tests, or I explained why not
 - [ ] No new runtime dependency, permission, or network request (or I opened an issue and linked it)
 - [ ] Stored data keeps working for existing users (a migration is included if the shape changed)

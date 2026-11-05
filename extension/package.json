@@ -9,8 +9,8 @@
     "build:firefox": "node build.js --target=firefox",
     "lint": "eslint app.js popup.js fouc.js build.js lib/*.js scripts/*.js tests/*.js",
     "test": "node --test tests/*.test.js",
-    "check-registry": "node scripts/check-registry.js",
-    "zip": "node build.js && node scripts/zip-dist.js"
+    "zip": "node build.js && node scripts/zip-dist.js",
+    "build:dashboard": "node scripts/build-dashboard.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

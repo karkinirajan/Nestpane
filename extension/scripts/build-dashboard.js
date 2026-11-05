@@ -12,17 +12,17 @@
  * directly in webapp/dashboard/ instead, since it has no extension
  * equivalent to generate from.
  *
- * Re-run this (`node scripts/build-dashboard.js`) any time extension/
+ * Re-run this (`npm run build:dashboard` in extension/) any time extension/
  * changes and the dashboard needs to catch up — it is NOT run automatically
  * by anything yet.
  */
 const fs = require("fs");
 const path = require("path");
 
-const ROOT = path.join(__dirname, "..");
-const EXT = path.join(ROOT, "extension");
+const EXT = path.join(__dirname, "..");
+const ROOT = path.join(EXT, "..");
 const OUT = path.join(ROOT, "webapp", "dashboard");
-const esbuild = require(path.join(EXT, "node_modules", "esbuild"));
+const esbuild = require("esbuild");
 
 const JS_FILES = ["app.js", "fouc.js"];
 const LIB_FILES = ["format.js", "migrations.js", "drive-conflict.js", "autosave.js", "bookmarks-store.js", "wikilinks.js", "snapshots.js", "sidebar-order.js"];
