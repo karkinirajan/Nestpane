@@ -110,4 +110,4 @@ Be respectful in issues and reviews. Assume good intent, give specific feedback,
 
 ## License
 
-By contributing, you agree that your work is released under the [MIT License](LICENSE). The Nestpane name and logo are not covered by that license.
+By contributing, you agree that your work is released under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE). The Nestpane name and logo are not covered by that license.
