@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: extension
+
+jobs:
+  # The unit tests on every Node.js line the project supports (package.json "engines").
+  test:
+    name: Unit tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  # Everything else, on the version pinned in extension/.nvmrc.
+  verify:
+    name: Lint, mutation checks, build, audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: extension/.nvmrc
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+      - name: Lint (no warnings allowed)
+        run: npm run lint
+      - name: Mutation checks (each deliberate bug must make a test fail)
+        run: npm run test:mutation
+      - name: Build the Chrome and Firefox packages
+        run: |
+          npm run build
+          npm run build:firefox
+      - name: The web dashboard is up to date with the extension source
+        run: |
+          npm run build:dashboard
+          if [ -n "$(git status --porcelain -- ../webapp/dashboard)" ]; then
+            git status --short -- ../webapp/dashboard
+            echo "::error::webapp/dashboard is out of date. Run 'npm run build:dashboard' in extension/ and commit the result."
+            exit 1
+          fi
+      - name: Dependency audit (high and critical fail the build)
+        run: npm audit --audit-level=high
+      - name: Write the Chrome Web Store package
+        run: npm run zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nestpane-chrome
+          path: extension/nestpane-v*-chrome.zip
+          if-no-files-found: error
+          retention-days: 14
