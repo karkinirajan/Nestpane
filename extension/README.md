@@ -63,7 +63,7 @@ extension/
 ├── fouc.js            Applies the theme and accent before first paint
 ├── popup.html/js      Toolbar popup
 ├── lib/               Small dependency-free modules, each unit tested
-├── tests/             node --test suites for lib/ and the build scripts
+├── tests/             node --test suites for lib/ and the build scripts; tests/mutation/ holds the deliberate-bug checks
 ├── scripts/           Zip writer, Firefox manifest merge, web dashboard generator
 ├── build.js           Validates, copies and minifies into dist/
 ├── privacy.html       Privacy policy (bundled copy, also hosted from webapp/)
@@ -77,7 +77,7 @@ extension/
 ## Prerequisites
 
 - Chrome, or another Chromium browser
-- Node.js 18 or newer, for the build, the tests and ESLint. Local development loads the sources directly and needs none of them
+- Node.js 22 or newer (26 is pinned in `.nvmrc`), for the build, the tests and ESLint. Local development loads the sources directly and needs none of them
 - `rsvg-convert` (librsvg) or ImageMagick `convert`, only to regenerate the PNG icons from `icons/favicon.svg`
 
 ## Local development
@@ -89,6 +89,7 @@ extension/
 | Command | What it does |
 |---|---|
 | `npm test` | Unit tests (`node --test`) |
+| `npm run test:mutation` | Mutation checks: each deliberate bug in `lib/` must make a test fail. See [docs/01-testing-and-quality.md](../docs/01-testing-and-quality.md) |
 | `npm run lint` | ESLint, must exit 0 with no warnings |
 | `npm run build` | Validates and minifies into `dist/` |
 | `npm run build:firefox` | Firefox variant into `dist-firefox/` |
@@ -229,7 +230,7 @@ Quick Access tile icons are loaded as images from Google's favicon service (`t3.
 
 - [ ] Bump `version` in `manifest.json` and `package.json` before each release
 - [ ] Regenerate the PNG icons after any change to `icons/favicon.svg`
-- [ ] Run `npm test`, `npm run lint` and `npm run build`, and confirm no errors
+- [ ] Run `npm test`, `npm run lint`, `npm run test:mutation` and `npm run build`, and confirm no errors
 - [ ] Run `npm run build:dashboard` if shared files changed
 - [ ] Test sign-in, Drive sync and sign-out after any auth change
 - [ ] Review `manifest.json` permissions and remove any that are unused

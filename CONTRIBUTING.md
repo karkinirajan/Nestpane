@@ -7,7 +7,7 @@ Thanks for taking a look. Bug reports, ideas, documentation fixes and code are a
 - Report a bug or ask for a feature using the [issue forms](https://github.com/karkinirajan/Nestpane/issues/new/choose).
 - Tell us what you use your new tab for, or what you expected and didn't find. The "Feedback and ideas" form is for that.
 - Pick up an issue labeled `good first issue`.
-- Add tests. Much of the interface logic has none yet (see [Tests](#tests)).
+- Add tests. The modules in `lib/` are covered; the screens in `app.js` are not (see [Tests](#tests)).
 - Improve the README files.
 
 If you plan a large change, open an issue first so we can agree on the approach before you spend the time.
@@ -24,7 +24,7 @@ If you plan a large change, open an issue first so we can agree on the approach 
 
 ## Set up
 
-You need Chrome (or another Chromium browser) and Node.js 18 or newer.
+You need Chrome (or another Chromium browser) and Node.js 22 or newer. `extension/.nvmrc` pins 26.
 
 ```bash
 git clone https://github.com/karkinirajan/Nestpane.git
@@ -48,6 +48,7 @@ From `extension/`:
 
 ```bash
 npm test          # unit tests (node --test)
+npm run test:mutation   # if you changed lib/: deliberate bugs must still be caught
 npm run lint      # must exit 0 with no warnings
 npm run build     # sources validate and minify
 ```
@@ -80,6 +81,8 @@ A new file needs to be registered in four places, or it won't load or ship:
 
 Follow the existing pattern: an IIFE that exports for Node tests (`module.exports`) and attaches a `Nestpane...` global in the browser.
 
+Then add its tests and its mutants, and regenerate the dashboard: see [`docs/01-testing-and-quality.md`](docs/01-testing-and-quality.md#14-adding-a-module-to-lib).
+
 ## Things that need a conversation first
 
 These change what the project promises to users, so please open an issue before sending code.
@@ -93,7 +96,9 @@ These change what the project promises to users, so please open an issue before 
 
 Tests use Node's built-in runner and live in `extension/tests/`. Name a test after the behavior it proves.
 
-New and changed logic should come with tests, and adding tests for logic that has none is a welcome first contribution.
+New and changed logic should come with tests. Tests for `lib/` modules come in pairs, `<module>.test.js` for the common path and `<module>.edges.test.js` for the edges, and each rule a module enforces has a mutant in `extension/tests/mutation/` that the tests must catch. [`docs/01-testing-and-quality.md`](docs/01-testing-and-quality.md) explains how that works and how to add a module. Adding tests for `app.js`, which has none, is a welcome first contribution.
+
+CI (`.github/workflows/ci.yml`) runs the unit tests on Node 22, 24 and 26, then lint, the mutation checks, the builds, a check that `webapp/dashboard/` is up to date, and `npm audit`. It must pass before a pull request is merged.
 
 ## Releases
 
