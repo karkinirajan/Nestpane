@@ -122,10 +122,19 @@
     return found.node;
   }
 
+  // True when `target` is `subtree` itself or sits anywhere below it.
+  function containsNode(subtree, target) {
+    if (subtree === target) return true;
+    return Array.isArray(subtree.children) && subtree.children.some((child) => containsNode(child, target));
+  }
+
   function moveNode(tree, id, newParentId) {
     const found = findNode(tree, id);
     const destination = findNode(tree, newParentId);
     if (!found || !destination || !found.parent) return null;
+    // A folder cannot move into itself or its own subfolder (chrome.bookmarks.move refuses the same move): detaching it first
+    // would leave it unreachable, or turn the tree into a cycle that findNode would follow forever.
+    if (containsNode(found.node, destination.node)) return null;
     found.parent.children.splice(found.index, 1);
     if (!Array.isArray(destination.node.children)) destination.node.children = [];
     destination.node.children.push(found.node);
