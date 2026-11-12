@@ -40,4 +40,18 @@ module.exports = [
       "no-undef": "warn",
     },
   },
+  {
+    files: ["tests/mutation/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      "no-unused-vars": "warn",
+      "no-undef": "warn",
+    },
+  },
 ];
