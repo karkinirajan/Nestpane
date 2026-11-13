@@ -6,7 +6,7 @@ A local-first new tab dashboard for Chrome and other Chromium browsers. Bookmark
 [Website](https://nestpane.kneeraazon.com/) ·
 [Try it in a browser tab](https://nestpane.kneeraazon.com/dashboard/)
 
-Current version: **3.1.1**. Open source under the [GPL-3.0](LICENSE).
+Current version: **3.1.2**. Open source under the [GPL-3.0](LICENSE).
 
 ---
 
