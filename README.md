@@ -49,13 +49,15 @@ nestpane/
 │   ├── style.css       Design tokens, themes and components
 │   ├── popup.html/js   Toolbar popup that saves the current page
 │   ├── lib/            Small modules, each unit tested
-│   ├── tests/          node --test suites
+│   ├── tests/          node --test suites, and tests/mutation/ (deliberate-bug checks)
 │   ├── scripts/        Zip writer, Firefox manifest merge, web dashboard generator
 │   └── build.js        Validates and minifies into dist/
 ├── webapp/           The website, privacy policy, terms, changelog and the web version
 │   └── dashboard/      Generated from extension/, never edited by hand
-├── .github/          Issue forms and the pull request template
+├── .github/          CI workflow, issue forms and the pull request template
+├── docs/             Testing and quality guide, and the November 2026 work record
 ├── CONTRIBUTING.md   How to set up, what to check, and what needs an issue first
+├── VERSIONS.md       Tool and service versions, where each was checked
 └── LICENSE           GPL-3.0
 ```
 
@@ -63,7 +65,7 @@ More detail lives in [`extension/README.md`](extension/README.md) (build, OAuth 
 
 ## Develop
 
-You need Node.js 18 or newer and Chrome.
+You need Node.js 22 or newer (26 is pinned in `extension/.nvmrc`) and Chrome.
 
 ```bash
 cd extension
@@ -76,6 +78,7 @@ Load the extension: open `chrome://extensions`, turn on Developer mode, choose L
 |---|---|
 | `npm test` | Unit tests |
 | `npm run lint` | ESLint, must exit 0 with no warnings |
+| `npm run test:mutation` | Applies deliberate bugs to `lib/` one at a time; every one must make a test fail (about 30 seconds) |
 | `npm run build` | Validates and minifies into `dist/` |
 | `npm run build:firefox` | Builds the Firefox variant into `dist-firefox/` |
 | `npm run build:dashboard` | Regenerates `webapp/dashboard/` from the extension source |
@@ -90,7 +93,7 @@ Google sign-in is tied to the extension ID and the OAuth client IDs. On a fork, 
 1. Check the version currently live on the Chrome Web Store. A new upload needs a higher one.
 2. Set the new version in `extension/manifest.json` and `extension/package.json` (and the lockfile's root entry).
 3. Add an entry to `webapp/changelog.html`.
-4. In `extension/`: `npm ci`, `npm test`, `npm run lint`, `npm run build:dashboard`, `npm run zip`.
+4. In `extension/`: `npm ci`, `npm test`, `npm run lint`, `npm run test:mutation`, `npm run build:dashboard`, `npm run zip`. CI runs the same checks on every push and pull request.
 5. Unpack the zip into a clean folder and check it in a browser before uploading.
 6. Upload the zip on the Package tab of the Chrome Web Store developer dashboard. This step is manual.
 7. Push. The website deploys to Vercel from the repository, with no build step.
