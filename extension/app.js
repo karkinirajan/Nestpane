@@ -1172,7 +1172,23 @@ function _parseImplicitToken(redirectUrl) {
     return { token: null, expiresIn: 0 };
   }
 }
-async function _webAuthFlowToken(interactive) {
+// True while the in-memory token is still usable. With `renew`, a token that
+// is close to expiry counts as used up, so it gets replaced ahead of time.
+function _hasUsableWebAuthToken(renew) {
+  if (!_webAuthToken) return false;
+  const now = Date.now();
+  if (now >= _webAuthTokenExpiresAt) return false;
+  return !renew || !NestpaneSession.needsRenewal(_webAuthTokenExpiresAt, now);
+}
+// Silent (prompt=none) requests name the signed-in account. Without it,
+// Google can't pick between several signed-in accounts and the silent
+// request fails, which looks to the user like being logged out.
+function _silentAuthParams() {
+  const params = { prompt: "none" };
+  if (S.googleUser?.email) params.login_hint = S.googleUser.email;
+  return params;
+}
+async function _webAuthFlowToken(interactive, renew = false) {
   if (!chrome.identity?.launchWebAuthFlow) return null;
   if (!_webAuthToken) {
     // This is a brand-new page context — rehydrate whatever token a
@@ -1184,19 +1200,19 @@ async function _webAuthFlowToken(interactive) {
       _webAuthTokenExpiresAt = persisted.expiresAt;
     }
   }
-  if (!interactive && _webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
+  if (!interactive && _hasUsableWebAuthToken(renew)) {
     return _webAuthToken;
   }
-  return new Promise((resolve) => {
+  const fresh = await new Promise((resolve) => {
     const scopes = chrome.runtime.getManifest()?.oauth2?.scopes || [];
     const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
       client_id: WEB_AUTH_CLIENT_ID,
       response_type: "token",
       redirect_uri: chrome.identity.getRedirectURL(),
       scope: scopes.join(" "),
-      prompt: interactive ? "select_account" : "none"
+      ...interactive ? { prompt: "select_account" } : _silentAuthParams()
     }).toString();
-    chrome.identity.launchWebAuthFlow({ url: authUrl, interactive }, (redirectedTo) => {
+    const onDone = (redirectedTo) => {
       if (chrome.runtime.lastError || !redirectedTo) {
         _lastAuthTokenError = chrome.runtime.lastError?.message || null;
         if (chrome.runtime.lastError && interactive) {
@@ -1216,8 +1232,24 @@ async function _webAuthFlowToken(interactive) {
         _persistWebAuthToken(_webAuthToken, _webAuthTokenExpiresAt);
       }
       resolve(token);
-    });
+    };
+    // By default a non-interactive flow gives up as soon as the first page
+    // loads. Google's prompt=none page redirects with JavaScript after it
+    // loads, so without these two options every silent renewal fails.
+    // Browsers that don't know the options reject them, so retry without.
+    const details = { url: authUrl, interactive };
+    try {
+      chrome.identity.launchWebAuthFlow(
+        interactive ? details : { ...details, abortOnLoadForNonInteractive: false, timeoutMsForNonInteractive: 15e3 },
+        onDone
+      );
+    } catch {
+      chrome.identity.launchWebAuthFlow(details, onDone);
+    }
   });
+  // A renewal that failed early must not throw away a token that still works.
+  if (!fresh && !interactive && _hasUsableWebAuthToken(false)) return _webAuthToken;
+  return fresh;
 }
 // --- Plain-web OAuth (the web dashboard — no chrome.identity at all) ---
 //
@@ -1298,14 +1330,14 @@ function _plainWebSilentRefresh() {
       response_type: "token",
       redirect_uri: _plainWebOAuthRedirectUri(),
       scope: WEB_OAUTH_SCOPES.join(" "),
-      prompt: "none",
+      ..._silentAuthParams(),
       state
     }).toString();
     document.body.appendChild(frame);
   });
   return _silentRefreshInFlight;
 }
-async function _plainWebOAuthToken(interactive) {
+async function _plainWebOAuthToken(interactive, renew = false) {
   if (typeof window === "undefined" || typeof sessionStorage === "undefined") return null;
   if (!_webAuthToken) {
     const persisted = await _loadPersistedWebAuthToken();
@@ -1314,10 +1346,14 @@ async function _plainWebOAuthToken(interactive) {
       _webAuthTokenExpiresAt = persisted.expiresAt;
     }
   }
-  if (_webAuthToken && Date.now() < _webAuthTokenExpiresAt) {
+  if (_hasUsableWebAuthToken(renew)) {
     return _webAuthToken;
   }
-  if (!interactive) return S.googleUser ? _plainWebSilentRefresh() : null;
+  if (!interactive) {
+    if (!S.googleUser) return null;
+    const fresh = await _plainWebSilentRefresh();
+    return fresh || (_hasUsableWebAuthToken(false) ? _webAuthToken : null);
+  }
   // No valid token and the caller wants one now — the only way to get one
   // on a plain web page is a full-page redirect. There is nothing to
   // `resolve()` here: the page navigates away and the token comes back on
@@ -1332,8 +1368,10 @@ async function _isBrave() {
     return false;
   }
 }
-async function getAuthToken(interactive = false) {
-  if (!IS_CHROME || !chrome.identity) return _plainWebOAuthToken(interactive);
+// `renew: true` replaces a token that is close to expiry instead of handing
+// it out (used by the keep-alive). Chrome's native token cache renews itself.
+async function getAuthToken(interactive = false, { renew = false } = {}) {
+  if (!IS_CHROME || !chrome.identity) return _plainWebOAuthToken(interactive, renew);
   const skipNative = _useWebAuthFallback || await _isBrave();
   if (!skipNative && chrome.identity.getAuthToken) {
     const native = await _nativeGetAuthToken(interactive);
@@ -1341,7 +1379,15 @@ async function getAuthToken(interactive = false) {
     if (!interactive || _isRealChromeCancel(_lastAuthTokenError)) return null;
     _useWebAuthFallback = true;
   }
-  return _webAuthFlowToken(interactive);
+  return _webAuthFlowToken(interactive, renew);
+}
+// A silent token request, tried a second time before giving up, so a single
+// network or redirect hiccup doesn't drop the user to "Connect Drive".
+async function _silentAuthToken() {
+  const token = await getAuthToken(false);
+  if (token || !navigator.onLine) return token;
+  await new Promise((r) => setTimeout(r, 1500));
+  return getAuthToken(false);
 }
 function _forgetToken(token) {
   return new Promise((resolve) => {
@@ -2077,7 +2123,7 @@ async function pushToDrive() {
     Drive._pendingPush = true;
     return false;
   }
-  const token = await getAuthToken(false);
+  const token = await _silentAuthToken();
   if (!token) {
     setSyncStatus("needs-auth", S.googleUser?.email || "");
     return false;
@@ -2093,7 +2139,7 @@ async function pushToDrive() {
     }
   }
 }
-async function _doPush(token) {
+async function _doPush(token, { retriedAuth = false } = {}) {
   setSyncStatus("syncing");
   const payload = buildDrivePayload();
   if (!Drive._fileId) {
@@ -2196,6 +2242,10 @@ async function _doPush(token) {
       const err = await r.json().catch(() => ({}));
       if (r.status === 401) {
         await _forgetToken(token);
+        // The token was rejected (revoked or expired early). Try one silent
+        // renewal and push again before asking the user to sign in.
+        const fresh = retriedAuth ? null : await _silentAuthToken();
+        if (fresh) return await _doPush(fresh, { retriedAuth: true });
         setSyncStatus("needs-auth", S.googleUser?.email || "");
       } else if ((r.status === 403 || r.status === 404) && fileId) {
         await _setDriveFileId(null);
@@ -2267,7 +2317,6 @@ function _showManualSyncBtns(show) {
   const d = el("sbSyncManual");
   if (d) d.style.display = show ? "flex" : "none";
 }
-const SESSION_KEEPALIVE_MS = 45 * 60 * 1e3;
 let _keepAliveTimer = null;
 let _keepAliveFails = 0;
 function _stopSessionKeepAlive() {
@@ -2279,12 +2328,11 @@ function _armSessionKeepAlive() {
   clearTimeout(_keepAliveTimer);
   _keepAliveTimer = null;
   if (!S.googleUser) return;
-  let delay = SESSION_KEEPALIVE_MS;
-  if (_keepAliveFails) {
-    delay = Math.min(6e4 * 2 ** (_keepAliveFails - 1), 15 * 60 * 1e3);
-  } else if (_webAuthToken && _webAuthTokenExpiresAt > Date.now()) {
-    delay = Math.max(_webAuthTokenExpiresAt - Date.now() + 1e3, 3e4);
-  }
+  const delay = NestpaneSession.keepAliveDelay({
+    failures: _keepAliveFails,
+    expiresAt: _webAuthToken ? _webAuthTokenExpiresAt : 0,
+    now: Date.now()
+  });
   _keepAliveTimer = setTimeout(_refreshSession, delay);
 }
 async function _refreshSession() {
@@ -2293,7 +2341,7 @@ async function _refreshSession() {
     _armSessionKeepAlive();
     return;
   }
-  const token = await getAuthToken(false);
+  const token = await getAuthToken(false, { renew: true });
   if (token) {
     _keepAliveFails = 0;
     if (Drive._status === "needs-auth" || Drive._status === "error") {
@@ -2322,7 +2370,7 @@ async function checkGoogleIdentity() {
   }
 }
 async function _checkGoogleIdentityOnce() {
-  const token = await getAuthToken(false);
+  const token = await _silentAuthToken();
   if (!token) {
     if (S.googleUser?.email) {
       setSyncStatus("needs-auth", S.googleUser.email);

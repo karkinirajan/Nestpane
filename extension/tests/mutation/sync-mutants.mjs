@@ -14,6 +14,8 @@ const m = (name, file, tests, old, replacement) => ({ name, file, tests, old, ne
 const DC = "lib/drive-conflict.js";
 const SN = "lib/snapshots.js";
 const MG = "lib/migrations.js";
+const SE = "lib/session.js";
+const session = ["tests/session.test.js"];
 
 export default [
   // --- when the cloud copy and the local copy disagree
@@ -60,4 +62,14 @@ export default [
   m("migrations: the input is migrated in place", MG, migrations, "let working = { ...data };", "let working = data;"),
   m("migrations: the final version is the lowest applied", MG, migrations, "Math.max(...applied)", "Math.min(...applied)"),
   m("migrations: the current version is two", MG, migrations, "const CURRENT_SCHEMA_VERSION = 1;", "const CURRENT_SCHEMA_VERSION = 2;"),
+  // --- keeping the Google sign-in alive
+  m("session: a missing token does not need renewal", SE, session, "if (!expiresAt) return true;", "if (!expiresAt) return false;"),
+  m("session: the renewal window is ignored", SE, session, "return now >= expiresAt - RENEW_BEFORE_MS;", "return now >= expiresAt;"),
+  m("session: the renewal window boundary is off by one", SE, session, "return now >= expiresAt - RENEW_BEFORE_MS;", "return now > expiresAt - RENEW_BEFORE_MS;"),
+  m("session: renewal is scheduled at expiry, not before", SE, session, "return Math.max(expiresAt - RENEW_BEFORE_MS - now, MIN_DELAY_MS);", "return Math.max(expiresAt - now, MIN_DELAY_MS);"),
+  m("session: no minimum delay", SE, session, "return Math.max(expiresAt - RENEW_BEFORE_MS - now, MIN_DELAY_MS);", "return expiresAt - RENEW_BEFORE_MS - now;"),
+  m("session: an expired token is scheduled from its expiry", SE, session, "if (expiresAt && expiresAt > now) {", "if (expiresAt) {"),
+  m("session: backoff does not grow", SE, session, "FIRST_BACKOFF_MS * 2 ** (failures - 1)", "FIRST_BACKOFF_MS * failures"),
+  m("session: backoff has no cap", SE, session, "return Math.min(FIRST_BACKOFF_MS * 2 ** (failures - 1), MAX_BACKOFF_MS);", "return FIRST_BACKOFF_MS * 2 ** (failures - 1);"),
+  m("session: failures are ignored", SE, session, "if (failures > 0) {", "if (failures > 1) {"),
 ];
