@@ -33,6 +33,7 @@ const REQUIRED_FILES = [
   "lib/format.js",
   "lib/migrations.js",
   "lib/drive-conflict.js",
+  "lib/session.js",
   "lib/autosave.js",
   "lib/bookmarks-store.js",
   "lib/wikilinks.js",

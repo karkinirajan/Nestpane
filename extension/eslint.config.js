@@ -13,6 +13,7 @@ module.exports = [
         NestpaneFormat: "readonly",
         NestpaneMigrations: "readonly",
         NestpaneDriveConflict: "readonly",
+        NestpaneSession: "readonly",
         NestpaneAutosave: "readonly",
         NestpaneBookmarksStore: "readonly",
         NestpaneWikiLinks: "readonly",
