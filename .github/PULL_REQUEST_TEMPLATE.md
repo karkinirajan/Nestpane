@@ -15,6 +15,7 @@
 - [ ] `npm test` passes in `extension/`
 - [ ] `npm run lint` exits 0 with no warnings
 - [ ] `npm run build` succeeds
+- [ ] `npm run test:mutation` passes if I changed anything in `extension/lib/`
 - [ ] I regenerated the web dashboard (`npm run build:dashboard`) if I changed `app.js`, `lib/`, `style.css` or `newtab.html`
 - [ ] New or changed logic has tests, or I explained why not
 - [ ] No new runtime dependency, permission, or network request (or I opened an issue and linked it)

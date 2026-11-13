@@ -7,14 +7,18 @@
   "scripts": {
     "build": "node build.js",
     "build:firefox": "node build.js --target=firefox",
-    "lint": "eslint app.js popup.js fouc.js build.js lib/*.js scripts/*.js tests/*.js",
+    "lint": "eslint --max-warnings=0 app.js popup.js fouc.js build.js lib/*.js scripts/*.js tests/*.js tests/mutation/*.mjs",
     "test": "node --test tests/*.test.js",
+    "test:mutation": "node tests/mutation/mutate.mjs tests/mutation/sync-mutants.mjs && node tests/mutation/mutate.mjs tests/mutation/content-mutants.mjs",
     "zip": "node build.js && node scripts/zip-dist.js",
     "build:dashboard": "node scripts/build-dashboard.js"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
-    "eslint": "^10.8.0",
-    "globals": "^15.15.0"
+    "esbuild": "^0.25.12",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
