@@ -171,17 +171,20 @@
     </tr>
     <tr>
       <td><code>history</code></td>
-      <td>Search your browsing history for the History viewer, Analytics, and Omni-Search.</td>
+      <td>Search your browsing history for the History viewer, Analytics, and Omni-Search. Optional: requested
+        the first time you click "Allow access" in History or Insights, not at install.</td>
       <td>No</td>
     </tr>
     <tr>
       <td><code>downloads</code></td>
-      <td>Show your recent downloads in the Downloads viewer.</td>
+      <td>Show your recent downloads in the Downloads viewer. Optional: requested when you click "Allow access"
+        there, not at install.</td>
       <td>No</td>
     </tr>
     <tr>
       <td><code>topSites</code></td>
-      <td>Show your most-visited sites in the Analytics view.</td>
+      <td>Show your most-visited sites in the Analytics view. Optional: requested when you click "Allow access"
+        there, not at install.</td>
       <td>No</td>
     </tr>
     <tr>
@@ -198,8 +201,14 @@
     </tr>
     <tr>
       <td><code>declarativeNetRequest</code></td>
-      <td>Block sites you choose while a Focus Mode session is running.</td>
+      <td>Block sites you choose while a Focus Mode session is running. Optional: requested when you turn on
+        site blocking and save, not at install.</td>
       <td>No — rules are evaluated entirely on-device by Chrome</td>
+    </tr>
+    <tr>
+      <td><code>favicon</code></td>
+      <td>Show site icons on Quick Access tiles and lists from Chrome's own icon cache.</td>
+      <td>No — Chrome serves the icon locally</td>
     </tr>
     <tr>
       <td><code>notifications</code></td>
@@ -291,11 +300,6 @@ sites are left out), plus the names of your existing bookmark folders</li>
       <td>Load the Inter, Instrument Serif &amp; JetBrains Mono fonts</td>
       <td>Standard font-request traffic only</td>
     </tr>
-<tr>
-<td><code>t3.gstatic.com</code> (Google favicon service)</td>
-<td>Show each Quick Access tile's site icon</td>
-<td>The domain of the site, in the image request</td>
-</tr>
   </table>
 
   <h2>8. Data Retention and Deletion</h2>

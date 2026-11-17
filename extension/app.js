@@ -1019,7 +1019,17 @@ function debounce(fn, d) {
     t = setTimeout(() => fn(...a), d);
   };
 }
+// Chrome serves cached site icons from the extension's own _favicon endpoint
+// (the "favicon" permission), so no third party sees the domain. Firefox and
+// the web build have no equivalent and keep Google's favicon service.
+const HAS_FAVICON_API = IS_CHROME && (chrome.runtime.getManifest?.().permissions || []).includes("favicon");
 function favSrc(url) {
+  if (HAS_FAVICON_API) {
+    const u = new URL(chrome.runtime.getURL("/_favicon/"));
+    u.searchParams.set("pageUrl", String(url || ""));
+    u.searchParams.set("size", "64");
+    return u.toString();
+  }
   try {
     const origin = new URL(url).origin;
     return `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(origin)}&size=64`;
@@ -2496,6 +2506,39 @@ async function _ensurePermission(names) {
   } catch {
     return false;
   }
+}
+// For click handlers: calls permissions.request with no await before it.
+// Browsers only show the prompt while the click's user activation is live,
+// and Firefox needs the call to happen synchronously inside the handler.
+async function _requestPermission(names) {
+  if (!IS_CHROME || !chrome.permissions) return true;
+  try {
+    return await chrome.permissions.request({ permissions: names });
+  } catch {
+    return false;
+  }
+}
+// history, downloads and topSites are optional permissions. Chrome only
+// exposes chrome.<api> while the permission is granted, so a missing
+// namespace in the extension means "not granted yet" (or revoked).
+function _needsGrant(api) {
+  return IS_CHROME && !chrome[api];
+}
+const PERMISSION_REASONS = {
+  history: "Nestpane needs access to your browsing history to show it here. It stays on this device.",
+  downloads: "Nestpane needs access to your downloads list to show it here. It stays on this device.",
+  topSites: "Nestpane needs access to your most-visited sites to show them here. It stays on this device."
+};
+function _grantButtonHTML(perm) {
+  return `<button type="button" class="btn-primary" data-grant-perm="${escH(perm)}">Allow access</button>`;
+}
+function _permissionGateHTML(perm, icon) {
+  return `<div class="empty-state"><div class="empty-state-icon">${icon}</div><div class="empty-state-text">${escH(PERMISSION_REASONS[perm])}</div>${_grantButtonHTML(perm)}</div>`;
+}
+function _insightsGate(card, perm) {
+  if (!card) return;
+  _insightsEmpty(card, PERMISSION_REASONS[perm]);
+  if (!card.querySelector("[data-grant-perm]")) card.insertAdjacentHTML("beforeend", _grantButtonHTML(perm));
 }
 async function signIn() {
   if (IS_CHROME) {
@@ -4013,6 +4056,11 @@ function _historyDateLabel(ts) {
   return "Older";
 }
 async function loadHistory(q) {
+  if (_needsGrant("history")) {
+    el("historyLoading").style.display = "none";
+    el("historyList").innerHTML = _permissionGateHTML("history", "\u{1F550}");
+    return;
+  }
   el("historyLoading").style.display = "flex";
   const items = await API.history(q);
   el("historyLoading").style.display = "none";
@@ -4106,6 +4154,11 @@ function _extBadgeColor(ext) {
   return { color, bg };
 }
 async function loadDownloads() {
+  if (_needsGrant("downloads")) {
+    el("downloadsLoading").style.display = "none";
+    el("downloadsList").innerHTML = _permissionGateHTML("downloads", "\u2B07\uFE0F");
+    return;
+  }
   el("downloadsLoading").style.display = "flex";
   const items = await API.downloads();
   el("downloadsLoading").style.display = "none";
@@ -5583,6 +5636,10 @@ function openFocusModeModal() {
   openModal("focusModeModal");
 }
 async function saveFocusModeSettings() {
+  // The site blocker's permission is optional. Ask now, while the Save click
+  // still counts as a user gesture, and before anything else awaits.
+  const wantsBlocking = el("focusModeToggle").checked;
+  const permissionAsk = wantsBlocking ? _requestPermission(["declarativeNetRequest"]) : Promise.resolve(true);
   const lines = el("focusModeSites").value.split("\n");
   const sites = [];
   const seen = new Set();
@@ -5600,15 +5657,20 @@ async function saveFocusModeSettings() {
       sites.push(domain);
     }
   });
+  const granted = await permissionAsk;
+  // Without the permission nothing can be blocked, so focus mode is saved as
+  // off rather than shown as on. The site list is kept for next time.
   S.settings.focus = {
-    enabled: el("focusModeToggle").checked,
+    enabled: wantsBlocking && granted,
     blockedSites: sites
   };
   save();
   _syncFocusModeUI();
   const applied = await applyFocusBlockRules(T.running);
   closeModal("focusModeModal");
-  if (!applied) {
+  if (wantsBlocking && !granted) {
+    showToast("Site list saved. Blocking stays off until you allow Nestpane to block sites.", "error");
+  } else if (!applied) {
     showToast("Focus mode saved, but blocking rules failed to apply \u2014 try again", "error");
   } else if (invalidCount) {
     showToast(`Saved \u2014 ${invalidCount} entr${invalidCount === 1 ? "y" : "ies"} skipped (not a valid domain)`, "error");
@@ -6041,6 +6103,8 @@ async function renderAnalytics() {
           </div>`
       ).join("");
     });
+  } else if (_needsGrant("topSites")) {
+    _insightsGate(el("an-topsites"), "topSites");
   } else {
     _insightsEmpty(el("an-topsites"), "Requires Chrome extension.");
   }
@@ -6072,7 +6136,7 @@ async function renderAnalytics() {
           ([d, c]) => `
           <div class="ins-bar-row">
             <div class="ins-bar-label" style="display:flex;align-items:center;gap:5px;width:120px">
-              <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=16" style="width:13px;height:13px;border-radius:2px;flex-shrink:0">
+              <img src="${favSrc("https://" + d)}" style="width:13px;height:13px;border-radius:2px;flex-shrink:0">
               <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(d)}</span>
             </div>
             <div class="ins-bar-track"><div class="ins-bar-fill" style="width:${Math.round(c / maxV * 100)}%"></div></div>
@@ -6081,6 +6145,8 @@ async function renderAnalytics() {
         ).join("");
       }
     );
+  } else if (_needsGrant("history")) {
+    _insightsGate(el("an-history"), "history");
   } else {
     _insightsEmpty(el("an-history"), "Requires Chrome extension.");
   }
@@ -6128,6 +6194,8 @@ async function renderAnalytics() {
         `;
       }
     );
+  } else if (_needsGrant("history")) {
+    _insightsGate(el("an-activity"), "history");
   } else {
     _insightsEmpty(el("an-activity"), "Requires Chrome extension.");
   }
@@ -6159,6 +6227,8 @@ async function renderAnalytics() {
         }).join("");
       }
     );
+  } else if (_needsGrant("downloads")) {
+    _insightsGate(el("an-downloads"), "downloads");
   } else {
     _insightsEmpty(el("an-downloads"), "Requires Chrome extension.");
   }
@@ -7371,6 +7441,19 @@ function setupEventListeners() {
         closeCmdPalette();
         break;
     }
+  });
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest?.("[data-grant-perm]");
+    if (!btn) return;
+    // Request first, before any await, so the click still counts as a gesture.
+    _requestPermission([btn.dataset.grantPerm]).then((granted) => {
+      if (!granted) {
+        showToast("Access not granted. You can allow it any time from this screen.");
+        return;
+      }
+      const view = document.querySelector(".view.active")?.id?.replace(/^view-/, "");
+      if (view) _navigateLoad(view);
+    });
   });
   document.addEventListener(
     "error",

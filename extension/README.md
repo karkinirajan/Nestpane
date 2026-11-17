@@ -183,12 +183,13 @@ To release an update, set the same new `version` in `manifest.json` and `package
 |---|---|
 | `tabs` | Tab sessions, Smart Organize, open-tab search |
 | `bookmarks` | Read and write the browser's bookmarks |
-| `history` | History view, Insights, search |
-| `downloads` | Downloads view |
 | `storage` | All user data, in `chrome.storage.local` |
-| `topSites` | Most visited sites in Insights |
-| `declarativeNetRequest` | Focus Mode site blocking while a session runs |
 | `search` | `chrome.search.query`, to search with the user's default search engine |
+| `favicon` | Site icons from Chrome's own cache (`/_favicon/`), instead of a third-party favicon service |
+| `history` (optional) | History view, Insights, palette search. Requested from the "Allow access" button in History or Insights |
+| `downloads` (optional) | Downloads view and Insights card. Requested from "Allow access" |
+| `topSites` (optional) | Most visited sites in Insights. Requested from "Allow access" |
+| `declarativeNetRequest` (optional) | Focus Mode site blocking. Requested when the user turns blocking on and saves |
 | `identity`, `identity.email` (optional) | Google sign-in for Drive backup, requested when the user signs in |
 | `notifications` (optional) | Reminder, habit and focus notifications |
 
@@ -199,7 +200,9 @@ To release an update, set the same new `version` in `manifest.json` and `package
 | `oauth2.googleapis.com` | Token revocation on sign-out |
 | `api.anthropic.com` | Optional AI features, only with a key the user adds |
 
-Quick Access tile icons are loaded as images from Google's favicon service (`t3.gstatic.com`). That needs no host permission, but the request includes the site's domain, and it is listed in the privacy policy.
+Optional permissions are requested only from a click (`_requestPermission()` in `app.js`), because Chrome and Firefox show the prompt only during a user gesture. `build.js` fails if any of them is also listed under `permissions`, which would put it back on the install prompt.
+
+Site icons come from Chrome's `/_favicon/` endpoint (`favSrc()` in `app.js`), so no outside service sees the domain. The Firefox build and the web demo have no such endpoint and still use Google's favicon service (`t3.gstatic.com`); the privacy policy says so.
 
 ## Security notes
 

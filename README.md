@@ -6,7 +6,7 @@ A local-first new tab dashboard for Chrome and other Chromium browsers. Bookmark
 [Website](https://nestpane.kneeraazon.com/) ·
 [Try it in a browser tab](https://nestpane.kneeraazon.com/dashboard/)
 
-Current version: **3.1.2**. Open source under the [GPL-3.0](LICENSE).
+Current version: **3.2.0**. Open source under the [GPL-3.0](LICENSE).
 
 ---
 
@@ -37,7 +37,9 @@ The AI features (Ask AI, the daily briefing, Smart Organize, adding tasks from t
 - **Stays signed in.** The saved Google account is removed only by Sign out. A keep-alive renews the access token in the background.
 - **One codebase, two targets.** The same app runs as the extension and, in a normal tab, as the web version at `/dashboard/`, which is generated from the extension source.
 
-Two things still reach Google by default: the web fonts and the site icons on Quick Access tiles.
+- **Asks for little at install.** History, downloads, top sites and the focus site blocker are optional permissions, requested from an "Allow access" button or when you turn the blocker on. The full list is in [`extension/README.md`](extension/README.md#permissions).
+
+One thing still reaches Google by default: the web fonts. In Chrome, site icons come from the browser's own cache; the Firefox build and the web version load them from Google's favicon service.
 
 ## Repository
 
@@ -107,7 +109,7 @@ Bug reports, ideas and pull requests are welcome. Read [`CONTRIBUTING.md`](CONTR
 - Reminders only fire while a Nestpane new tab page is open, because there is no background worker.
 - Firefox builds but is not published. Safari is not started.
 - Google Drive backup on the web version is not verified.
-- Quick Access icons and fonts load from Google.
+- Fonts load from Google. Site icons do too in the Firefox build and the web version.
 
 ## License
 

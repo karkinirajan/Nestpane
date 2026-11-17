@@ -192,11 +192,12 @@
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
             <li><strong>tabs:</strong> Tab Sessions (save/restore groups of open tabs), Smart Organize (sort your open tabs into bookmark folders), and the command palette's open-tabs search.</li>
             <li><strong>bookmarks:</strong> read and write your Chrome bookmarks for the Bookmarks view.</li>
-            <li><strong>history:</strong> the History viewer, Analytics/Insights, and command-palette search.</li>
-            <li><strong>downloads:</strong> the Downloads viewer.</li>
+            <li><strong>history (optional):</strong> the History viewer, Analytics/Insights, and command-palette search. Requested when you click "Allow access" in History or Insights.</li>
+            <li><strong>downloads (optional):</strong> the Downloads viewer. Requested when you click "Allow access" there.</li>
             <li><strong>storage:</strong> persisting all the local data described in Section 1.</li>
-            <li><strong>topSites:</strong> the Analytics/Insights "top visited sites" card.</li>
-            <li><strong>declarativeNetRequest:</strong> Focus Mode's optional site-blocking, evaluated entirely on-device by Chrome — Nestpane never sees the sites you visit through this.</li>
+            <li><strong>topSites (optional):</strong> the Analytics/Insights "top visited sites" card. Requested when you click "Allow access" there.</li>
+            <li><strong>declarativeNetRequest (optional):</strong> Focus Mode's site-blocking, requested when you turn blocking on, evaluated entirely on-device by Chrome — Nestpane never sees the sites you visit through this.</li>
+            <li><strong>favicon:</strong> shows site icons from Chrome's own icon cache, so no outside service sees which sites they are for.</li>
             <li><strong>search:</strong> sends a query you type in the command bar to your own default search engine.</li>
             <li><strong>identity / identity.email (optional):</strong> Google sign-in — see Section 2.</li>
             <li><strong>notifications (optional):</strong> desktop notifications when a reminder is due, a Focus session ends, or a habit is untracked for the day.</li>
@@ -237,7 +238,7 @@
           <p>A few features talk directly to third-party services, not through any server of ours:</p>
           <ul class="list-disc list-inside mt-4 space-y-2 text-gray-400">
             <li><strong>Search Engines:</strong> a query typed in the command bar is sent directly to your browser's default search engine.</li>
-            <li><strong>Site icons:</strong> each Quick Access tile loads the site's icon from Google's favicon service (<code>t3.gstatic.com</code>). That request includes the site's domain.</li>
+            <li><strong>Site icons:</strong> the Chrome extension shows site icons from Chrome's own cache, with no outside request. The Firefox build and the in-browser demo, which have no such cache, load them from Google's favicon service (<code>t3.gstatic.com</code>); that request includes the site's domain.</li>
             <li><strong>Google Fonts:</strong> the Inter, Instrument Serif and JetBrains Mono typefaces are loaded from <code>fonts.googleapis.com</code>/<code>fonts.gstatic.com</code>.</li>
           </ul>
           <p class="mt-4">Your browser communicates with these services directly; we are not a party to those requests and do not control their own data practices.</p>

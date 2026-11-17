@@ -44,15 +44,20 @@ const REQUIRED_PERMISSIONS = [
   "tabs",
   "bookmarks",
   "storage",
-  "history",
-  "downloads",
-  "declarativeNetRequest",
-  "search"
+  "search",
+  "favicon"
 ];
+// Requested at runtime when the user opens the feature that needs them.
+// Listing one of these under "permissions" too would put it back on the
+// install prompt, so the build refuses that.
 const REQUIRED_OPTIONAL_PERMISSIONS = [
   "identity",
   "identity.email",
-  "notifications"
+  "notifications",
+  "history",
+  "downloads",
+  "topSites",
+  "declarativeNetRequest"
 ];
 const PUBLISHED_EXTENSION_ID = "aokkcpfoompjgeknhbkphogfcjjlbpol";
 function extensionIdFromKey(base64Key) {
@@ -86,6 +91,14 @@ function validate() {
     console.error(
       "\n\u2717 Missing manifest optional_permissions:",
       missingOptionalPermissions.join(", ")
+    );
+    ok = false;
+  }
+  const optionalMarkedRequired = REQUIRED_OPTIONAL_PERMISSIONS.filter((p) => manifestPermissions.includes(p));
+  if (optionalMarkedRequired.length) {
+    console.error(
+      "\n\u2717 These must stay optional, but manifest permissions lists them:",
+      optionalMarkedRequired.join(", ")
     );
     ok = false;
   }

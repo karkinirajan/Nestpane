@@ -24,6 +24,18 @@ The extension itself has **no runtime dependencies**: everything below is build 
 
 **Not run:** the unpacked extension inside Chrome (the `chrome.*` APIs, Drive sign-in and sync, notifications, Focus Mode blocking); Firefox; Edge; any AI call with a real key.
 
+### 3.2.0 (2026-11-17, local, Node 26.13.1)
+
+| What | Result |
+| --- | --- |
+| `npm ci`, `npm run lint`, `npm test`, both mutation lists | Lint clean; 158 tests pass; 50 of 50 and 112 of 112 mutants killed. |
+| `npm run zip`, `npm run build:firefox`, `npm run build:dashboard` | Succeed. `nestpane-v3.2.0-chrome.zip` is 22 files, 124.6 kB, SHA-256 `2fe88132198e40bb53423da7a57d017929d3cee4c382a85430591d17bf6d449c`, identical on a second run. The Firefox manifest leaves out `favicon`. |
+| `build.js` permission guard | Fails the build when an optional permission (tested with `history`) is also listed as required. |
+| `npm audit --audit-level=high` | Exit 0. It reports 3 moderate advisories in `minimatch` through `eslint`, a dev dependency that is not in the zip. |
+| The built extension in Playwright's Chromium (headless) | Only `tabs`, `bookmarks`, `storage`, `search`, `favicon` are granted at install; `chrome.history`, `chrome.downloads`, `chrome.topSites` and `chrome.declarativeNetRequest` are absent. History, Downloads and four Insights cards show "Allow access", reachable by keyboard, in dark and light themes. Site icons load from `/_favicon/`. Saving focus mode without the permission keeps the site list and saves it as off. No console errors. |
+
+**Not run for 3.2.0:** clicking "Allow access" through Chrome's permission prompt (automation cannot answer it), and an update from 3.1.2 to 3.2.0, which would show whether existing users keep the permissions they already granted.
+
 ## Dependencies (`extension/package-lock.json`)
 
 | Package | Locked | Declared | Used for |
